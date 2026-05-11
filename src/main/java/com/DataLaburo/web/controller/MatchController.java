@@ -3,6 +3,7 @@ package com.DataLaburo.web.controller;
 import com.DataLaburo.web.dto.CandidateProfileForm;
 import com.DataLaburo.web.dto.CvMatchingForm;
 import com.DataLaburo.web.dto.DashboardStatsDto;
+import com.DataLaburo.web.dto.JobMatchRowView;
 import com.DataLaburo.web.model.CandidateProfile;
 import com.DataLaburo.web.model.Job;
 import com.DataLaburo.web.repository.JobRepository;
@@ -58,10 +59,14 @@ public class MatchController {
     @PostMapping("/matching")
     public String matchCv(@ModelAttribute("form") CvMatchingForm form, Model model) {
         String cvText = resolveCvText(form, model);
+        if (model.containsAttribute("error")) {
+            model.addAttribute("form", form == null ? new CvMatchingForm() : form);
+            addProfiles(model);
+            return "matching";
+        }
+
         if (cvText == null || cvText.isBlank() || cvText.trim().length() < 200) {
-            if (!model.containsAttribute("error")) {
-                model.addAttribute("error", "Pega tu CV (texto) o elegi un perfil guardado para calcular el match. Recomendado: 200+ caracteres.");
-            }
+            model.addAttribute("error", "Pega tu CV (texto) o elegi un perfil guardado para calcular el match. Recomendado: 200+ caracteres.");
             model.addAttribute("form", form == null ? new CvMatchingForm() : form);
             addProfiles(model);
             return "matching";
@@ -74,6 +79,42 @@ public class MatchController {
         return "matching";
     }
 
+    @GetMapping("/jobs/{jobId}/match")
+    public String jobMatch(@PathVariable Long jobId, @RequestParam(value = "profileId", required = false) Long profileId, Model model) {
+        Job job = jobRepository.findById(jobId).orElse(null);
+        if (job == null) {
+            return "redirect:/jobs";
+        }
+
+        CvMatchingForm form = new CvMatchingForm();
+        form.setProfileId(profileId);
+        addJobMatchModel(model, job, form);
+        return "job-match";
+    }
+
+    @PostMapping("/jobs/{jobId}/match")
+    public String matchJob(@PathVariable Long jobId, @ModelAttribute("form") CvMatchingForm form, Model model) {
+        Job job = jobRepository.findById(jobId).orElse(null);
+        if (job == null) {
+            return "redirect:/jobs";
+        }
+
+        String cvText = resolveCvText(form, model);
+        addJobMatchModel(model, job, form == null ? new CvMatchingForm() : form);
+        if (model.containsAttribute("error")) {
+            return "job-match";
+        }
+
+        if (cvText == null || cvText.isBlank() || cvText.trim().length() < 200) {
+            model.addAttribute("error", "Pega tu CV (texto) o elegi un perfil guardado para calcular el match. Recomendado: 200+ caracteres.");
+            return "job-match";
+        }
+
+        JobMatchRowView result = cvMatchingService.matchAgainstJob(cvText, job);
+        model.addAttribute("result", result);
+        return "job-match";
+    }
+
     private String resolveCvText(CvMatchingForm form, Model model) {
         if (form == null) {
             return null;
@@ -82,7 +123,7 @@ public class MatchController {
         if (form.getProfileId() != null) {
             CandidateProfile profile = candidateProfileService.findById(form.getProfileId()).orElse(null);
             if (profile == null) {
-                model.addAttribute("error", "No se encontro el perfil seleccionado.");
+                model.addAttribute("error", "No se encontro el perfil seleccionado. Elegi otro perfil o usa el texto manual.");
                 return null;
             }
             return profile.getCvText();
@@ -93,6 +134,12 @@ public class MatchController {
 
     private void addProfiles(Model model) {
         model.addAttribute("profiles", candidateProfileService.findAll());
+    }
+
+    private void addJobMatchModel(Model model, Job job, CvMatchingForm form) {
+        model.addAttribute("job", job);
+        model.addAttribute("form", form);
+        addProfiles(model);
     }
 
     @GetMapping("/results")

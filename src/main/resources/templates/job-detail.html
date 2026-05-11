@@ -18,6 +18,10 @@
 		<p><a class="link" th:href="${job.sourceUrl}" target="_blank" rel="noopener">Abrir oferta original</a></p>
 	</section>
 
+	<section class="actions">
+		<a class="btn btn-primary" th:href="@{/jobs/{id}/match(id=${job.id})}">Evaluar compatibilidad</a>
+	</section>
+
 	<section class="card"
 			 th:with="bestText=${(job.description != null && !job.description.isBlank()) ? job.description : job.visibleText}"
 			 th:if="${bestText != null && !bestText.isBlank()}">
@@ -31,4 +35,3 @@
 </main>
 </body>
 </html>
-

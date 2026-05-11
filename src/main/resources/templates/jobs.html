@@ -122,7 +122,7 @@
 						</div>
 
 						<div class="detail-actions">
-							<a class="btn btn-primary" th:href="@{/matching(jobId=${job.id})}">Comprobar con mi CV/perfil</a>
+							<a class="btn btn-primary" th:href="@{/jobs/{id}/match(id=${job.id})}">Evaluar compatibilidad</a>
 							<a class="btn btn-secondary" th:href="${job.sourceUrl}" target="_blank" rel="noreferrer">Ver en origen</a>
 							<a class="btn btn-ghost" th:href="@{/api/jobs/{id}(id=${job.id})}" target="_blank" rel="noreferrer">Ver JSON</a>
 							<div class="muted small">MVP: sin login real todavía. Usá Matching con tus skills.</div>

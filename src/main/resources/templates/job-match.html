@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Evaluar compatibilidad</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>Evaluar compatibilidad</h1>
+		<p class="muted">Matching individual contra una oferta guardada en <code>JOBS</code>.</p>
+	</header>
+
+	<section class="card">
+		<header class="header">
+			<h2 th:text="${job.title != null ? job.title : 'Untitled'}">Oferta</h2>
+			<p class="muted"
+			   th:text="${(job.company != null ? job.company : 'Unknown') + (job.location != null && !job.location.isBlank() ? ' - ' + job.location : '')}"></p>
+		</header>
+
+		<div th:with="bestText=${(job.description != null && !job.description.isBlank()) ? job.description : job.visibleText}"
+			 th:if="${bestText != null && !bestText.isBlank()}">
+			<p class="muted small">Descripcion breve</p>
+			<p class="muted" th:text="${#strings.abbreviate(bestText, 700)}"></p>
+		</div>
+
+		<div class="actions">
+			<a class="link" th:href="@{/jobs/{id}(id=${job.id})}">Ver detalle</a>
+			<a class="link" th:href="@{/jobs}">Volver a Jobs</a>
+		</div>
+	</section>
+
+	<section class="card" th:if="${error}">
+		<p class="error" th:text="${error}"></p>
+	</section>
+
+	<section class="card">
+		<form method="post" th:action="@{/jobs/{id}/match(id=${job.id})}" th:object="${form}">
+			<div class="field" th:if="${profiles != null && !#lists.isEmpty(profiles)}">
+				<label for="profileId">Perfil guardado</label>
+				<select id="profileId" th:field="*{profileId}">
+					<option value="">Sin perfil - usar texto manual</option>
+					<option th:each="profile : ${profiles}"
+							th:value="${profile.id}"
+							th:text="${profile.name}"></option>
+				</select>
+				<p class="hint muted">Si elegis un perfil, se usa su CV guardado aunque pegues texto manual.</p>
+			</div>
+
+			<div class="field">
+				<label for="cvText">CV (texto)</label>
+				<textarea id="cvText" rows="10" th:field="*{cvText}"
+						  placeholder="Pega aca tu CV en texto plano"></textarea>
+				<p class="hint muted">Si no elegis perfil, se usa este texto manual.</p>
+			</div>
+
+			<div class="actions">
+				<button type="submit">Calcular compatibilidad</button>
+			</div>
+		</form>
+	</section>
+
+	<section th:if="${result != null}" class="card">
+		<h2>Resultado</h2>
+
+		<div class="match-top">
+			<span class="match-badge"
+				  th:classappend="${result.matchPercent == null ? ' is-na' : (result.matchPercent >= 80 ? ' is-ideal' : (result.matchPercent >= 60 ? ' is-good' : (result.matchPercent >= 40 ? ' is-mid' : ' is-low')))}"
+				  th:text="${result.matchPercent == null ? 'N/A' : (result.matchPercent + '%')}"></span>
+			<span th:if="${result.jobSeniority != null}" class="muted small" th:text="${'Seniority: ' + result.jobSeniority}"></span>
+		</div>
+
+		<div class="grid-2">
+			<div th:if="${result.technicalFit != null || result.roleFit != null || result.experienceFit != null}">
+				<p class="muted small">Breakdown</p>
+				<ul>
+					<li th:if="${result.technicalFit != null}" th:text="${'Tecnico: ' + result.technicalFit + '/100'}"></li>
+					<li th:if="${result.roleFit != null}" th:text="${'Afinidad/rol: ' + result.roleFit + '/40'}"></li>
+					<li th:if="${result.experienceFit != null}" th:text="${'Experiencia: ' + result.experienceFit + '/40'}"></li>
+				</ul>
+			</div>
+
+			<div th:if="${not #lists.isEmpty(result.primaryStack)}">
+				<p class="muted small">Stack principal de la oferta</p>
+				<div class="chips">
+					<span class="chip match-chip profile-chip" th:each="s : ${result.primaryStack}" th:text="${s}"></span>
+				</div>
+			</div>
+		</div>
+
+		<div>
+			<p class="muted small">Skills encontradas</p>
+			<p th:if="${#lists.isEmpty(result.coincidences)}" class="muted">No se detectaron coincidencias explicables.</p>
+			<div th:if="${!#lists.isEmpty(result.coincidences)}" class="chips">
+				<span class="chip match-chip" th:each="s : ${result.coincidences}" th:text="${s}"></span>
+			</div>
+		</div>
+
+		<div th:if="${not #lists.isEmpty(result.affinity)}">
+			<p class="muted small">Explicacion</p>
+			<ul>
+				<li th:each="item : ${result.affinity}" th:text="${item}"></li>
+			</ul>
+		</div>
+
+		<div th:if="${not #lists.isEmpty(result.improvements)}">
+			<p class="muted small">Skills faltantes / oportunidades</p>
+			<ul>
+				<li th:each="item : ${result.improvements}" th:text="${item}"></li>
+			</ul>
+		</div>
+
+		<div th:if="${not #lists.isEmpty(result.jobCategories)}">
+			<p class="muted small">Areas de la oferta</p>
+			<div class="chips">
+				<span class="chip match-chip cat-chip" th:each="c : ${result.jobCategories}" th:attr="data-cat=${c}" th:text="${c}"></span>
+			</div>
+		</div>
+	</section>
+</main>
+</body>
+</html>

@@ -20,10 +20,10 @@
 
 	<section class="card">
 		<form method="post" th:action="@{/matching}" th:object="${form}">
-			<div class="field">
+			<div class="field" th:if="${profiles != null && !#lists.isEmpty(profiles)}">
 				<label for="profileId">Perfil guardado</label>
 				<select id="profileId" th:field="*{profileId}">
-					<option value="">Sin perfil: usar CV manual</option>
+					<option value="">Sin perfil - usar texto manual</option>
 					<option th:each="profile : ${profiles}"
 							th:value="${profile.id}"
 							th:text="${profile.name}"></option>

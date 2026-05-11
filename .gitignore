@@ -32,6 +32,7 @@ run.*.log
 .env
 .env.*
 !.env.example
+context.md
 application-local.properties
 application-local.yml
 application-local.yaml

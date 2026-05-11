@@ -39,6 +39,306 @@ public class CvMatchingService {
 		this.ruleBasedEnrichmentService = ruleBasedEnrichmentService;
 	}
 
+	public JobMatchRowView matchAgainstJob(String cvText, Job job) {
+		Objects.requireNonNull(job, "job");
+
+		SkillExtractionService.SkillCatalog catalog = skillExtractionService.loadCatalog();
+
+		SkillExtractionService.ExtractedSkills cvExplicit = skillExtractionService.extractSkills(cvText, catalog);
+		Set<Long> cvExplicitSkillIds = cvExplicit.skillIds();
+		EnrichedDocument cvEnriched = ruleBasedEnrichmentService.enrichCandidate(cvText, cvExplicit);
+
+		JobTextBuckets buckets = buildJobTextBuckets(job);
+
+		SkillExtractionService.ExtractedSkills jobRequired = skillExtractionService.extractSkills(buckets.requiredText(), catalog);
+		SkillExtractionService.ExtractedSkills jobNice = skillExtractionService.extractSkills(buckets.niceToHaveText(), catalog);
+
+		Set<Long> requiredSkillIds = jobRequired.skillIds();
+		Set<Long> niceSkillIds = subtract(jobNice.skillIds(), requiredSkillIds);
+		Set<Long> dominantSkillIds = detectDominantSkillIds(job, buckets, jobRequired);
+
+		SkillExtractionService.ExtractedSkills jobAllExplicit = merge(jobRequired, jobNice);
+		String jobAllText = joinNonBlank(buckets.requiredText(), buckets.niceToHaveText());
+		EnrichedDocument jobEnriched = ruleBasedEnrichmentService.enrichJob(jobAllText, jobAllExplicit);
+		RuleBasedEnrichmentService.Seniority jobSeniorityEnum = jobSeniorityFromTitle(job.getTitle(), jobEnriched.seniority());
+
+		boolean hasSignals = !requiredSkillIds.isEmpty()
+				|| !niceSkillIds.isEmpty()
+				|| (jobEnriched.inferred() != null && !jobEnriched.inferred().isEmpty());
+		if (!hasSignals) {
+			return new JobMatchRowView(
+					job.getId(),
+					coalesce(job.getTitle(), "Untitled"),
+					coalesce(job.getCompany(), "Unknown"),
+					null,
+					List.of(),
+					List.of(),
+					List.of(),
+					List.of(),
+					List.of(),
+					null,
+					null,
+					null,
+					null
+			);
+		}
+
+		Set<Long> matchedRequired = intersect(cvExplicitSkillIds, requiredSkillIds);
+		Set<Long> matchedNice = intersect(cvExplicitSkillIds, niceSkillIds);
+		Set<Long> missingRequired = subtract(requiredSkillIds, cvExplicitSkillIds);
+		Set<Long> missingNice = subtract(niceSkillIds, cvExplicitSkillIds);
+
+		double totalWeight = 0.0;
+		double matchedWeight = 0.0;
+		for (Long id : requiredSkillIds) {
+			double w = REQUIRED_WEIGHT * (dominantSkillIds.contains(id) ? 2.4 : 1.0);
+			totalWeight += w;
+			if (cvExplicitSkillIds.contains(id)) matchedWeight += w;
+		}
+		for (Long id : niceSkillIds) {
+			double w = NICE_TO_HAVE_WEIGHT * (dominantSkillIds.contains(id) ? 1.6 : 1.0);
+			totalWeight += w;
+			if (cvExplicitSkillIds.contains(id)) matchedWeight += w;
+		}
+
+		List<String> matchedInferredLabels = new ArrayList<>();
+		if (jobEnriched.inferred() != null && !jobEnriched.inferred().isEmpty()) {
+			for (InferredItem item : jobEnriched.inferred()) {
+				if (item.type() == InferredType.ROLE || item.type() == InferredType.AREA || item.type() == InferredType.SKILL || item.type() == InferredType.DOMAIN) {
+					double w = signalWeight(item);
+					totalWeight += w;
+					if (cvEnriched.hasInferredLabel(item.label())) {
+						matchedWeight += w;
+						matchedInferredLabels.add(item.label());
+					}
+				}
+			}
+		}
+
+		int technicalFit = totalWeight <= 0.0 ? 0 : (int) Math.round(100.0 * (matchedWeight / totalWeight));
+		technicalFit = Math.max(0, Math.min(100, technicalFit));
+
+		List<String> affinityReasons = new LinkedList<>();
+		Affinity affinity = affinityFloor(cvEnriched, jobEnriched);
+		if (affinity.kind == AffinityKind.STRONG) affinityReasons.add("Afinidad fuerte por rubro/area.");
+		if (affinity.kind == AffinityKind.RELATED) affinityReasons.add("Afinidad por rubro/area.");
+
+		int roleFit = Math.max(0, Math.min(40, affinity.floor));
+		boolean seniorityMismatch = false;
+		if (!dominantSkillIds.isEmpty()) {
+			boolean hasPrimary = false;
+			for (Long id : dominantSkillIds) {
+				if (cvExplicitSkillIds.contains(id)) {
+					hasPrimary = true;
+					break;
+				}
+			}
+			if (hasPrimary) {
+				roleFit = Math.min(40, roleFit + 10);
+				affinityReasons.add("Coincidis con la tecnologia principal del puesto.");
+			}
+		}
+
+		RuleBasedEnrichmentService.Seniority cvRelativeSeniority = cvEnriched.seniorityForCategories(jobEnriched.categories());
+		if (cvRelativeSeniority != null && jobSeniorityEnum != null) {
+			int cvRank = RuleBasedEnrichmentService.Seniority.rank(cvRelativeSeniority);
+			int jobRank = RuleBasedEnrichmentService.Seniority.rank(jobSeniorityEnum);
+			int diff = cvRank - jobRank;
+			if (diff == 0) {
+				roleFit = Math.min(40, roleFit + 8);
+				affinityReasons.add("Seniority compatible para el area del puesto.");
+			} else if (diff == -1) {
+				roleFit = Math.min(40, roleFit + 3);
+				affinityReasons.add("Seniority levemente por debajo (para el area).");
+			} else if (diff <= -2) {
+				seniorityMismatch = true;
+				roleFit = Math.max(0, roleFit - (diff <= -4 ? 10 : diff <= -3 ? 8 : 5));
+			}
+		}
+
+		Integer relevantYears = cvEnriched.experienceYearsForCategories(jobEnriched.categories());
+		int domainFloor = domainAffinityFloor(cvEnriched, jobEnriched);
+		if (domainFloor > 0) {
+			roleFit = Math.min(40, roleFit + (domainFloor >= 25 ? 10 : 8));
+			affinityReasons.add("Experiencia con clientes/negocio relevante.");
+		}
+
+		int experienceFit = 0;
+		Integer generalYears = cvEnriched.experienceYearsGeneral();
+		if (generalYears != null && generalYears > 0) {
+			experienceFit = Math.min(40, 10 + Math.min(30, generalYears * 4));
+			affinityReasons.add("Trayectoria laboral general.");
+		}
+		if (relevantYears != null && relevantYears > 0) {
+			experienceFit = Math.min(40, Math.max(experienceFit, 15 + Math.min(25, relevantYears * 6)));
+			affinityReasons.add("Experiencia en el area del puesto.");
+		}
+
+		int score = Math.round(technicalFit * 0.60f + roleFit * 0.25f + experienceFit * 0.15f);
+
+		// Anti-0% (solo si hay relacion real y ademas lo explicamos en UI).
+		int floor = 0;
+		String floorReason = null;
+		boolean hasRelation = technicalFit > 0
+				|| affinity.kind != AffinityKind.NONE
+				|| domainFloor > 0
+				|| (relevantYears != null && relevantYears > 0);
+		if (hasRelation) {
+			if (affinity.kind == AffinityKind.STRONG) floor = Math.max(floor, 35);
+			if (affinity.kind == AffinityKind.RELATED) floor = Math.max(floor, 25);
+			if (domainFloor > 0) floor = Math.max(floor, 25);
+			if (relevantYears != null && relevantYears > 0) floor = Math.max(floor, relevantYears >= 3 ? 30 : 25);
+			if (technicalFit > 0) floor = Math.max(floor, 15);
+			floorReason = "Sumo afinidad aunque falten keywords exactas.";
+		}
+
+		// Piso especial para puestos Trainee/Junior (demo-friendly).
+		if (hasRelation && jobSeniorityEnum != null
+				&& (jobSeniorityEnum == RuleBasedEnrichmentService.Seniority.TRAINEE)) {
+			int jrFloor = affinity.kind == AffinityKind.STRONG ? 60
+					: affinity.kind == AffinityKind.RELATED ? 50
+					: 40;
+			boolean hasItSignals = (technicalFit > 0)
+					|| (relevantYears != null && relevantYears > 0)
+					|| domainFloor > 0
+					|| affinity.kind != AffinityKind.NONE;
+			if (hasItSignals) {
+				floor = Math.max(floor, jrFloor);
+				floorReason = affinity.kind == AffinityKind.STRONG
+						? "Perfil compatible para etapa trainee (afinidad fuerte)."
+						: "Perfil compatible para etapa trainee (base tecnica relacionada).";
+			}
+		}
+
+		score = Math.max(0, Math.min(100, score));
+		if (floor > 0 && score < floor) score = floor;
+
+		Map<Long, String> cvNames = cvExplicit.skillIdToName();
+		Map<Long, String> jobNames = jobAllExplicit.skillIdToName();
+
+		List<String> matchedRequiredNames = matchedRequired.stream()
+				.map(id -> firstNonNull(cvNames.get(id), jobNames.get(id)))
+				.filter(s -> s != null && !s.isBlank())
+				.sorted(Comparator.naturalOrder())
+				.toList();
+
+		List<String> matchedNiceNames = matchedNice.stream()
+				.map(id -> firstNonNull(cvNames.get(id), jobNames.get(id)))
+				.filter(s -> s != null && !s.isBlank())
+				.sorted(Comparator.naturalOrder())
+				.toList();
+
+		List<String> missingRequiredNames = missingRequired.stream()
+				.map(jobNames::get)
+				.filter(s -> s != null && !s.isBlank())
+				.filter(s -> isKeyGapForJob(s, job, buckets))
+				.sorted(Comparator.naturalOrder())
+				.toList();
+
+		List<String> missingNiceNames = missingNice.stream()
+				.map(jobNames::get)
+				.filter(s -> s != null && !s.isBlank())
+				.sorted(Comparator.naturalOrder())
+				.toList();
+
+		List<String> jobCategories = jobEnriched.categories().stream()
+				.map(RuleBasedEnrichmentService::displayCategory)
+				.filter(Objects::nonNull)
+				.sorted()
+				.toList();
+		String jobSeniority = RuleBasedEnrichmentService.displaySeniority(jobSeniorityEnum);
+		List<String> primaryStack = dominantSkillIds.stream()
+				.map(jobRequired.skillIdToName()::get)
+				.filter(s -> s != null && !s.isBlank())
+				.distinct()
+				.limit(2)
+				.toList();
+
+		List<String> coincidences = new ArrayList<>();
+		coincidences.addAll(matchedRequiredNames);
+		coincidences.addAll(matchedNiceNames);
+		coincidences.addAll(matchedInferredLabels);
+		coincidences = coincidences.stream()
+				.filter(Objects::nonNull)
+				.map(String::trim)
+				.filter(s -> !s.isBlank())
+				.distinct()
+				.sorted()
+				.limit(12)
+				.toList();
+
+		Set<String> primaryNorm = primaryStack.stream()
+				.map(SkillExtractionService::normalizeText)
+				.filter(s -> s != null && !s.isBlank())
+				.collect(java.util.stream.Collectors.toSet());
+
+		List<String> mustHave = new ArrayList<>();
+		List<String> couldReinforce = new ArrayList<>();
+		for (String s : missingRequiredNames) {
+			String sn = SkillExtractionService.normalizeText(s);
+			boolean isPrimary = primaryNorm.contains(sn);
+			if (isPrimary) {
+				mustHave.add(s);
+			} else {
+				couldReinforce.add(s);
+			}
+		}
+		couldReinforce.addAll(missingNiceNames);
+
+		if (mustHave.stream().anyMatch(s -> "python".equals(SkillExtractionService.normalizeText(s)))
+				&& (cvEnriched.hasInferredLabel("Data / Analytics") || cvEnriched.categories().contains(RuleBasedEnrichmentService.Category.DATABASES))) {
+			List<String> newMust = new ArrayList<>();
+			for (String s : mustHave) {
+				if ("python".equals(SkillExtractionService.normalizeText(s))) couldReinforce.add(s);
+				else newMust.add(s);
+			}
+			mustHave = newMust;
+		}
+
+		List<String> improvements = new ArrayList<>();
+		if (!mustHave.isEmpty()) {
+			improvements.add("Te falta: " + summarize(mustHave, 3));
+		}
+		if (!couldReinforce.isEmpty()) {
+			improvements.add("Podrias reforzar: " + summarize(couldReinforce, 3));
+		}
+		if (seniorityMismatch) {
+			improvements.add("El seniority del puesto esta por encima de tu experiencia en el area.");
+		}
+		improvements = improvements.stream().limit(3).toList();
+
+		List<String> affinityVisible = affinityReasons.stream()
+				.filter(Objects::nonNull)
+				.map(String::trim)
+				.filter(s -> !s.isBlank())
+				.distinct()
+				.limit(6)
+				.toList();
+
+		// Coherencia: si hay score>0, debe haber al menos 1 razon visible.
+		if (score > 0 && coincidences.isEmpty() && affinityVisible.isEmpty()) {
+			score = 0;
+		} else if (score > 0 && affinityVisible.isEmpty() && floorReason != null && !floorReason.isBlank()) {
+			affinityVisible = List.of(floorReason);
+		}
+
+		return new JobMatchRowView(
+				job.getId(),
+				coalesce(job.getTitle(), "Untitled"),
+				coalesce(job.getCompany(), "Unknown"),
+				score,
+				primaryStack,
+				coincidences,
+				affinityVisible,
+				improvements,
+				jobCategories,
+				jobSeniority,
+				technicalFit,
+				roleFit,
+				experienceFit
+		);
+	}
+
 	public CvMatchResult matchAgainstAllJobs(String cvText, int limit) {
 		SkillExtractionService.SkillCatalog catalog = skillExtractionService.loadCatalog();
 
