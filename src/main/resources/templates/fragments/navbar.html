@@ -1,0 +1,57 @@
+<div th:fragment="navbar">
+  <script>
+    (function () {
+      try {
+        const saved = localStorage.getItem("datalaburo.theme");
+        if (saved === "dark" || saved === "light") {
+          document.documentElement.dataset.theme = saved;
+        }
+      } catch (_) {}
+    })();
+  </script>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a class="nav-brand" th:href="@{/}">
+        <span class="nav-logo">DataLaburo</span>
+      </a>
+
+      <div class="nav-links">
+        <a th:href="@{/}">Home</a>
+        <a th:href="@{/jobs}">Jobs</a>
+        <a th:href="@{/matching}">Matching</a>
+        <a th:href="@{/profiles}">Perfiles</a>
+      </div>
+
+      <div class="nav-actions">
+        <button id="theme-toggle" type="button" class="btn btn-ghost btn-sm" aria-pressed="false">Tema: Claro</button>
+        <!-- MVP: no login yet (keep a fixed CTA). -->
+        <a class="btn btn-ghost btn-sm" th:href="@{/profiles/new}">Nuevo perfil</a>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    (function () {
+      const btn = document.getElementById("theme-toggle");
+      if (!btn) return;
+
+      function currentTheme() {
+        const t = document.documentElement.dataset.theme;
+        return t === "dark" || t === "light" ? t : "light";
+      }
+
+      function apply(theme) {
+        document.documentElement.dataset.theme = theme;
+        btn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+        btn.textContent = theme === "dark" ? "Tema: Oscuro" : "Tema: Claro";
+        try {
+          localStorage.setItem("datalaburo.theme", theme);
+        } catch (_) {}
+      }
+
+      apply(currentTheme());
+      btn.addEventListener("click", () => apply(currentTheme() === "dark" ? "light" : "dark"));
+    })();
+  </script>
+</div>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DataLaburo - Jobs</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    input { padding: 8px; min-width: 240px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    table { border-collapse: collapse; width: 100%; margin-top: 16px; }
+    th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
+    th { text-align: left; background: #f6f6f6; }
+    a { color: #0b5fff; text-decoration: none; }
+    .muted { color: #666; font-size: 13px; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #eee; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>DataLaburo</h1>
+  <div class="muted">Flujo sugerido: 1) busca en LinkedIn 2) abre un job 3) usa la extension para capturar 4) recarga esta pagina.</div>
+
+  <div class="row" style="margin-top: 12px;">
+    <input id="search" placeholder="Ej: Java" />
+    <button id="btn-linkedin" type="button">Buscar en LinkedIn</button>
+    <button id="btn-refresh" type="button">Recargar guardados</button>
+  </div>
+
+  <div id="status" class="muted" style="margin-top: 10px;"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Titulo</th>
+        <th>Empresa</th>
+        <th>Ubicacion</th>
+        <th>Fuente</th>
+        <th>Link</th>
+        <th>Estado</th>
+        <th>Creado</th>
+      </tr>
+    </thead>
+    <tbody id="jobs-body"></tbody>
+  </table>
+
+  <script src="JS/main.js"></script>
+</body>
+</html>
+

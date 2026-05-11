@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>DataLaburo - Estadísticas</title>
+    <link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+    <header class="header">
+        <h1>Estadísticas</h1>
+        <p class="muted">Vista simple basada en <code>JOBS</code>. (MVP)</p>
+    </header>
+
+    <section class="grid-3">
+        <div class="card">
+            <h2>Total jobs</h2>
+            <p class="kpi"><span class="kpi-number" th:text="${stats.totalJobs}"></span></p>
+        </div>
+        <div class="card">
+            <h2>Last 7 days</h2>
+            <p class="kpi"><span class="kpi-number" th:text="${stats.jobsLast7Days}"></span></p>
+        </div>
+        <div class="card">
+            <h2>Quality</h2>
+            <ul class="muted">
+                <li th:text="${stats.percentWithDescription + '% with description'}"></li>
+                <li th:text="${stats.percentWithRequirementsText + '% with requirements'}"></li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Legacy tables (observability)</h2>
+        <p class="muted">Estas tablas existen por entidades JPA legacy; no son la fuente principal.</p>
+        <ul class="muted">
+            <li><strong th:text="${stats.jobSnapshotsTotal}"></strong> rows en <code>JOB_SNAPSHOTS</code></li>
+            <li><strong th:text="${stats.jobOffersTotal}"></strong> rows en <code>JOB_OFFERS</code></li>
+        </ul>
+    </section>
+</main>
+</body>
+</html>

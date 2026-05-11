@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Perfil</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1 th:text="${profile.name}">Perfil</h1>
+		<p class="muted">
+			<span th:if="${profile.createdAt != null}" th:text="${'Creado: ' + profile.createdAt}"></span>
+			<span th:if="${profile.updatedAt != null}" th:text="${' - Actualizado: ' + profile.updatedAt}"></span>
+		</p>
+	</header>
+
+	<section class="actions">
+		<a class="btn btn-primary" th:href="@{/matching(profileId=${profile.id})}">Usar en matching</a>
+		<a class="btn btn-secondary" th:href="@{/profiles}">Volver a perfiles</a>
+	</section>
+
+	<section class="card">
+		<h2>CV guardado</h2>
+		<div class="code" th:text="${profile.cvText}"></div>
+	</section>
+</main>
+</body>
+</html>

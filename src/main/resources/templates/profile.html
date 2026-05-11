@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Profile</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>Profile</h1>
+		<p class="muted">Manage your profile and settings.</p>
+	</header>
+	
+	<section class="card">
+		<p>This page will allow you to view and edit your profile.</p>
+		<p>Feature coming soon!</p>
+	</section>
+	
+	<section class="actions">
+		<a class="link" th:href="@{/}">← Back to Home</a>
+	</section>
+</main>
+</body>
+</html>

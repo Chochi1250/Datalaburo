@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Nuevo perfil</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>Nuevo perfil</h1>
+		<p class="muted">Guarda un nombre y un CV en texto para reutilizarlo en matching.</p>
+	</header>
+
+	<section class="card" th:if="${error}">
+		<p class="error" th:text="${error}"></p>
+	</section>
+
+	<section class="card">
+		<form method="post" th:action="@{/profiles}" th:object="${form}">
+			<div class="field">
+				<label for="name">Nombre del perfil</label>
+				<input id="name" type="text" th:field="*{name}" placeholder="Ej: Mi CV backend"/>
+			</div>
+
+			<div class="field">
+				<label for="cvText">CV (texto)</label>
+				<textarea id="cvText" rows="14" th:field="*{cvText}"
+						  placeholder="Pega aca el CV en texto plano"></textarea>
+				<p class="hint muted">MVP: sin login real y sin PDF todavia.</p>
+			</div>
+
+			<div class="actions">
+				<button type="submit">Guardar perfil</button>
+				<a class="link" th:href="@{/profiles}">Cancelar</a>
+			</div>
+		</form>
+	</section>
+</main>
+</body>
+</html>

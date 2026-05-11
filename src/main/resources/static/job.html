@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Job Detail</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #f6f6f6; padding: 12px; border-radius: 6px; }
+    a { color: #0b5fff; text-decoration: none; }
+    .muted { color: #666; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div><a href="/">&larr; Volver</a></div>
+  <h1 id="title">Job</h1>
+  <div id="meta" class="muted"></div>
+  <div id="extra" class="muted" style="margin-top: 6px;"></div>
+  <h2>Visible text</h2>
+  <pre id="visible"></pre>
+  <h2>Descripcion del empleo</h2>
+  <pre id="desc"></pre>
+
+  <script>
+    function qs(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    async function load() {
+      const id = qs('id');
+      if (!id) {
+        document.getElementById('title').textContent = 'Missing id';
+        return;
+      }
+      const res = await fetch(`/api/jobs/${id}`);
+      if (!res.ok) {
+        document.getElementById('title').textContent = `Error ${res.status}`;
+        return;
+      }
+      const job = await res.json();
+      const snap = job.latestSnapshot;
+      document.getElementById('title').textContent = snap && snap.title ? snap.title : `Job ${job.id}`;
+      const parts = [];
+      if (snap && snap.company) parts.push(snap.company);
+      if (snap && snap.location) parts.push(snap.location);
+      if (job.sourceUrl) parts.push(job.sourceUrl);
+      document.getElementById('meta').textContent = parts.join(' | ');
+
+      const extraParts = [];
+      if (snap && snap.postedAtText) extraParts.push(`Publicado: ${snap.postedAtText}`);
+      if (snap && (snap.applicantsCount || snap.applicantsText)) {
+        extraParts.push(`Solicitantes: ${snap.applicantsCount || ""} ${snap.applicantsText || ""}`.trim());
+      }
+      if (snap && snap.locationRaw && snap.locationRaw !== snap.location) extraParts.push(`Location raw: ${snap.locationRaw}`);
+      document.getElementById('extra').textContent = extraParts.join(' | ');
+
+      document.getElementById('visible').textContent = (snap && snap.visibleText) ? snap.visibleText : '';
+      document.getElementById('desc').textContent = (snap && snap.jobDescription) ? snap.jobDescription : '';
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Match result</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>DataLaburo - Match result</h1>
+		<p class="muted" th:text="${job.title + ' @ ' + (job.company != null ? job.company : 'Unknown')}"></p>
+		<p class="muted" th:if="${job.location != null}" th:text="${job.location}"></p>
+	</header>
+
+	<section class="card">
+		<div class="score">
+			<div class="score-number" th:text="${result.score}"></div>
+			<div class="score-label muted">Score (0–100)</div>
+		</div>
+	</section>
+
+	<section class="grid-2">
+		<div class="card">
+			<h2>Missing skills</h2>
+			<ul th:if="${#lists.isEmpty(result.missingRequiredSkills)}">
+				<li>None — no missing skills detected.</li>
+			</ul>
+			<ul th:if="${!#lists.isEmpty(result.missingRequiredSkills)}">
+				<li th:each="s : ${result.missingRequiredSkills}" th:text="${s}"></li>
+			</ul>
+		</div>
+
+		<div class="card">
+			<h2>Matched skills</h2>
+			<ul th:if="${#lists.isEmpty(result.matchedSkills)}">
+				<li>No matches detected.</li>
+			</ul>
+			<ul th:if="${!#lists.isEmpty(result.matchedSkills)}">
+				<li th:each="s : ${result.matchedSkills}" th:text="${s}"></li>
+			</ul>
+		</div>
+	</section>
+
+	<section class="card">
+		<h2>Actionable feedback</h2>
+		<ol>
+			<li th:each="f : ${result.feedback}" th:text="${f}"></li>
+		</ol>
+	</section>
+
+	<section class="card"
+			 th:with="bestText=${(job.description != null && !job.description.isBlank()) ? job.description : job.visibleText}"
+			 th:if="${bestText != null && !bestText.isBlank()}">
+		<h2>Job description (excerpt)</h2>
+		<p class="muted" th:text="${#strings.abbreviate(bestText, 600)}"></p>
+	</section>
+
+	<section class="actions">
+		<a class="link" th:href="@{/matching}">← Try another match</a>
+	</section>
+</main>
+</body>
+</html>

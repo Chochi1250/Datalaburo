@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>DataLaburo</title>
+    <link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="landing">
+    <section class="hero">
+        <div class="hero-inner">
+            <h1 class="hero-title">Descubrí qué trabajos se ajustan a tu perfil</h1>
+            <p class="hero-subtitle">
+                Cargá ofertas reales con la extensión, explorá el catálogo y hacé matching en segundos.
+            </p>
+
+            <div class="hero-actions">
+                <a class="btn btn-primary" th:href="@{/profile}">Subir CV</a>
+                <a class="btn btn-secondary" th:href="@{/jobs}">Explorar trabajos</a>
+                <a class="btn btn-ghost" th:href="@{/profile}">Iniciar sesión</a>
+            </div>
+
+            <div class="hero-meta">
+                <div class="stat-pill">
+                    <div class="stat-number" th:text="${stats.totalJobs}">0</div>
+                    <div class="stat-label muted">jobs cargados</div>
+                </div>
+                <div class="stat-pill">
+                    <div class="stat-number" th:text="${stats.jobsLast7Days}">0</div>
+                    <div class="stat-label muted">últimos 7 días</div>
+                </div>
+                <div class="stat-pill">
+                    <div class="stat-number" th:text="${stats.percentWithRequirementsText + '%'}">0%</div>
+                    <div class="stat-label muted">con requisitos</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container landing-below">
+        <div class="grid-3">
+            <div class="card">
+                <h2>1) Capturá</h2>
+                <p class="muted">Usá la extensión en LinkedIn y guardá la oferta en tu base H2 (<code>JOBS</code>).</p>
+                <div class="actions">
+                    <a class="link" th:href="@{/settings}">Ver configuración</a>
+                </div>
+            </div>
+            <div class="card">
+                <h2>2) Explorá</h2>
+                <p class="muted">Revisá título, empresa, ubicación y detalle del job capturado.</p>
+                <div class="actions">
+                    <a class="link" th:href="@{/jobs}">Ir a Jobs</a>
+                </div>
+            </div>
+            <div class="card">
+                <h2>3) Match</h2>
+                <p class="muted">Compará tus skills con la descripción/requisitos y obtené feedback.</p>
+                <div class="actions">
+                    <a class="link" th:href="@{/matching}">Iniciar matching</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" th:if="${!#lists.isEmpty(recentJobs)}">
+            <h2>Recientes</h2>
+            <ul class="recent-list">
+                <li th:each="job : ${recentJobs}">
+                    <span class="company-mark small">
+                        <img class="logo-img"
+                             th:if="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}"
+                             th:src="${job.companyLogoUrl}"
+                             alt=""
+                             onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+                        <span class="logo-fallback"
+                              th:style="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()} ? 'display:none' : ''"
+                              th:text="${job.company != null && !job.company.isBlank() ? #strings.substring(job.company,0,1) : (job.title != null && !job.title.isBlank() ? #strings.substring(job.title,0,1) : '?')}"></span>
+                    </span>
+                    <span class="recent-title" th:text="${job.title != null ? job.title : 'Untitled'}"></span>
+                    <span class="muted" th:text="${' @ ' + (job.company != null ? job.company : 'Unknown')}"></span>
+                    <span class="muted" th:if="${job.location != null && !job.location.isBlank()}" th:text="${' — ' + job.location}"></span>
+                </li>
+            </ul>
+            <div class="actions">
+                <a class="link" th:href="@{/jobs}">Ver todos</a>
+                <a class="link" th:href="@{/stats}">Ver estadísticas</a>
+            </div>
+        </div>
+    </section>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

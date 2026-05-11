@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Perfiles</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>Perfiles</h1>
+		<p class="muted">CVs guardados para reutilizar en el matching del MVP.</p>
+	</header>
+
+	<section class="actions">
+		<a class="btn btn-primary" th:href="@{/profiles/new}">Nuevo perfil</a>
+		<a class="btn btn-secondary" th:href="@{/matching}">Ir a matching</a>
+	</section>
+
+	<section class="card" th:if="${#lists.isEmpty(profiles)}">
+		<p class="muted">Todavia no hay perfiles guardados.</p>
+	</section>
+
+	<section th:if="${!#lists.isEmpty(profiles)}" class="grid">
+		<article class="card" th:each="profile : ${profiles}">
+			<header class="header">
+				<h2 th:text="${profile.name}">Perfil</h2>
+				<p class="muted small" th:if="${profile.updatedAt != null}" th:text="${'Actualizado: ' + profile.updatedAt}"></p>
+			</header>
+			<p class="muted" th:text="${#strings.abbreviate(profile.cvText, 220)}"></p>
+			<div class="actions">
+				<a class="link" th:href="@{/profiles/{id}(id=${profile.id})}">Ver detalle</a>
+				<a class="link" th:href="@{/matching(profileId=${profile.id})}">Usar en matching</a>
+			</div>
+		</article>
+	</section>
+</main>
+</body>
+</html>

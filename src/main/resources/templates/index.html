@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Job Advisory MVP</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>Matching (MVP)</h1>
+		<p class="muted">Pick a captured job (from <code>JOBS</code>) and compare it against your skills.</p>
+	</header>
+
+	<section class="card" th:if="${error}">
+		<p class="error" th:text="${error}"></p>
+	</section>
+
+	<section class="card">
+		<form method="post" th:action="@{/match}" th:object="${form}">
+            <div class="grid">
+                <div class="field" th:if="${#lists.isEmpty(jobs)}">
+                    <p class="hint muted">No jobs available. Please add jobs using the plugin.</p>
+                </div>
+                <div class="field" th:if="${!#lists.isEmpty(jobs)}">
+                    <label for="jobOfferId">Job offer</label>
+                    <select id="jobOfferId" th:field="*{jobId}" required>
+                        <option value="" selected>Select a job offer…</option>
+                        <option th:each="job : ${jobs}" th:value="${job.id}"
+                                th:text="${job.title + ' @ ' + (job.company != null ? job.company : 'Unknown') + (job.location != null && job.location.trim().length() > 0 ? ' - ' + job.location : '')}"></option>
+                    </select>
+                    <p class="hint muted">Offers are loaded from the <code>JOBS</code> table (captured by the plugin).</p>
+                </div>
+
+				<div class="field">
+					<label for="yearsExperience">Years of experience</label>
+					<input id="yearsExperience" type="number" min="0" max="50" th:field="*{yearsExperience}"
+						   placeholder="e.g. 3" required/>
+				</div>
+
+				<div class="field">
+					<label for="skillsText">Skills (comma or newline separated)</label>
+					<textarea id="skillsText" rows="5" th:field="*{skillsText}"
+							  placeholder="java, spring boot, sql, docker"></textarea>
+					<p class="hint muted">Tip: keep it simple—10–20 skills is enough for the demo.</p>
+				</div>
+
+				<div class="field">
+					<label for="cvText">Optional: CV text</label>
+					<textarea id="cvText" rows="6" th:field="*{cvText}"
+							  placeholder="Paste a short summary or bullet points from your CV…"></textarea>
+					<p class="hint muted">We do a basic keyword check (no AI) to detect skills.</p>
+				</div>
+			</div>
+
+			<div class="actions">
+				<button type="submit">Analyze match</button>
+			</div>
+		</form>
+	</section>
+</main>
+</body>
+</html>

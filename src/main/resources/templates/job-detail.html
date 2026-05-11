@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Job detail</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1 th:text="${job.title != null ? job.title : 'Untitled'}"></h1>
+		<p class="muted" th:text="${(job.company != null ? job.company : 'Unknown') + (job.location != null && !job.location.isBlank() ? ' · ' + job.location : '')}"></p>
+	</header>
+
+	<section class="card" th:if="${job.sourceUrl != null}">
+		<p><a class="link" th:href="${job.sourceUrl}" target="_blank" rel="noopener">Abrir oferta original</a></p>
+	</section>
+
+	<section class="card"
+			 th:with="bestText=${(job.description != null && !job.description.isBlank()) ? job.description : job.visibleText}"
+			 th:if="${bestText != null && !bestText.isBlank()}">
+		<h2>Descripción</h2>
+		<p class="muted" th:text="${bestText}"></p>
+	</section>
+
+	<section class="actions">
+		<a class="link" th:href="@{/jobs}">← Volver a Jobs</a>
+	</section>
+</main>
+</body>
+</html>
+

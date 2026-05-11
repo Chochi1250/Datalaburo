@@ -1,0 +1,74 @@
+HELP.md
+
+### Build outputs ###
+target/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### Maven local artifacts ###
+.m2/
+.mvn/wrapper/maven-wrapper.jar
+
+### Local runtime data ###
+data/
+*.mv.db
+*.trace.db
+*.lock.db
+
+### Logs ###
+logs/
+*.log
+run.*.log
+
+### Environment and local config ###
+.env
+.env.*
+!.env.example
+application-local.properties
+application-local.yml
+application-local.yaml
+
+### Backups and temporary files ###
+_backup_*/
+backup/
+backups/
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+nbbuild/
+dist/
+nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/

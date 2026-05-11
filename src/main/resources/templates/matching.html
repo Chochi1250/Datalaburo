@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Matching por CV</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>Matching por CV (MVP)</h1>
+		<p class="muted">Pega tu CV como texto o usa un perfil guardado. El matching sigue usando reglas locales, sin IA.</p>
+	</header>
+
+	<section class="card" th:if="${error}">
+		<p class="error" th:text="${error}"></p>
+	</section>
+
+	<section class="card">
+		<form method="post" th:action="@{/matching}" th:object="${form}">
+			<div class="field">
+				<label for="profileId">Perfil guardado</label>
+				<select id="profileId" th:field="*{profileId}">
+					<option value="">Sin perfil: usar CV manual</option>
+					<option th:each="profile : ${profiles}"
+							th:value="${profile.id}"
+							th:text="${profile.name}"></option>
+				</select>
+				<p class="hint muted">
+					Si elegis un perfil, se usa su CV guardado. Si no elegis perfil, se usa el texto pegado abajo.
+					<a class="link" th:href="@{/profiles/new}">Crear perfil</a>
+				</p>
+			</div>
+
+			<div class="field">
+				<label for="cvText">CV (texto)</label>
+				<textarea id="cvText" rows="10" th:field="*{cvText}"
+						  placeholder="Pegá acá tu CV en texto plano (experiencia, stack, proyectos, etc.)"></textarea>
+				<p class="hint muted">MVP: extracción por diccionario + inferencias por reglas (sin IA).</p>
+			</div>
+
+			<div class="actions">
+				<button type="submit">Calcular match</button>
+			</div>
+		</form>
+	</section>
+
+	<section th:if="${result != null}" class="card">
+		<h2>Tu perfil (detectado)</h2>
+		<p class="muted" th:text="${'Jobs analizados: ' + result.totalJobs + ' · Sin señales detectadas en el aviso: ' + result.jobsWithoutDetectedSkills}"></p>
+
+		<p th:if="${result.cvExperienceYears != null}" class="muted" th:text="${'Experiencia detectada: ' + result.cvExperienceYears + ' años'}"></p>
+		<p th:if="${result.cvTrajectorySeniority != null}" class="muted"
+		   th:text="${'Trayectoria general: ' + result.cvTrajectorySeniority + (result.cvSeniorityAdjusted ? ' (ajustada)' : '')}"></p>
+		<p th:if="${result.cvDevSeniority != null}" class="muted small" th:text="${'Nivel dev (estimado): ' + result.cvDevSeniority}"></p>
+		<p th:if="${result.cvSupportSeniority != null}" class="muted small" th:text="${'Nivel soporte (estimado): ' + result.cvSupportSeniority}"></p>
+		<p th:if="${result.cvConsultingSeniority != null}" class="muted small" th:text="${'Nivel consulting/tech sales (estimado): ' + result.cvConsultingSeniority}"></p>
+		<div class="grid-2">
+			<div>
+				<div th:if="${not #lists.isEmpty(result.cvPrimaryProfiles)}">
+					<p class="muted small">Perfiles principales</p>
+					<div class="chips">
+						<span class="chip match-chip profile-chip" th:each="s, it : ${result.cvPrimaryProfiles}" th:if="${it.index < 6}" th:text="${s}"></span>
+						<span class="chip match-chip chip-muted" th:if="${#lists.size(result.cvPrimaryProfiles) > 6}"
+							  th:text="${'+' + (#lists.size(result.cvPrimaryProfiles) - 6) + ' más'}"></span>
+					</div>
+				</div>
+
+				<div th:if="${not #lists.isEmpty(result.cvSecondaryProfiles)}">
+					<p class="muted small">Perfiles secundarios</p>
+					<div class="chips">
+						<span class="chip match-chip profile-chip" th:each="s, it : ${result.cvSecondaryProfiles}" th:if="${it.index < 6}" th:text="${s}"></span>
+						<span class="chip match-chip chip-muted" th:if="${#lists.size(result.cvSecondaryProfiles) > 6}"
+							  th:text="${'+' + (#lists.size(result.cvSecondaryProfiles) - 6) + ' más'}"></span>
+					</div>
+				</div>
+
+				<div th:if="${not #lists.isEmpty(result.cvAreaSeniorities)}">
+					<p class="muted small">Seniority por áreas (estimado)</p>
+					<ul class="small">
+						<li th:each="s, it : ${result.cvAreaSeniorities}" th:if="${it.index < 6}" th:text="${s}"></li>
+						<li th:if="${#lists.size(result.cvAreaSeniorities) > 6}" class="muted"
+							th:text="${'+' + (#lists.size(result.cvAreaSeniorities) - 6) + ' más'}"></li>
+					</ul>
+				</div>
+			</div>
+
+			<div>
+				<div th:if="${not #lists.isEmpty(result.cvTechnicalAreas)}">
+					<p class="muted small">Áreas técnicas</p>
+					<div class="chips">
+						<span class="chip match-chip cat-chip" th:each="c, it : ${result.cvTechnicalAreas}" th:if="${it.index < 6}"
+							  th:attr="data-cat=${c}" th:text="${c}"></span>
+						<span class="chip match-chip chip-muted" th:if="${#lists.size(result.cvTechnicalAreas) > 6}"
+							  th:text="${'+' + (#lists.size(result.cvTechnicalAreas) - 6) + ' más'}"></span>
+					</div>
+				</div>
+
+				<div th:if="${not #lists.isEmpty(result.cvBusinessAreas)}">
+					<p class="muted small">Áreas de negocio</p>
+					<div class="chips">
+						<span class="chip match-chip cat-chip" th:each="c, it : ${result.cvBusinessAreas}" th:if="${it.index < 6}"
+							  th:attr="data-cat=${c}" th:text="${c}"></span>
+						<span class="chip match-chip chip-muted" th:if="${#lists.size(result.cvBusinessAreas) > 6}"
+							  th:text="${'+' + (#lists.size(result.cvBusinessAreas) - 6) + ' más'}"></span>
+					</div>
+				</div>
+
+				<div th:if="${not #lists.isEmpty(result.cvDomains)}">
+					<p class="muted small">Dominio / contexto</p>
+					<div class="chips">
+						<span class="chip match-chip domain-chip" th:each="d, it : ${result.cvDomains}" th:if="${it.index < 6}" th:text="${d}"></span>
+						<span class="chip match-chip chip-muted" th:if="${#lists.size(result.cvDomains) > 6}"
+							  th:text="${'+' + (#lists.size(result.cvDomains) - 6) + ' más'}"></span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div>
+			<p class="muted small">Skills explícitas</p>
+			<p th:if="${#lists.isEmpty(result.cvExplicitSkills)}" class="muted">No se detectaron skills explícitas.</p>
+			<div th:if="${!#lists.isEmpty(result.cvExplicitSkills)}" class="chips">
+				<span class="chip match-chip" th:each="s, it : ${result.cvExplicitSkills}" th:if="${it.index < 6}" th:text="${s}"></span>
+				<span class="chip match-chip chip-muted" th:if="${#lists.size(result.cvExplicitSkills) > 6}"
+					  th:text="${'+' + (#lists.size(result.cvExplicitSkills) - 6) + ' más'}"></span>
+			</div>
+		</div>
+
+		<div th:if="${!#lists.isEmpty(result.cvInferredAreas) || !#lists.isEmpty(result.cvInferredSkills)}">
+			<p class="muted small">Inferencias (reglas)</p>
+			<div th:if="${!#lists.isEmpty(result.cvInferredAreas)}">
+				<p class="muted small">Áreas</p>
+				<div class="chips">
+					<span class="chip match-chip" th:each="s, it : ${result.cvInferredAreas}" th:if="${it.index < 6}" th:text="${s}"></span>
+					<span class="chip match-chip chip-muted" th:if="${#lists.size(result.cvInferredAreas) > 6}"
+						  th:text="${'+' + (#lists.size(result.cvInferredAreas) - 6) + ' más'}"></span>
+				</div>
+			</div>
+			<div th:if="${!#lists.isEmpty(result.cvInferredSkills)}">
+				<p class="muted small">Skills inferidas</p>
+				<div class="chips">
+					<span class="chip match-chip" th:each="s, it : ${result.cvInferredSkills}" th:if="${it.index < 6}" th:text="${s}"></span>
+					<span class="chip match-chip chip-muted" th:if="${#lists.size(result.cvInferredSkills) > 6}"
+						  th:text="${'+' + (#lists.size(result.cvInferredSkills) - 6) + ' más'}"></span>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section th:if="${result != null}" class="card">
+		<h2>Ranking</h2>
+		<p class="muted">El match combina coincidencias técnicas + afinidad (roles/áreas/dominios) + trayectoria.</p>
+
+		<div th:if="${#lists.isEmpty(result.matches)}" class="muted">No hay resultados.</div>
+
+		<div th:if="${!#lists.isEmpty(result.matches)}" class="grid match-grid">
+			<div th:each="row : ${result.matches}" class="card">
+				<header class="header">
+					<h3 th:text="${row.title}"></h3>
+					<p class="muted" th:text="${row.company}"></p>
+					<div class="match-top">
+						<span class="match-badge"
+							  th:classappend="${row.matchPercent == null ? ' is-na' : (row.matchPercent >= 80 ? ' is-ideal' : (row.matchPercent >= 60 ? ' is-good' : (row.matchPercent >= 40 ? ' is-mid' : ' is-low')))}"
+							  th:text="${row.matchPercent == null ? 'N/A' : (row.matchPercent + '%')}"></span>
+						<span th:if="${row.matchPercent != null}" class="muted small"
+							  th:text="${row.matchPercent >= 80 ? 'Match ideal' : (row.matchPercent >= 60 ? 'Buen match' : (row.matchPercent >= 40 ? 'Puede aplicar' : 'No recomendado'))}"></span>
+						<span th:if="${row.jobSeniority != null}" class="muted small" th:text="${'Seniority: ' + row.jobSeniority}"></span>
+					</div>
+					<div th:if="${not #lists.isEmpty(row.primaryStack)}">
+						<p class="muted small">Stack principal</p>
+						<div class="chips">
+							<span class="chip match-chip profile-chip" th:each="s, it : ${row.primaryStack}" th:if="${it.index < 3}" th:text="${s}"></span>
+						</div>
+					</div>
+					<div th:if="${!#lists.isEmpty(row.jobCategories)}" class="chips">
+						<span class="chip match-chip cat-chip" th:each="c, it : ${row.jobCategories}" th:if="${it.index < 6}"
+							  th:attr="data-cat=${c}" th:text="${c}"></span>
+						<span class="chip match-chip chip-muted" th:if="${#lists.size(row.jobCategories) > 6}"
+							  th:text="${'+' + (#lists.size(row.jobCategories) - 6) + ' más'}"></span>
+					</div>
+				</header>
+
+				<div th:if="${not #lists.isEmpty(row.coincidences)}">
+					<p class="muted small">Coincidencias</p>
+					<div class="chips">
+						<span class="chip match-chip" th:each="s, it : ${row.coincidences}" th:if="${it.index < 6}" th:text="${s}"></span>
+						<span class="chip match-chip chip-muted" th:if="${#lists.size(row.coincidences) > 6}"
+							  th:text="${'+' + (#lists.size(row.coincidences) - 6) + ' más'}"></span>
+					</div>
+				</div>
+
+				<div th:if="${not #lists.isEmpty(row.affinity)}">
+					<p class="muted small">Afinidad detectada</p>
+					<ul>
+						<li th:each="r, it : ${row.affinity}" th:if="${it.index < 3}" th:text="${r}"></li>
+						<li th:if="${#lists.size(row.affinity) > 3}" class="muted" th:text="${'+' + (#lists.size(row.affinity) - 3) + ' más'}"></li>
+					</ul>
+				</div>
+
+				<div th:if="${not #lists.isEmpty(row.improvements)}">
+					<p class="muted small">Oportunidades de mejora</p>
+					<ul>
+						<li th:each="r, it : ${row.improvements}" th:if="${it.index < 2}" th:text="${r}"></li>
+						<li th:if="${#lists.size(row.improvements) > 2}" class="muted" th:text="${'+' + (#lists.size(row.improvements) - 2) + ' más'}"></li>
+					</ul>
+				</div>
+
+				<div class="actions">
+					<a class="link" th:href="@{/jobs/{id}(id=${row.jobId})}">Ver detalle</a>
+				</div>
+			</div>
+		</div>
+	</section>
+</main>
+</body>
+</html>

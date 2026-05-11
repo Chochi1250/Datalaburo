@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - My Results</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>My Match Results</h1>
+		<p class="muted">View your past match analyses here.</p>
+	</header>
+	
+	<section class="card">
+		<p>This page will show your match history.</p>
+		<p>Feature coming soon!</p>
+	</section>
+	
+	<section class="actions">
+		<a class="link" th:href="@{/}">← Back to Home</a>
+	</section>
+</main>
+</body>
+</html>

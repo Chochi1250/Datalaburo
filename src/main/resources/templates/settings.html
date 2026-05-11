@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>DataLaburo - Configuración</title>
+    <link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+    <header class="header">
+        <h1>Configuración</h1>
+        <p class="muted">Ayudas rápidas para el MVP (extensión + DB).</p>
+    </header>
+
+    <section class="card">
+        <h2>Extensión (LinkedIn)</h2>
+        <ol class="muted">
+            <li>Abrí LinkedIn → Jobs.</li>
+            <li>Abrí el detalle de una oferta (panel derecho).</li>
+            <li>Click en la extensión → Capture.</li>
+        </ol>
+        <p class="muted">Backend esperado por defecto: <code>http://127.0.0.1:8081</code> → <code>POST /plugins/scrape-current</code></p>
+    </section>
+
+    <section class="card">
+        <h2>H2 Console</h2>
+        <p class="muted">
+            Console: <code>http://localhost:8081/h2-console</code><br/>
+            JDBC URL: <code>jdbc:h2:file:./data/datalaburo</code><br/>
+            User: <code>sa</code> / Password: (vacío)
+        </p>
+    </section>
+
+    <section class="card">
+        <h2>Queries de verificación (objetivo)</h2>
+        <p class="muted">Pegá esto en la consola de H2 para confirmar dónde se guardan las capturas:</p>
+        <pre class="code">select count(*) from jobs;
+select count(*) from job_snapshots;
+select count(*) from job_offers;
+
+select id, created_at, title, company, location
+from jobs
+order by created_at desc
+limit 20;</pre>
+
+        <p class="muted">Conteos actuales (desde backend):</p>
+        <ul class="muted">
+            <li><strong th:text="${stats.totalJobs}"></strong> en <code>JOBS</code></li>
+            <li><strong th:text="${stats.jobSnapshotsTotal}"></strong> en <code>JOB_SNAPSHOTS</code></li>
+            <li><strong th:text="${stats.jobOffersTotal}"></strong> en <code>JOB_OFFERS</code> (legacy)</li>
+        </ul>
+    </section>
+
+    <section class="card">
+        <h2>Legacy / no usar</h2>
+        <p class="muted">
+            <code>JOB_OFFERS</code> existe por una entidad legacy (<code>JobOffer</code>) y un controller legacy
+            (<code>/api/job-offers</code>). El flujo real del plugin usa <code>/plugins/scrape-current</code> y guarda en <code>JOBS</code>.
+        </p>
+    </section>
+</main>
+</body>
+</html>

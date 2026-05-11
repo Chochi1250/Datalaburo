@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Browse Jobs</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body class="page page-jobs">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container jobs-page">
+	<header class="header">
+		<h1>Trabajos cargados</h1>
+		<p class="muted">Lista de ofertas guardadas en <code>JOBS</code> (capturadas por el plugin).</p>
+	</header>
+	
+	<section class="jobs-shell card">
+		<p class="muted" th:if="${#lists.isEmpty(jobs)}">No hay trabajos todavía. Capturá uno con la extensión.</p>
+		<div th:if="${!#lists.isEmpty(jobs)}" class="jobs-topbar" aria-label="Jobs search and filters">
+			<div class="jobs-searchbar">
+				<label class="sr-only" for="jobs-search">Buscar</label>
+				<input id="jobs-search" class="jobs-input" type="search" placeholder="Buscar por título, empresa o palabra clave" autocomplete="off" />
+
+				<label class="sr-only" for="jobs-location">Ubicación</label>
+				<input id="jobs-location" class="jobs-input jobs-input-location" type="search" placeholder="Ubicación" autocomplete="off" />
+
+				<button id="jobs-search-btn" type="button" class="btn btn-primary jobs-search-btn">Buscar</button>
+			</div>
+
+			<div class="jobs-filters" aria-label="Filtros">
+				<label class="sr-only" for="filter-date">Fecha</label>
+				<select id="filter-date" class="chip-select">
+					<option value="any">Cualquier fecha</option>
+					<option value="24h">Últimas 24 h</option>
+					<option value="7d">Última semana</option>
+					<option value="30d">Último mes</option>
+				</select>
+
+				<label class="sr-only" for="filter-modality">Modalidad</label>
+				<select id="filter-modality" class="chip-select">
+					<option value="any">Modalidad</option>
+					<option value="remote">Remoto</option>
+					<option value="hybrid">Híbrido</option>
+					<option value="onsite">Presencial</option>
+				</select>
+
+				<label class="sr-only" for="filter-jornada">Jornada</label>
+				<select id="filter-jornada" class="chip-select">
+					<option value="any">Jornada</option>
+					<option value="fulltime">Full-time</option>
+					<option value="parttime">Part-time</option>
+					<option value="contract">Contrato</option>
+					<option value="freelance">Freelance</option>
+				</select>
+
+				<label class="sr-only" for="filter-exp">Experiencia</label>
+				<select id="filter-exp" class="chip-select">
+					<option value="any">Experiencia</option>
+					<option value="trainee">Sin experiencia</option>
+					<option value="junior">Junior</option>
+					<option value="mid">Semi Senior</option>
+					<option value="senior">Senior</option>
+				</select>
+
+				<button id="filters-clear" type="button" class="btn btn-secondary btn-sm">Limpiar</button>
+			</div>
+		</div>
+
+		<div th:if="${!#lists.isEmpty(jobs)}" class="jobs-layout">
+			<aside class="jobs-list" aria-label="Jobs list">
+				<button type="button"
+						class="job-item"
+						th:each="job : ${jobs}"
+						th:attr="data-job-id=${job.id},
+								 data-title=${job.title},
+								 data-company=${job.company},
+								 data-location=${job.location},
+								 data-posted=${job.postedAtText},
+								 data-has-logo=${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}">
+					<span class="company-mark">
+						<img class="logo-img"
+							 th:if="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}"
+							 th:src="${job.companyLogoUrl}"
+							 alt=""
+							 onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+						<span class="logo-fallback"
+							  th:style="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()} ? 'display:none' : ''"
+							  th:text="${job.company != null && !job.company.isBlank() ? #strings.substring(job.company,0,1) : (job.title != null && !job.title.isBlank() ? #strings.substring(job.title,0,1) : '?')}"></span>
+					</span>
+
+					<span class="job-item-main">
+						<span class="job-item-title" th:text="${job.title != null ? job.title : 'Untitled'}"></span>
+						<span class="job-item-sub job-item-company" th:text="${job.company != null ? job.company : 'Unknown'}"></span>
+						<span class="job-item-sub job-item-meta"
+							  th:text="${(job.location != null && !job.location.isBlank() ? job.location : '—') + ' · ' + (job.postedAtText != null && !job.postedAtText.isBlank() ? job.postedAtText : 'Fecha no especificada')}"></span>
+						<span class="job-item-tags" aria-label="Etiquetas"></span>
+					</span>
+				</button>
+			</aside>
+
+			<section class="jobs-detail" aria-label="Job detail">
+				<div class="job-detail" th:each="job : ${jobs}" th:attr="data-job-id=${job.id}">
+					<div class="detail-top">
+						<div class="detail-title-row">
+							<div class="company-mark">
+								<img class="logo-img"
+									 th:if="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}"
+									 th:src="${job.companyLogoUrl}"
+									 alt=""
+									 onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+								<div class="logo-fallback"
+									 th:style="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()} ? 'display:none' : ''"
+									 th:text="${job.company != null && !job.company.isBlank() ? #strings.substring(job.company,0,1) : (job.title != null && !job.title.isBlank() ? #strings.substring(job.title,0,1) : '?')}"></div>
+							</div>
+							<div>
+								<h2 class="detail-title" th:text="${job.title != null ? job.title : 'Untitled'}"></h2>
+								<div class="detail-company" th:text="${job.company != null ? job.company : 'Unknown'}"></div>
+								<div class="detail-meta"
+									 th:text="${(job.location != null && !job.location.isBlank() ? job.location : '—') + ' · ' + (job.postedAtText != null && !job.postedAtText.isBlank() ? job.postedAtText : 'Fecha no especificada')}"></div>
+								<div class="muted small" th:if="${job.createdAt != null}" th:text="${'Capturado: ' + job.createdAt.toString()}"></div>
+							</div>
+						</div>
+
+						<div class="detail-actions">
+							<a class="btn btn-primary" th:href="@{/matching(jobId=${job.id})}">Comprobar con mi CV/perfil</a>
+							<a class="btn btn-secondary" th:href="${job.sourceUrl}" target="_blank" rel="noreferrer">Ver en origen</a>
+							<a class="btn btn-ghost" th:href="@{/api/jobs/{id}(id=${job.id})}" target="_blank" rel="noreferrer">Ver JSON</a>
+							<div class="muted small">MVP: sin login real todavía. Usá Matching con tus skills.</div>
+						</div>
+					</div>
+
+					<div class="detail-body">
+						<div class="card">
+							<h3>Descripción</h3>
+							<div th:with="bestText=${(job.description != null && !job.description.isBlank()) ? job.description : job.visibleText}">
+								<div class="job-description detail-scroll"
+									 data-format="job-description"
+									 th:if="${bestText != null && !bestText.isBlank()}"
+									 th:text="${bestText}"></div>
+								<p class="muted" th:if="${bestText == null || bestText.isBlank()}">
+									Sin descripción todavía. Volvé a capturar la oferta.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+	</section>
+	
+	<section class="actions">
+		<a class="link" th:href="@{/}">← Back to Home</a>
+	</section>
+</main>
+
+<script>
+  (function () {
+    const items = Array.from(document.querySelectorAll(".job-item[data-job-id]"));
+    const details = Array.from(document.querySelectorAll(".job-detail[data-job-id]"));
+    const searchInput = document.getElementById("jobs-search");
+    const locationInput = document.getElementById("jobs-location");
+    const searchBtn = document.getElementById("jobs-search-btn");
+    const descriptionTextById = new Map();
+
+    const filtersBar = document.querySelector(".jobs-filters");
+    const dateSelect = document.getElementById("filter-date");
+    const modalitySelect = document.getElementById("filter-modality");
+    const jornadaSelect = document.getElementById("filter-jornada");
+    const expSelect = document.getElementById("filter-exp");
+    const clearBtn = document.getElementById("filters-clear");
+
+    function initChipFilters() {
+      if (!filtersBar || filtersBar.querySelector(".chip-group")) return;
+      if (!dateSelect || !modalitySelect || !jornadaSelect || !expSelect) return;
+
+      function mkGroup(group, select, defaultLabel) {
+        const wrap = document.createElement("div");
+        wrap.className = "chip-group";
+        wrap.dataset.group = group;
+
+        const opts = Array.from(select.querySelectorAll("option")).map((o) => ({
+          value: o.value,
+          label: o.textContent || o.value,
+        }));
+
+        function addBtn(value, label, active) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "chip chip-option" + (active ? " is-active" : "");
+          b.dataset.group = group;
+          b.dataset.value = value;
+          b.textContent = label;
+          wrap.appendChild(b);
+        }
+
+        const label = document.createElement("span");
+        label.className = "chip chip-label";
+        label.textContent = defaultLabel;
+        wrap.appendChild(label);
+
+        for (const opt of opts.slice(1)) {
+          addBtn(opt.value, opt.label.replace(/Ãš/g, "Ú").replace(/Ã­/g, "í").replace(/Ã³/g, "ó"), false);
+        }
+        return wrap;
+      }
+
+      const dateGroup = mkGroup("date", dateSelect, "Fecha");
+      const modalityGroup = mkGroup("modality", modalitySelect, "Modalidad");
+      const jornadaGroup = mkGroup("jornada", jornadaSelect, "Jornada");
+      const expGroup = mkGroup("exp", expSelect, "Experiencia");
+
+      const insertBefore = clearBtn || null;
+      filtersBar.insertBefore(dateGroup, insertBefore);
+      filtersBar.insertBefore(modalityGroup, insertBefore);
+      filtersBar.insertBefore(jornadaGroup, insertBefore);
+      filtersBar.insertBefore(expGroup, insertBefore);
+    }
+
+    function activeValue(group) {
+      const btn = filtersBar?.querySelector(`.chip-group[data-group="${group}"] .chip-option.is-active`);
+      return btn?.dataset?.value || "any";
+    }
+
+    function normalizeForSearch(text) {
+      return String(text || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9áéíóúüñ\s]+/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function parsePostedAtToTimestamp(text) {
+      const raw = String(text || "").trim().toLowerCase();
+      if (!raw) return null;
+
+      const now = Date.now();
+      if (raw === "hoy" || raw === "today") return now;
+      if (raw === "ayer" || raw === "yesterday") return now - 24 * 60 * 60 * 1000;
+
+      let m = raw.match(/hace\s+(\d+)\s+(minuto|minutos|hora|horas|día|dias|d[ií]a|d[ií]as|semana|semanas|mes|meses)/i);
+      if (m) {
+        const n = Number(m[1]);
+        const unit = m[2];
+        const minutes =
+          /minut/.test(unit) ? n :
+          /hora/.test(unit) ? n * 60 :
+          /d[ií]a|dia/.test(unit) ? n * 60 * 24 :
+          /semana/.test(unit) ? n * 60 * 24 * 7 :
+          /mes/.test(unit) ? n * 60 * 24 * 30 : null;
+        return minutes == null ? null : now - minutes * 60 * 1000;
+      }
+
+      m = raw.match(/(\d+)\s+(minute|minutes|hour|hours|day|days|week|weeks|month|months)\s+ago/i);
+      if (m) {
+        const n = Number(m[1]);
+        const unit = m[2];
+        const minutes =
+          /minute/.test(unit) ? n :
+          /hour/.test(unit) ? n * 60 :
+          /day/.test(unit) ? n * 60 * 24 :
+          /week/.test(unit) ? n * 60 * 24 * 7 :
+          /month/.test(unit) ? n * 60 * 24 * 30 : null;
+        return minutes == null ? null : now - minutes * 60 * 1000;
+      }
+
+      return null;
+    }
+
+    function normalizeText(text) {
+      if (!text) return "";
+      let s = String(text).replace(/\r/g, "\n");
+
+      // Insert blank lines before common headings (Spanish/English), including emoji-prefixed ones.
+      const headingPhrases = [
+        "Descripción del rol",
+        "Descripción",
+        "Acerca del empleo",
+        "Sobre el empleo",
+        "Responsabilidades",
+        "Desafíos",
+        "Desafios",
+        "Requisitos técnicos",
+        "Requisitos tecnicos",
+        "Requisitos",
+        "Qué ofrecemos",
+        "Que ofrecemos",
+        "Qué buscamos",
+        "Que buscamos",
+        "Perfil",
+        "Your Impact",
+        "Who We Are Looking For",
+        "Who We're Looking For",
+        "About you",
+        "Your profile",
+        "What We Offer",
+        "Benefits",
+        "Responsibilities",
+        "Requirements",
+        "Qualifications",
+        "Skills",
+      ];
+
+      for (const phrase of headingPhrases) {
+        // Match heading at line start, optionally prefixed by emojis/bullets.
+        const re = new RegExp(
+          `(^|\\n)\\s*([\\u2600-\\u27BF\\u1F300-\\u1FAFF\\u2000-\\u206F\\u2022\\-\\+\\*·•\\s]*)(${phrase})(\\s*:?)(?=\\s|$)`,
+          "gi"
+        );
+        s = s.replace(re, "\n\n$3$4");
+      }
+
+      // Split glued sentences only in very common patterns (avoid aggressive splitting).
+      s = s.replace(/\.(?=\s*(Ser|Tener|Poseer|Contar|Experiencia|Conocimiento|Implementaciones|Sólido|Solido|Proven|Excellent)\b)/g, ".\n");
+
+      // Normalize multiple blank lines.
+      s = s.replace(/\n{3,}/g, "\n\n").trim();
+      return s;
+    }
+
+    function looksLikeHeading(line) {
+      if (!line) return false;
+      const raw = line.trim();
+      if (!raw) return false;
+      const normalized = raw
+        .replace(/^[^\p{L}\p{N}]+/u, "") // strip emoji/punct at start
+        .replace(/[:?!…]+$/u, "")
+        .trim()
+        .toLowerCase();
+
+      const headings = new Set([
+        "descripción del rol",
+        "descripcion del rol",
+        "descripción",
+        "descripcion",
+        "acerca del empleo",
+        "sobre el empleo",
+        "responsabilidades",
+        "desafíos",
+        "desafios",
+        "requisitos técnicos",
+        "requisitos tecnicos",
+        "requisitos",
+        "qué ofrecemos",
+        "que ofrecemos",
+        "qué buscamos",
+        "que buscamos",
+        "perfil",
+        "beneficios",
+        "your impact",
+        "who we are looking for",
+        "who we're looking for",
+        "about you",
+        "your profile",
+        "what we offer",
+        "benefits",
+        "responsibilities",
+        "requirements",
+        "qualifications",
+        "skills",
+      ]);
+
+      return headings.has(normalized) && raw.length <= 60;
+    }
+
+    function isBulletLine(line) {
+      const s = (line || "").trim();
+      return /^([•\-\+\*·])\s+/.test(s);
+    }
+
+    function formatDescriptionElement(el) {
+      const original = el.textContent || "";
+      const jobId = el.closest(".job-detail")?.dataset?.jobId;
+      if (jobId && !descriptionTextById.has(jobId)) {
+        descriptionTextById.set(jobId, original);
+      }
+      const normalized = normalizeText(original);
+      if (!normalized) {
+        return;
+      }
+
+      el.textContent = "";
+
+      const lines = normalized.split("\n");
+      let currentList = null;
+
+      function flushList() {
+        currentList = null;
+      }
+
+      for (const rawLine of lines) {
+        const line = rawLine.trimEnd();
+        if (!line.trim()) {
+          flushList();
+          continue;
+        }
+
+        if (looksLikeHeading(line)) {
+          flushList();
+          const h = document.createElement("h4");
+          h.className = "desc-heading";
+          h.textContent = line.replace(/[:?!…]+$/u, "").trim();
+          el.appendChild(h);
+          continue;
+        }
+
+        if (isBulletLine(line)) {
+          if (!currentList) {
+            currentList = document.createElement("ul");
+            currentList.className = "desc-list";
+            el.appendChild(currentList);
+          }
+          const li = document.createElement("li");
+          li.textContent = line.replace(/^([•\-\+\*·])\s+/, "");
+          currentList.appendChild(li);
+          continue;
+        }
+
+        flushList();
+        const p = document.createElement("p");
+        p.className = "desc-paragraph";
+        p.textContent = line.trim();
+        el.appendChild(p);
+      }
+    }
+
+    Array.from(document.querySelectorAll(".job-description[data-format='job-description']")).forEach(formatDescriptionElement);
+
+    function modalityFromText(locationText, descText) {
+      const lower = (String(locationText || "") + " " + String(descText || "")).toLowerCase();
+      if (!lower) return null;
+      if (lower.includes("remoto") || lower.includes("remote")) return "remote";
+      if (lower.includes("híbrido") || lower.includes("hibrido") || lower.includes("hybrid")) return "hybrid";
+      if (lower.includes("presencial") || lower.includes("on-site") || lower.includes("onsite")) return "onsite";
+      return null;
+    }
+
+    function employmentTypeFromText(titleText, descText) {
+      const lower = (String(titleText || "") + "\n" + String(descText || "")).toLowerCase();
+      if (!lower) return null;
+      if (/\b(full[\s-]?time|jornada completa|tiempo completo)\b/.test(lower)) return "fulltime";
+      if (/\b(part[\s-]?time|medio tiempo|tiempo parcial)\b/.test(lower)) return "parttime";
+      if (/\b(contrato|contract(or)?|temporary|temp)\b/.test(lower)) return "contract";
+      if (/\b(freelance|autonomo)\b/.test(lower)) return "freelance";
+      return null;
+    }
+
+    function experienceFromText(titleText, descText) {
+      const lower = (String(titleText || "") + "\n" + String(descText || "")).toLowerCase();
+      if (!lower) return null;
+      if (/\b(trainee|sin experiencia)\b/.test(lower) || lower.includes("pasant") || lower.includes("intern")) return "trainee";
+      if (/\b(jr\.?|junior)\b/.test(lower)) return "junior";
+      if (/\b(semi\s*senior|semi-senior|ssr)\b/.test(lower)) return "mid";
+      if (/\b(sr\.?|senior|lead|principal|staff)\b/.test(lower)) return "senior";
+      return null;
+    }
+
+    function areaFromText(titleText, descText) {
+      const lower = (String(titleText || "") + "\n" + String(descText || "")).toLowerCase();
+      if (!lower) return null;
+
+      const has = (re) => re.test(lower);
+
+      // Only emit a strong area label when it's explicit in the text.
+      if (has(/\b(full\s*stack|fullstack)\b/)) return "fullstack";
+      if (has(/\b(frontend|front-end)\b/)) return "frontend";
+      if (has(/\b(backend|back-end)\b/)) return "backend";
+      if (has(/\b(data|analytics|bi\b|etl\b|machine learning|ml\b|data engineer|data scientist)\b/)) return "data";
+      if (has(/\b(qa\b|quality assurance|tester|testing)\b/)) return "qa";
+      if (has(/\b(devops|sre\b)\b/)) return "devops";
+      if (has(/\b(soporte|support|help desk|mesa de ayuda)\b/)) return "support";
+      if (has(/\b(marketing|growth)\b/)) return "marketing";
+      if (has(/\b(sales|ventas)\b/)) return "sales";
+      if (has(/\b(finanzas|finance|contabilidad|accounting)\b/)) return "finance";
+      if (has(/\b(producto|product manager)\b/)) return "product";
+
+      // Conservative inference: if web tech is present but role isn't explicit, label as "Web Dev".
+      if (has(/\b(react|vue|angular|javascript|typescript|html|css|web)\b/)) return "webdev";
+      return null;
+    }
+
+    function getJobMeta(jobId) {
+      const detail = details.find((d) => d.dataset.jobId === jobId);
+      const title = detail?.querySelector(".detail-title")?.textContent || "";
+      const companyLine = detail?.querySelector(".detail-company")?.textContent || "";
+      const createdAt = detail?.querySelector(".muted.small")?.textContent || "";
+
+      const listItem = items.find((i) => i.dataset.jobId === jobId);
+      const company = listItem?.dataset?.company || "";
+      const location = listItem?.dataset?.location || "";
+      const postedAtText = listItem?.dataset?.posted || "";
+      const hasLogo = listItem?.dataset?.hasLogo === "true";
+
+      const descRaw = descriptionTextById.get(jobId) || "";
+      const hasDesc = normalizeForSearch(descRaw).length >= 40;
+
+      return {
+        title,
+        company: companyLine || company,
+        location,
+        postedAtText,
+        postedAtTs: parsePostedAtToTimestamp(postedAtText),
+        createdAt,
+        modality: modalityFromText(location, descRaw),
+        employmentType: employmentTypeFromText(title, descRaw),
+        experience: experienceFromText(title, descRaw),
+        area: areaFromText(title, descRaw),
+        hasLogo,
+        hasDesc,
+        descRaw,
+      };
+    }
+
+    function tagLabelForModality(value) {
+      if (value === "remote") return "Remoto";
+      if (value === "hybrid") return "Hibrido";
+      if (value === "onsite") return "Presencial";
+      return null;
+    }
+
+    function tagLabelForEmploymentType(value) {
+      if (value === "fulltime") return "Full-time";
+      if (value === "parttime") return "Part-time";
+      if (value === "contract") return "Contrato";
+      if (value === "freelance") return "Freelance";
+      return null;
+    }
+
+    function tagLabelForExperience(value) {
+      if (value === "trainee") return "Trainee";
+      if (value === "junior") return "Junior";
+      if (value === "mid") return "Semi Senior";
+      if (value === "senior") return "Senior";
+      return null;
+    }
+
+    function tagLabelForArea(value) {
+      if (value === "frontend") return "Frontend";
+      if (value === "backend") return "Backend";
+      if (value === "fullstack") return "Fullstack";
+      if (value === "data") return "Data";
+      if (value === "qa") return "QA";
+      if (value === "devops") return "DevOps";
+      if (value === "support") return "Soporte";
+      if (value === "marketing") return "Marketing";
+      if (value === "sales") return "Ventas";
+      if (value === "finance") return "Finanzas";
+      if (value === "product") return "Producto";
+      if (value === "webdev") return "Web Dev";
+      return null;
+    }
+
+    function ensureTagsContainer(item) {
+      const existing = item.querySelector(".job-item-tags");
+      if (existing) return existing;
+      const host = item.querySelector(".job-item-main") || item;
+      const tags = document.createElement("div");
+      tags.className = "job-item-tags";
+      host.appendChild(tags);
+      return tags;
+    }
+
+    function ensureDetailTagsContainer(detailEl) {
+      if (!detailEl) return null;
+      let tags = detailEl.querySelector(".detail-tags");
+      if (tags) return tags;
+      const meta = detailEl.querySelector(".detail-meta");
+      if (!meta || !meta.parentElement) return null;
+      tags = document.createElement("div");
+      tags.className = "detail-tags";
+      meta.insertAdjacentElement("afterend", tags);
+      return tags;
+    }
+
+    function renderTagsForItem(item) {
+      const jobId = item.dataset.jobId;
+      const meta = getJobMeta(jobId);
+      const tags = ensureTagsContainer(item);
+      tags.textContent = "";
+
+      const now = Date.now();
+      const isNew = meta.postedAtTs != null && (now - meta.postedAtTs) <= 24 * 60 * 60 * 1000;
+      if (isNew) {
+        const t = document.createElement("span");
+        t.className = "tag tag-new";
+        t.textContent = "Nuevo";
+        tags.appendChild(t);
+      }
+
+      const mod = tagLabelForModality(meta.modality);
+      if (mod) {
+        const t = document.createElement("span");
+        t.className = "tag";
+        t.textContent = mod;
+        tags.appendChild(t);
+      }
+
+      const et = tagLabelForEmploymentType(meta.employmentType);
+      if (et) {
+        const t = document.createElement("span");
+        t.className = "tag";
+        t.textContent = et;
+        tags.appendChild(t);
+      }
+
+      const exp = tagLabelForExperience(meta.experience);
+      if (exp) {
+        const t = document.createElement("span");
+        t.className = "tag";
+        t.textContent = exp;
+        tags.appendChild(t);
+      }
+
+      const area = tagLabelForArea(meta.area);
+      if (area) {
+        const t = document.createElement("span");
+        t.className = "tag";
+        t.textContent = area;
+        tags.appendChild(t);
+      }
+
+      // Keep the card clean.
+      while (tags.childElementCount > 4) {
+        tags.removeChild(tags.lastElementChild);
+      }
+    }
+
+    function renderAllTags() {
+      for (const item of items) {
+        try {
+          // Simplify meta line (keep only location, no long postedAt text).
+          const metaEl = item.querySelector(".job-item-meta");
+          if (metaEl) {
+            metaEl.textContent = item.dataset.location && String(item.dataset.location).trim()
+              ? String(item.dataset.location).trim()
+              : "—";
+          }
+          renderTagsForItem(item);
+        } catch (_) {}
+      }
+    }
+
+    function renderTagsForDetail(jobId) {
+      const detail = details.find((d) => d.dataset.jobId === jobId);
+      if (!detail) return;
+      const tags = ensureDetailTagsContainer(detail);
+      if (!tags) return;
+
+      const meta = getJobMeta(jobId);
+      tags.textContent = "";
+
+      const now = Date.now();
+      const isNew = meta.postedAtTs != null && (now - meta.postedAtTs) <= 24 * 60 * 60 * 1000;
+      if (isNew) {
+        const t = document.createElement("span");
+        t.className = "tag tag-new";
+        t.textContent = "Nuevo";
+        tags.appendChild(t);
+      }
+
+      const mod = tagLabelForModality(meta.modality);
+      const et = tagLabelForEmploymentType(meta.employmentType);
+      const exp = tagLabelForExperience(meta.experience);
+      const area = tagLabelForArea(meta.area);
+
+      for (const label of [mod, et, exp, area]) {
+        if (!label) continue;
+        const t = document.createElement("span");
+        t.className = "tag";
+        t.textContent = label;
+        tags.appendChild(t);
+      }
+
+      while (tags.childElementCount > 5) {
+        tags.removeChild(tags.lastElementChild);
+      }
+    }
+
+    function applyFilters() {
+      initChipFilters();
+      const q = normalizeForSearch(searchInput?.value || "");
+      const locationQ = normalizeForSearch(locationInput?.value || "");
+      const dateVal = activeValue("date");
+      const modalityVal = activeValue("modality");
+      const jornadaVal = activeValue("jornada");
+      const expVal = activeValue("exp");
+
+      const now = Date.now();
+      const maxAgeMs =
+        dateVal === "24h" ? 24 * 60 * 60 * 1000 :
+        dateVal === "7d" ? 7 * 24 * 60 * 60 * 1000 :
+        dateVal === "30d" ? 30 * 24 * 60 * 60 * 1000 :
+        null;
+
+      const visibleIds = [];
+
+      for (const item of items) {
+        const jobId = item.dataset.jobId;
+        const meta = getJobMeta(jobId);
+
+        let ok = true;
+
+        if (q) {
+          const hay = normalizeForSearch(
+            `${item.dataset.title || ""} ${item.dataset.company || ""} ${item.dataset.location || ""} ${meta.descRaw}`
+          );
+          ok = hay.includes(q);
+        }
+
+        if (ok && locationQ) {
+          const locHay = normalizeForSearch(item.dataset.location || meta.location || "");
+          ok = locHay.includes(locationQ);
+        }
+
+          if (ok && modalityVal !== "any") {
+            ok = meta.modality === modalityVal;
+          }
+
+          if (ok && jornadaVal !== "any") {
+            ok = meta.employmentType === jornadaVal;
+          }
+
+          if (ok && expVal !== "any") {
+            ok = meta.experience === expVal;
+          }
+
+          // Date filter is best-effort: if there's no postedAtText, do NOT exclude aggressively.
+          if (ok && maxAgeMs != null && meta.postedAtTs != null) {
+            ok = (now - meta.postedAtTs) <= maxAgeMs;
+          }
+
+        item.style.display = ok ? "" : "none";
+        if (ok) visibleIds.push(jobId);
+      }
+
+      // If current selection is hidden, select first visible.
+      const currentSelected = items.find((el) => el.classList.contains("is-selected"))?.dataset?.jobId;
+      if (!currentSelected || !visibleIds.includes(currentSelected)) {
+        if (visibleIds.length) {
+          setActive(visibleIds[0]);
+        } else {
+          details.forEach((el) => el.classList.remove("is-active"));
+        }
+      }
+    }
+
+    function setActive(jobId) {
+      items.forEach((el) => el.classList.toggle("is-selected", el.dataset.jobId === jobId));
+      details.forEach((el) => el.classList.toggle("is-active", el.dataset.jobId === jobId));
+      renderTagsForDetail(jobId);
+    }
+
+    items.forEach((el) => {
+      el.addEventListener("click", () => setActive(el.dataset.jobId));
+    });
+
+      if (items.length) {
+        setActive(items[0].dataset.jobId);
+      }
+
+      function clearFilters() {
+        const groups = Array.from(filtersBar?.querySelectorAll(".chip-group[data-group]") || []);
+        for (const g of groups) {
+          Array.from(g.querySelectorAll(".chip-option")).forEach((b) => b.classList.remove("is-active"));
+        }
+        applyFilters();
+      }
+
+      initChipFilters();
+
+      if (filtersBar) {
+        filtersBar.addEventListener("click", (e) => {
+          const btn = e.target && e.target.closest ? e.target.closest(".chip-option[data-group][data-value]") : null;
+          if (!btn) return;
+
+          const group = btn.dataset.group;
+          const wrap = filtersBar.querySelector(`.chip-group[data-group="${group}"]`);
+          if (!wrap) return;
+
+          Array.from(wrap.querySelectorAll(".chip-option")).forEach((b) => b.classList.remove("is-active"));
+          btn.classList.add("is-active");
+          applyFilters();
+        });
+      }
+
+      if (clearBtn) clearBtn.addEventListener("click", () => clearFilters());
+
+    if (searchInput) {
+      searchInput.addEventListener("input", () => applyFilters());
+    }
+    if (locationInput) {
+      locationInput.addEventListener("input", () => applyFilters());
+    }
+      if (searchBtn) {
+        searchBtn.addEventListener("click", () => applyFilters());
+      }
+
+      // Remove ISO capture date from the detail header (UX: not a primary signal).
+      Array.from(document.querySelectorAll(".detail-top .muted.small")).forEach((el) => {
+        if ((el.textContent || "").toLowerCase().includes("capturado")) {
+          el.remove();
+        }
+      });
+
+      renderAllTags();
+      applyFilters();
+    })();
+</script>
+</body>
+</html>
