@@ -10,12 +10,13 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <main class="container">
 	<header class="header">
-		<h1>Evaluar compatibilidad</h1>
-		<p class="muted">Matching individual contra una oferta guardada en <code>JOBS</code>.</p>
+		<h1>Evaluar una oferta</h1>
+		<p class="muted">Esta evaluacion compara el perfil/CV del candidato unicamente contra esta oferta.</p>
 	</header>
 
 	<section class="card">
 		<header class="header">
+			<p class="muted small">Oferta evaluada</p>
 			<h2 th:text="${job.title != null ? job.title : 'Untitled'}">Oferta</h2>
 			<p class="muted"
 			   th:text="${(job.company != null ? job.company : 'Unknown') + (job.location != null && !job.location.isBlank() ? ' - ' + job.location : '')}"></p>
@@ -39,6 +40,11 @@
 
 	<section class="card">
 		<form method="post" th:action="@{/jobs/{id}/match(id=${job.id})}" th:object="${form}">
+			<header class="header">
+				<h2>Fuente del candidato</h2>
+				<p class="muted">Elegis una fuente para comparar contra esta oferta: un perfil guardado o un CV pegado manualmente.</p>
+			</header>
+
 			<div class="field" th:if="${profiles != null && !#lists.isEmpty(profiles)}">
 				<label for="profileId">Perfil guardado</label>
 				<select id="profileId" th:field="*{profileId}">
@@ -47,14 +53,14 @@
 							th:value="${profile.id}"
 							th:text="${profile.name}"></option>
 				</select>
-				<p class="hint muted">Si elegis un perfil, se usa su CV guardado aunque pegues texto manual.</p>
+				<p class="hint muted">Si elegis un perfil, se usa ese perfil aunque tambien pegues texto manual.</p>
 			</div>
 
 			<div class="field">
-				<label for="cvText">CV (texto)</label>
+				<label for="cvText">Texto manual del CV</label>
 				<textarea id="cvText" rows="10" th:field="*{cvText}"
 						  placeholder="Pega aca tu CV en texto plano"></textarea>
-				<p class="hint muted">Si no elegis perfil, se usa este texto manual.</p>
+				<p class="hint muted">Si no elegis perfil, se usa el texto ingresado manualmente.</p>
 			</div>
 
 			<div class="actions">
@@ -64,7 +70,8 @@
 	</section>
 
 	<section th:if="${result != null}" class="card">
-		<h2>Resultado</h2>
+		<h2>Resultado para esta oferta</h2>
+		<p class="muted">Este resultado corresponde solo a la oferta seleccionada.</p>
 
 		<div class="match-top">
 			<span class="match-badge"

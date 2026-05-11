@@ -10,8 +10,8 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <main class="container">
 	<header class="header">
-		<h1>Matching por CV (MVP)</h1>
-		<p class="muted">Pega tu CV como texto o usa un perfil guardado. El matching sigue usando reglas locales, sin IA.</p>
+		<h1>Matching general</h1>
+		<p class="muted">Esta evaluacion compara el perfil/CV del candidato contra todas las ofertas guardadas en <code>JOBS</code>.</p>
 	</header>
 
 	<section class="card" th:if="${error}">
@@ -20,6 +20,11 @@
 
 	<section class="card">
 		<form method="post" th:action="@{/matching}" th:object="${form}">
+			<header class="header">
+				<h2>Fuente del candidato</h2>
+				<p class="muted">Elegis una fuente para calcular compatibilidad: un perfil guardado o un CV pegado manualmente.</p>
+			</header>
+
 			<div class="field" th:if="${profiles != null && !#lists.isEmpty(profiles)}">
 				<label for="profileId">Perfil guardado</label>
 				<select id="profileId" th:field="*{profileId}">
@@ -29,20 +34,20 @@
 							th:text="${profile.name}"></option>
 				</select>
 				<p class="hint muted">
-					Si elegis un perfil, se usa su CV guardado. Si no elegis perfil, se usa el texto pegado abajo.
+					Si elegis un perfil, se usa ese perfil aunque tambien pegues texto manual.
 					<a class="link" th:href="@{/profiles/new}">Crear perfil</a>
 				</p>
 			</div>
 
 			<div class="field">
-				<label for="cvText">CV (texto)</label>
+				<label for="cvText">Texto manual del CV</label>
 				<textarea id="cvText" rows="10" th:field="*{cvText}"
 						  placeholder="Pegá acá tu CV en texto plano (experiencia, stack, proyectos, etc.)"></textarea>
-				<p class="hint muted">MVP: extracción por diccionario + inferencias por reglas (sin IA).</p>
+				<p class="hint muted">Si no elegis perfil, se usa el texto ingresado manualmente. MVP: extraccion por diccionario + inferencias por reglas (sin IA).</p>
 			</div>
 
 			<div class="actions">
-				<button type="submit">Calcular match</button>
+				<button type="submit">Calcular compatibilidad</button>
 			</div>
 		</form>
 	</section>
