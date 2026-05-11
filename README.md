@@ -89,27 +89,6 @@ La extension se encuentra en `browser-extension/`. Para probarla en Chrome/Chrom
 - `/matching`: matching entre CV y ofertas.
 - `/h2-console`: consola H2 local.
 
-## Notas de seguridad para Git
-
-No subir a GitHub:
-
-- `target/`
-- `.m2/`
-- `data/`
-- `*.log`
-- `.env`
-- archivos temporales
-- backups locales
-- configuraciones personales del IDE
-- bases H2 locales
-
-Antes de publicar, revisar:
-
-```powershell
-git status --short
-git diff -- .gitignore README.md src/main/resources/application.properties
-git ls-files
-```
 
 ## Alcance pendiente
 
