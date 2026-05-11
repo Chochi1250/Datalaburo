@@ -1,6 +1,6 @@
 # Datalaburo
 
-Datalaburo es un MVP de tesis para analizar la compatibilidad entre CVs y ofertas laborales. La aplicacion permite capturar ofertas desde LinkedIn mediante una extension de navegador, almacenarlas en H2, visualizar los trabajos cargados y calcular un ranking de compatibilidad a partir de un CV pegado en la pantalla de matching.
+Datalaburo es mi proyecto de tesis para analizar la compatibilidad entre CVs y ofertas laborales. La aplicacion permite capturar ofertas desde LinkedIn mediante una extension de navegador, almacenarlas en H2, visualizar los trabajos cargados y calcular un ranking de compatibilidad a partir de un CV pegado en la pantalla de matching.
 
 ## Estado actual del MVP
 
@@ -115,6 +115,8 @@ git ls-files
 
 Fuera del alcance de este MVP actual:
 
+- Finalizar sistema de creacion de perfiles
+- Ingresar informacion por documentos ( CVs en .docx o .pdf )
 - Migracion a PostgreSQL.
 - Implementacion de pgvector.
 - Embeddings.
