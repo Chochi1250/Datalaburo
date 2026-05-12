@@ -1,21 +1,21 @@
 # Datalaburo
 
-Datalaburo es mi proyecto de tesis para analizar la compatibilidad entre CVs y ofertas laborales. La aplicacion permite capturar ofertas desde LinkedIn mediante una extension de navegador, almacenarlas en H2, visualizar los trabajos cargados y calcular un ranking de compatibilidad a partir de un CV pegado en la pantalla de matching.
+Datalaburo es mi proyecto de tesis para analizar la compatibilidad entre CVs y ofertas laborales. La aplicacion permite capturar ofertas desde LinkedIn mediante una extension de navegador, almacenarlas en PostgreSQL, visualizar los trabajos cargados y calcular un ranking de compatibilidad a partir de un CV pegado en la pantalla de matching.
 
 ## Estado actual del MVP
 
 - Backend Java con Spring Boot.
 - Vistas server-side con Thymeleaf.
-- Persistencia con Spring Data JPA. H2 sigue como fallback local y PostgreSQL esta disponible via Docker.
+- Persistencia con Spring Data JPA. PostgreSQL es la base principal y H2 queda como fallback/demo local explicito.
 - JOBS es la fuente de verdad de ofertas.
 - Matching basado en reglas, catalogo de skills y aliases.
 - Extension de navegador para capturar ofertas desde LinkedIn.
-- PostgreSQL local con Flyway y pgvector preparado para la futura capa vectorial. Sin embeddings ni IA generativa en esta etapa.
+- PostgreSQL local con Flyway y pgvector preparado para la futura capa vectorial. H2 sigue disponible para demo/fallback. Sin embeddings ni IA generativa en esta etapa.
 
 ## Funcionalidades principales
 
 - Captura de ofertas laborales desde LinkedIn.
-- Ingesta y guardado de ofertas en H2 o PostgreSQL, segun el perfil activo.
+- Ingesta y guardado de ofertas en PostgreSQL por defecto, o en H2 si se activa el perfil fallback.
 - Visualizacion de trabajos cargados.
 - Pantalla `/matching` para pegar un CV.
 - Ranking de compatibilidad entre CV y ofertas.
@@ -41,20 +41,25 @@ Datalaburo es mi proyecto de tesis para analizar la compatibilidad entre CVs y o
 
 ## Ejecucion local
 
-H2 es el perfil por defecto. Desde la raiz del proyecto:
+PostgreSQL es el perfil por defecto. Antes de correr la app normalmente, levantar la base local:
+
+```powershell
+docker compose up -d
+```
+
+Luego iniciar la aplicacion desde la raiz del proyecto:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-Para usar PostgreSQL local, primero levantar Docker Compose y luego correr con el perfil `postgres`:
+Para correr explicitamente con PostgreSQL:
 
 ```powershell
-docker compose up -d
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
 ```
 
-Para volver a H2 explicitamente:
+Para correr explicitamente con H2 fallback:
 
 ```powershell
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=h2"
@@ -66,7 +71,7 @@ La aplicacion queda disponible en:
 http://localhost:8081
 ```
 
-Consola H2:
+Consola H2, solo cuando la app corre con perfil `h2`:
 
 ```text
 http://localhost:8081/h2-console
@@ -80,9 +85,9 @@ User: sa
 Password: vacio
 ```
 
-## Base local
+## Base local H2
 
-La base H2 se crea localmente en `data/`. Esa carpeta no debe versionarse porque contiene datos locales de ejecucion:
+La base H2 se crea localmente en `data/` cuando se usa el perfil `h2`. Esa carpeta no debe versionarse porque contiene datos locales de ejecucion:
 
 - `data/datalaburo.mv.db`
 - `data/datalaburo.trace.db`
@@ -104,6 +109,24 @@ docker compose down
 ```
 
 No usar `docker compose down -v` si queres conservar datos: borra el volumen local de PostgreSQL y elimina ofertas/perfiles cargados.
+
+Datos para DBeaver:
+
+```text
+Host: localhost
+Port: 5433
+Database: datalaburo
+User: datalaburo
+Password: datalaburo
+```
+
+Verificaciones opcionales:
+
+```powershell
+docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select installed_rank, version, description, success from flyway_schema_history order by installed_rank;"
+docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select extname, extversion from pg_extension where extname = 'vector';"
+docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select table_name from information_schema.tables where table_schema = 'public' order by table_name;"
+```
 
 ## Extension de navegador
 

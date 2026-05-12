@@ -1,6 +1,6 @@
 # PostgreSQL local
 
-Datalaburo puede correr con PostgreSQL local mediante Docker Compose. H2 sigue disponible como fallback para desarrollo rapido.
+Datalaburo corre con PostgreSQL local como flujo principal mediante Docker Compose. H2 sigue disponible como fallback/demo explicito.
 
 ## Levantar PostgreSQL
 
@@ -44,7 +44,13 @@ docker compose down -v
 
 ## Correr la app
 
-Con PostgreSQL:
+Con PostgreSQL default:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+Con PostgreSQL explicito:
 
 ```powershell
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
@@ -105,6 +111,12 @@ docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select colu
 ```
 
 La columna de embedding debe estar creada como `vector(1024)`.
+
+Tablas principales:
+
+```powershell
+docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select table_name from information_schema.tables where table_schema = 'public' order by table_name;"
+```
 
 ## Backup
 
