@@ -8,7 +8,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
@@ -43,12 +42,10 @@ public class JobSnapshot {
     @Column(length = 256)
     private String location;
 
-    @Lob
-    @Column(name = "visible_text")
+    @Column(name = "visible_text", columnDefinition = "TEXT")
     private String visibleText;
 
-    @Lob
-    @Column(name = "job_description")
+    @Column(name = "job_description", columnDefinition = "TEXT")
     private String jobDescription;
 
     @Column(name = "applicants_count")
@@ -63,8 +60,7 @@ public class JobSnapshot {
     @Column(name = "location_raw", length = 2000)
     private String locationRaw;
 
-    @Lob
-    @Column(name = "html")
+    @Column(name = "html", columnDefinition = "TEXT")
     private String html;
 
     @Column(name = "plugin_name", length = 64)

@@ -74,11 +74,14 @@
 		<p class="muted">Este resultado corresponde solo a la oferta seleccionada.</p>
 
 		<div class="match-top">
-			<span class="match-badge"
-				  th:classappend="${result.matchPercent == null ? ' is-na' : (result.matchPercent >= 80 ? ' is-ideal' : (result.matchPercent >= 60 ? ' is-good' : (result.matchPercent >= 40 ? ' is-mid' : ' is-low')))}"
-				  th:text="${result.matchPercent == null ? 'N/A' : (result.matchPercent + '%')}"></span>
+			<span th:if="${result.matchPercent == null}" class="match-badge is-na">Se&ntilde;ales insuficientes</span>
+			<span th:if="${result.matchPercent != null}" class="match-badge"
+				  th:classappend="${result.matchPercent >= 80 ? ' is-ideal' : (result.matchPercent >= 60 ? ' is-good' : (result.matchPercent >= 40 ? ' is-mid' : ' is-low'))}"
+				  th:text="${result.matchPercent + '%'}"></span>
+			<span th:if="${result.matchPercent == null}" class="muted small">No evaluable con reglas actuales</span>
 			<span th:if="${result.jobSeniority != null}" class="muted small" th:text="${'Seniority: ' + result.jobSeniority}"></span>
 		</div>
+		<p th:if="${result.matchPercent == null}" class="muted small">No se detectaron skills o &aacute;reas t&eacute;cnicas suficientes para calcular compatibilidad.</p>
 
 		<div class="grid-2">
 			<div th:if="${result.technicalFit != null || result.roleFit != null || result.experienceFit != null}">

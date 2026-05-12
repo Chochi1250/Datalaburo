@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -55,16 +54,13 @@ public class Job {
     @Column(nullable = false, length = 32)
     private String status = "new";
 
-    @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Lob
-    @Column(name = "requirements_text")
+    @Column(name = "requirements_text", columnDefinition = "TEXT")
     private String requirementsText;
 
-    @Lob
-    @Column(name = "visible_text")
+    @Column(name = "visible_text", columnDefinition = "TEXT")
     private String visibleText;
 
     @Column(name = "applicants_text", length = 2000)

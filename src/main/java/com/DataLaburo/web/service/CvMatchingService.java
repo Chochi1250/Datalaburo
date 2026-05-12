@@ -76,7 +76,7 @@ public class CvMatchingService {
 					List.of(),
 					List.of(),
 					List.of(),
-					null,
+					RuleBasedEnrichmentService.displaySeniority(jobSeniorityEnum),
 					null,
 					null,
 					null
@@ -381,7 +381,7 @@ public class CvMatchingService {
 						List.of(),
 						List.of(),
 						List.of(),
-						null,
+						RuleBasedEnrichmentService.displaySeniority(jobSeniorityEnum),
 						null,
 						null,
 						null
@@ -1032,9 +1032,13 @@ public class CvMatchingService {
 
 		// Force Trainee when the job title explicitly says so (even if the description mentions "2+ years", etc.).
 		if (containsWord(title, "trainee")
+				|| containsWord(title, "trainees")
+				|| containsWord(title, "programa trainee")
+				|| containsWord(title, "programa trainees")
 				|| containsWord(title, "intern")
 				|| containsWord(title, "internship")
 				|| containsWord(title, "pasantia")
+				|| containsWord(title, "pasantias")
 				|| containsWord(title, "pasante")
 				|| containsWord(title, "entry level")
 				|| containsWord(title, "entry-level")) {

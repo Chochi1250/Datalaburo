@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -28,8 +27,7 @@ public class CandidateProfile {
     @Column(nullable = false, length = 160)
     private String name;
 
-    @Lob
-    @Column(name = "cv_text", nullable = false)
+    @Column(name = "cv_text", nullable = false, columnDefinition = "TEXT")
     private String cvText;
 
     @CreationTimestamp

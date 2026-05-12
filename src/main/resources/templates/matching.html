@@ -167,13 +167,16 @@
 					<h3 th:text="${row.title}"></h3>
 					<p class="muted" th:text="${row.company}"></p>
 					<div class="match-top">
-						<span class="match-badge"
-							  th:classappend="${row.matchPercent == null ? ' is-na' : (row.matchPercent >= 80 ? ' is-ideal' : (row.matchPercent >= 60 ? ' is-good' : (row.matchPercent >= 40 ? ' is-mid' : ' is-low')))}"
-							  th:text="${row.matchPercent == null ? 'N/A' : (row.matchPercent + '%')}"></span>
+						<span th:if="${row.matchPercent == null}" class="match-badge is-na">Se&ntilde;ales insuficientes</span>
+						<span th:if="${row.matchPercent != null}" class="match-badge"
+							  th:classappend="${row.matchPercent >= 80 ? ' is-ideal' : (row.matchPercent >= 60 ? ' is-good' : (row.matchPercent >= 40 ? ' is-mid' : ' is-low'))}"
+							  th:text="${row.matchPercent + '%'}"></span>
 						<span th:if="${row.matchPercent != null}" class="muted small"
 							  th:text="${row.matchPercent >= 80 ? 'Match ideal' : (row.matchPercent >= 60 ? 'Buen match' : (row.matchPercent >= 40 ? 'Puede aplicar' : 'No recomendado'))}"></span>
+						<span th:if="${row.matchPercent == null}" class="muted small">No evaluable con reglas actuales</span>
 						<span th:if="${row.jobSeniority != null}" class="muted small" th:text="${'Seniority: ' + row.jobSeniority}"></span>
 					</div>
+					<p th:if="${row.matchPercent == null}" class="muted small">No se detectaron skills o &aacute;reas t&eacute;cnicas suficientes para calcular compatibilidad.</p>
 					<div th:if="${not #lists.isEmpty(row.primaryStack)}">
 						<p class="muted small">Stack principal</p>
 						<div class="chips">

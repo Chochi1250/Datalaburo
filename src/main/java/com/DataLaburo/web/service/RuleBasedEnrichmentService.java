@@ -392,11 +392,14 @@ public class RuleBasedEnrichmentService {
 		}
 		String hay = " " + normalizedText + " ";
 
-		if (containsAny(hay, "trainee", "intern", "pasante")) return Seniority.TRAINEE;
+		if (containsAny(hay, "trainee", "trainees", "programa trainee", "programa trainees",
+				"intern", "internship", "pasante", "pasantia", "pasantias")) return Seniority.TRAINEE;
 		if (containsAny(hay, "junior", "jr")) return Seniority.JUNIOR;
 		if (containsAny(hay, "semi senior", "semisenior", "ssr")) return Seniority.MID;
 		if (containsAny(hay, "senior", "sr")) return Seniority.SENIOR;
-		if (containsAny(hay, "lead", "tech lead", "principal", "staff")) return Seniority.LEAD;
+		if (containsAny(hay, "tech lead", "team lead", "technical lead",
+				"lead engineer", "lead developer", "lider tecnico",
+				"staff engineer", "principal engineer")) return Seniority.LEAD;
 		return null;
 	}
 
@@ -478,6 +481,7 @@ public class RuleBasedEnrichmentService {
 
 	private static Seniority adjustSeniority(Seniority raw, Integer experienceYears) {
 		if (experienceYears == null) return raw;
+		if (raw == Seniority.TRAINEE) return raw;
 		Seniority min;
 		// Simple, explainable thresholds (MVP).
 		// 0-1: Trainee, 1-3: Junior, 3-5: Mid, 5+: Senior (Lead reserved for long careers).
