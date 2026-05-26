@@ -1,6 +1,8 @@
 # PostgreSQL local
 
-Datalaburo corre con PostgreSQL local como flujo principal mediante Docker Compose. H2 sigue disponible como fallback/demo explicito.
+Datalaburo corre con PostgreSQL local como base objetivo mediante Docker Compose.
+H2 fue usado en una etapa inicial del MVP y hoy debe considerarse legacy/obsoleto,
+no fallback ni base local objetivo.
 
 ## Levantar PostgreSQL
 
@@ -54,12 +56,6 @@ Con PostgreSQL explicito:
 
 ```powershell
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
-```
-
-Con H2 fallback:
-
-```powershell
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=h2"
 ```
 
 La app queda disponible en:

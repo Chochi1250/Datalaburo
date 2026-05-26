@@ -1,29 +1,38 @@
 # Pipeline vectorial de Datalaburo
 
 Este documento describe el estado actual del pipeline vectorial de Datalaburo.
-La etapa actual prepara la informacion necesaria para generar embeddings en una fase posterior, pero todavia no calcula vectores reales.
+La base objetivo del proyecto es PostgreSQL con pgvector. H2 fue usado en una
+etapa inicial del MVP y hoy debe considerarse legacy/obsoleto, no fallback ni
+base local objetivo.
 
-## Problema que resuelve
+## Objetivo
 
-El pipeline vectorial prepara a Datalaburo para comparar semanticamente CVs/perfiles profesionales y ofertas laborales tecnologicas.
+El pipeline vectorial prepara a Datalaburo para comparar semanticamente
+perfiles profesionales/CVs y ofertas laborales tecnologicas en una fase futura.
 
-El matching actual por reglas sigue siendo el baseline explicable. El pipeline vectorial se esta construyendo como una capa futura para complementar ese baseline con busqueda semantica usando PostgreSQL, pgvector y embeddings.
+El matching por reglas sigue siendo el baseline explicable y defendible. La
+capa vectorial todavia no reemplaza ese baseline, no participa del scoring y no
+se usa en la UI.
 
 ## Tabla `document_embeddings`
 
-`document_embeddings` es la tabla preparada para almacenar un embedding por documento o seccion vectorizable.
+Flyway crea `document_embeddings` con una columna `embedding vector(1024)`.
+La tabla guarda un documento vectorizable por origen, seccion, modelo y version
+de normalizacion.
 
-Actualmente guarda metadata como:
+Campos principales:
 
-- `owner_type`: tipo de documento origen (`JOB` o `PROFILE`).
+- `owner_type`: origen (`JOB` o `PROFILE`).
 - `owner_id`: id del registro origen.
-- `section_type`: seccion vectorizada. Por ahora se usa `FULL_TEXT`.
-- `source_text_hash`: hash SHA-256 del texto normalizado.
-- `embedding_model`: modelo previsto. Actualmente `BAAI/bge-m3`.
+- `section_type`: seccion vectorizada. Actualmente `FULL_TEXT`.
+- `source_text_hash`: SHA-256 del texto normalizado.
+- `embedding_model`: modelo o generador usado.
 - `embedding_dimensions`: dimension esperada. Actualmente `1024`.
-- `normalizer_version`: version del normalizador usado.
-- `status`: estado del registro.
-- `embedding`: columna `vector(1024)` de pgvector. Por ahora queda en `NULL`.
+- `normalizer_version`: version del normalizador.
+- `embedding`: vector pgvector `vector(1024)`.
+- `status`: `PENDING`, `READY` o `FAILED`.
+- `error_message`: error operativo si falla el procesamiento.
+- `last_embedded_at`: momento en que se guardo el vector.
 
 La constraint logica evita duplicados para:
 
@@ -33,193 +42,277 @@ owner_type + owner_id + section_type + embedding_model + normalizer_version
 
 ## Metadata backfill
 
-El metadata backfill recorre los `jobs` y `candidate_profiles` existentes y prepara registros en `document_embeddings`.
+El metadata backfill prepara registros en `document_embeddings` a partir de
+`jobs` y `candidate_profiles`.
 
-No genera embeddings reales. Solo:
+No genera embeddings semanticos reales. Solo:
 
 1. Construye el texto vectorizable.
 2. Normaliza el texto.
-3. Calcula el hash SHA-256.
-4. Crea o actualiza un registro en `document_embeddings`.
+3. Calcula `source_text_hash`.
+4. Crea o actualiza metadata.
 5. Deja el registro en `PENDING` si es nuevo o si el texto cambio.
 
 La operacion es idempotente:
 
 - Si no existe registro, crea uno nuevo en `PENDING`.
-- Si existe y el hash no cambio, queda `unchanged`.
-- Si existe y el hash cambio, actualiza el hash, limpia errores, resetea `last_embedded_at` y vuelve a `PENDING`.
+- Si existe y el hash no cambio, devuelve `unchanged`.
+- Si existe y el hash cambio, actualiza el hash, limpia errores, resetea
+  `last_embedded_at` y vuelve a `PENDING`.
 
-## Estados
+## Componentes existentes
 
-- `PENDING`: el texto fuente ya fue preparado, pero todavia no tiene embedding real.
-- `READY`: estado futuro para registros que ya tengan un vector calculado y guardado.
-- `FAILED`: estado futuro para registros cuyo calculo de embedding falle.
+- `EmbeddingTextBuilder`: arma texto vectorizable desde `Job` y
+  `CandidateProfile`.
+- `EmbeddingTextNormalizer`: normaliza texto antes del hash.
+- `SourceTextHasher`: calcula SHA-256 sobre UTF-8.
+- `DocumentEmbedding`: mapea metadata, no mapea directamente el campo
+  `embedding`.
+- `DocumentEmbeddingRepository`: acceso JPA a metadata.
+- `EmbeddingPreparationService`: prepara metadata por registro.
+- `EmbeddingBackfillService`: prepara metadata por lote.
+- `EmbeddingAdminController`: expone endpoints internos.
+- `EmbeddingProcessingService`: procesa embeddings fake `PENDING`.
+- `PostgresDocumentEmbeddingVectorWriter`: escribe `vector(1024)` con JDBC.
+- `EmbeddingVectorSearchService`: ejecuta busqueda vectorial interna.
+- `PostgresEmbeddingVectorSearchRepository`: usa pgvector para ranking.
 
-En la etapa actual, los registros preparados quedan en `PENDING` con `embedding = NULL`.
+## Modelos
 
-## Componentes actuales
+### Modelo real futuro
 
-### `EmbeddingTextBuilder`
-
-Construye el texto vectorizable desde entidades de dominio.
-
-Para `Job` usa campos etiquetados:
-
-- `Title`
-- `Company`
-- `Location`
-- `Description`
-- `Requirements`
-
-`visibleText` solo se usa como fallback cuando `description` esta vacio.
-
-Para `CandidateProfile` usa `cvText`. No incluye `name` ni otra identidad personal innecesaria.
-
-### `EmbeddingTextNormalizer`
-
-Normaliza el texto antes de calcular el hash.
-
-Version actual:
+El modelo real objetivo sigue siendo:
 
 ```text
-embedding-text-v1
+BAAI/bge-m3
 ```
 
-Reglas principales:
+Dimension esperada:
 
-- normaliza saltos de linea a `\n`;
-- aplica trim general;
-- colapsa espacios repetidos;
-- elimina caracteres de control;
-- limita lineas vacias consecutivas;
-- preserva idioma, acentos y puntuacion razonable.
+```text
+1024
+```
 
-### `SourceTextHasher`
+Todavia no existe integracion real con `BAAI/bge-m3`, no hay servicio local de
+embeddings reales y no se generan embeddings semanticos reales.
 
-Calcula SHA-256 sobre el texto normalizado usando UTF-8.
+### Modelo fake de infraestructura
 
-Devuelve un hash hexadecimal de 64 caracteres. Ese hash permite detectar si el texto fuente cambio y evitar recalcular embeddings innecesariamente en fases futuras.
+El worker fake usa:
+
+```text
+fake-deterministic-1024
+```
+
+Ese identificador separa los vectores fake de los futuros vectores reales de
+`BAAI/bge-m3`.
+
+El worker fake/deterministico:
+
+- procesa solo registros `PENDING` con
+  `embedding_model = 'fake-deterministic-1024'`;
+- genera siempre el mismo vector para el mismo input;
+- genera vectores de dimension `1024`;
+- evita `NaN` e infinitos;
+- escribe en `document_embeddings.embedding` usando pgvector;
+- marca registros como `READY`;
+- completa `last_embedded_at`;
+- limpia `error_message` si fue exitoso;
+- marca `FAILED` y guarda `error_message` ante error.
+
+Importante: los vectores `fake-deterministic-1024` no tienen significado
+semantico real. Solo validan infraestructura: generacion controlada,
+persistencia `vector(1024)`, transicion `PENDING -> READY`, trazabilidad e
+idempotencia.
+
+## Busqueda vectorial interna
+
+Ya existe una busqueda vectorial interna con pgvector para validar que
+PostgreSQL puede comparar embeddings `READY`.
+
+La busqueda:
+
+- toma el embedding `READY` de un `PROFILE`;
+- busca `JOBs` con embeddings `READY`;
+- filtra siempre por `embedding_model` y `embedding_dimensions = 1024`;
+- usa distancia coseno con el operador `<=>` de pgvector;
+- ordena de menor distancia a mayor distancia;
+- devuelve `distance`, `similarity`, `jobId`, `jobEmbeddingId`,
+  `embeddingModel` y `semanticMeaning=false`.
+
+Endpoint:
+
+```text
+GET /internal/embeddings/vector-search/profiles/{profileId}/jobs?limit=20
+```
+
+Parametro opcional:
+
+```text
+embeddingModel=fake-deterministic-1024
+```
+
+Default:
+
+```text
+fake-deterministic-1024
+```
+
+Respuesta conceptual:
+
+- `semanticMeaning=false` indica que el resultado no debe interpretarse como
+  compatibilidad profesional real.
+- Si `embeddingModel = fake-deterministic-1024`, el ranking es una prueba
+  interna de infraestructura, no una medicion semantica.
+
+## SQL base de busqueda
+
+La consulta interna usa la forma:
+
+```sql
+with profile_embedding as (
+    select embedding
+    from document_embeddings
+    where owner_type = 'PROFILE'
+      and owner_id = :profileId
+      and section_type = 'FULL_TEXT'
+      and embedding_model = :embeddingModel
+      and embedding_dimensions = 1024
+      and status = 'READY'
+      and embedding is not null
+    limit 1
+)
+select job.owner_id as job_id,
+       job.id as job_embedding_id,
+       job.embedding_model,
+       job.embedding <=> profile_embedding.embedding as distance,
+       1 - (job.embedding <=> profile_embedding.embedding) as similarity
+from document_embeddings job
+cross join profile_embedding
+where job.owner_type = 'JOB'
+  and job.section_type = 'FULL_TEXT'
+  and job.embedding_model = :embeddingModel
+  and job.embedding_dimensions = 1024
+  and job.status = 'READY'
+  and job.embedding is not null
+order by job.embedding <=> profile_embedding.embedding asc
+limit :limit;
+```
 
 ## Endpoints internos
 
-Los endpoints internos actuales estan bajo `/internal/embeddings`.
+Preparacion de metadata:
 
 ```text
 POST /internal/embeddings/backfill/jobs?limit=100
 POST /internal/embeddings/backfill/profiles?limit=100
 POST /internal/embeddings/jobs/{id}/prepare
 POST /internal/embeddings/profiles/{id}/prepare
-GET  /internal/embeddings/status
 ```
 
-Los backfills devuelven conteos:
+Preparacion fake separada:
 
-- `scanned`
-- `created`
-- `updated`
-- `unchanged`
-- `skippedBlank`
-- `failed`
+```text
+POST /internal/embeddings/backfill/fake/jobs?limit=100
+POST /internal/embeddings/backfill/fake/profiles?limit=100
+POST /internal/embeddings/jobs/{id}/prepare-fake
+POST /internal/embeddings/profiles/{id}/prepare-fake
+```
+
+Procesamiento fake:
+
+```text
+POST /internal/embeddings/process/pending?limit=100
+POST /internal/embeddings/{id}/process
+```
+
+Estado y busqueda:
+
+```text
+GET /internal/embeddings/status
+GET /internal/embeddings/vector-search/profiles/{profileId}/jobs?limit=20
+```
 
 ## Probar con PowerShell
 
-Con la aplicacion corriendo en `http://localhost:8081`:
+Con PostgreSQL y la aplicacion corriendo en `http://localhost:8081`:
 
 ```powershell
-Invoke-RestMethod -Method Post "http://localhost:8081/internal/embeddings/backfill/jobs?limit=100"
-Invoke-RestMethod -Method Post "http://localhost:8081/internal/embeddings/backfill/profiles?limit=100"
-Invoke-RestMethod -Method Post "http://localhost:8081/internal/embeddings/jobs/1/prepare"
-Invoke-RestMethod -Method Post "http://localhost:8081/internal/embeddings/profiles/1/prepare"
+Invoke-RestMethod -Method Post "http://localhost:8081/internal/embeddings/backfill/fake/jobs?limit=100"
+Invoke-RestMethod -Method Post "http://localhost:8081/internal/embeddings/backfill/fake/profiles?limit=100"
+Invoke-RestMethod -Method Post "http://localhost:8081/internal/embeddings/process/pending?limit=100"
 Invoke-RestMethod "http://localhost:8081/internal/embeddings/status"
 ```
 
-Alternativa con `curl.exe`:
+Buscar jobs desde un perfil fake `READY`:
 
 ```powershell
-curl.exe -X POST "http://localhost:8081/internal/embeddings/backfill/jobs?limit=100"
-curl.exe -X POST "http://localhost:8081/internal/embeddings/backfill/profiles?limit=100"
-curl.exe -X POST "http://localhost:8081/internal/embeddings/jobs/1/prepare"
-curl.exe -X POST "http://localhost:8081/internal/embeddings/profiles/1/prepare"
-curl.exe "http://localhost:8081/internal/embeddings/status"
+$profileId = docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -t -A -c "select owner_id from document_embeddings where owner_type='PROFILE' and embedding_model='fake-deterministic-1024' and status='READY' and embedding is not null limit 1;"
+Invoke-RestMethod "http://localhost:8081/internal/embeddings/vector-search/profiles/$profileId/jobs?limit=20" | ConvertTo-Json -Depth 5
 ```
 
-## Queries utiles para DBeaver
+## Queries utiles
 
-Ver conteos por tipo y estado:
+Conteos por modelo y estado:
 
 ```sql
-select owner_type, status, count(*)
+select owner_type, embedding_model, status, count(*)
 from document_embeddings
-group by owner_type, status
-order by owner_type, status;
+group by owner_type, embedding_model, status
+order by owner_type, embedding_model, status;
 ```
 
-Ver registros recientes:
+Verificar embeddings fake `READY`:
 
 ```sql
 select id,
        owner_type,
        owner_id,
-       section_type,
        embedding_model,
-       embedding_dimensions,
-       normalizer_version,
        status,
-       source_text_hash,
-       embedding is null as embedding_is_null,
-       created_at,
-       updated_at,
-       last_embedded_at
+       embedding is not null as has_embedding,
+       vector_dims(embedding) as dimensions,
+       last_embedded_at,
+       error_message
 from document_embeddings
-order by created_at desc
-limit 20;
+where embedding_model = 'fake-deterministic-1024'
+order by owner_type, owner_id;
 ```
 
-Verificar que no haya duplicados logicos:
+Verificar que no se mezclan modelos:
 
 ```sql
-select owner_type,
-       owner_id,
-       section_type,
-       embedding_model,
-       normalizer_version,
-       count(*)
-from document_embeddings
-group by owner_type, owner_id, section_type, embedding_model, normalizer_version
-having count(*) > 1;
-```
-
-Verificar que la etapa actual no lleno embeddings reales:
-
-```sql
-select status,
+select embedding_model,
        count(*) as total,
-       count(*) filter (where embedding is null) as embedding_null,
-       count(*) filter (where embedding is not null) as embedding_not_null
+       count(*) filter (where status = 'READY') as ready,
+       count(*) filter (where embedding is not null) as with_embedding
 from document_embeddings
-group by status
-order by status;
+group by embedding_model
+order by embedding_model;
 ```
 
-## Que todavia no hace
+## Que todavia falta
 
-La etapa actual no:
+Todavia no existe:
 
-- genera embeddings reales;
-- llama a `BAAI/bge-m3`;
-- integra Python ni modelos locales;
-- llena la columna `embedding`;
-- ejecuta busqueda vectorial;
-- modifica el scoring ni el matching actual.
+- integracion real con `BAAI/bge-m3`;
+- generacion de embeddings semanticos reales;
+- dataset mas representativo de ofertas;
+- busqueda vectorial semanticamente valida;
+- comparacion formal contra el baseline por reglas;
+- feedback semantico real para el usuario;
+- matching hibrido.
 
-## Proxima fase
+Tampoco existen indices vectoriales HNSW/IVFFlat. No son necesarios para esta
+fase de validacion interna.
 
-La siguiente fase natural es agregar un servicio local de embeddings que:
+## Proximos pasos recomendados
 
-1. Tome registros `PENDING`.
-2. Genere embeddings reales con el modelo local elegido.
-3. Guarde el vector en `document_embeddings.embedding`.
-4. Cambie el estado a `READY`.
-5. Marque `FAILED` y guarde `error_message` si ocurre un error.
-
-Despues de eso, se puede incorporar busqueda semantica con pgvector y combinarla con el baseline explicable actual.
+1. Capturar 20-50 ofertas variadas.
+2. Crear 2-3 perfiles de prueba.
+3. Preparar registros `BAAI/bge-m3` en `PENDING`.
+4. Integrar un servicio local de embeddings reales.
+5. Pasar registros `BAAI/bge-m3` de `PENDING` a `READY`.
+6. Usar busqueda vectorial real como base para asesoramiento.
+7. Comparar resultados contra el baseline por reglas.
+8. Recien despues evaluar matching hibrido.
