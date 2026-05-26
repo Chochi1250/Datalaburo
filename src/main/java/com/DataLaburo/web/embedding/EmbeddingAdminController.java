@@ -13,9 +13,14 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/internal/embeddings")
 public class EmbeddingAdminController {
     private final EmbeddingBackfillService embeddingBackfillService;
+    private final EmbeddingProcessingService embeddingProcessingService;
 
-    public EmbeddingAdminController(EmbeddingBackfillService embeddingBackfillService) {
+    public EmbeddingAdminController(
+            EmbeddingBackfillService embeddingBackfillService,
+            EmbeddingProcessingService embeddingProcessingService
+    ) {
         this.embeddingBackfillService = embeddingBackfillService;
+        this.embeddingProcessingService = embeddingProcessingService;
     }
 
     @PostMapping("/backfill/jobs")
@@ -23,9 +28,19 @@ public class EmbeddingAdminController {
         return embeddingBackfillService.backfillJobs(limit);
     }
 
+    @PostMapping("/backfill/fake/jobs")
+    public EmbeddingBackfillResponse backfillFakeJobs(@RequestParam(defaultValue = "100") Integer limit) {
+        return embeddingBackfillService.backfillFakeJobs(limit);
+    }
+
     @PostMapping("/backfill/profiles")
     public EmbeddingBackfillResponse backfillProfiles(@RequestParam(defaultValue = "100") Integer limit) {
         return embeddingBackfillService.backfillCandidateProfiles(limit);
+    }
+
+    @PostMapping("/backfill/fake/profiles")
+    public EmbeddingBackfillResponse backfillFakeProfiles(@RequestParam(defaultValue = "100") Integer limit) {
+        return embeddingBackfillService.backfillFakeCandidateProfiles(limit);
     }
 
     @PostMapping("/jobs/{id}/prepare")
@@ -35,11 +50,36 @@ public class EmbeddingAdminController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job not found: " + id));
     }
 
+    @PostMapping("/jobs/{id}/prepare-fake")
+    public EmbeddingPrepareResponse prepareFakeJob(@PathVariable Long id) {
+        return embeddingBackfillService.prepareFakeJobById(id)
+                .map(EmbeddingPrepareResponse::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job not found: " + id));
+    }
+
     @PostMapping("/profiles/{id}/prepare")
     public EmbeddingPrepareResponse prepareProfile(@PathVariable Long id) {
         return embeddingBackfillService.prepareCandidateProfileById(id)
                 .map(EmbeddingPrepareResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Candidate profile not found: " + id));
+    }
+
+    @PostMapping("/profiles/{id}/prepare-fake")
+    public EmbeddingPrepareResponse prepareFakeProfile(@PathVariable Long id) {
+        return embeddingBackfillService.prepareFakeCandidateProfileById(id)
+                .map(EmbeddingPrepareResponse::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Candidate profile not found: " + id));
+    }
+
+    @PostMapping("/process/pending")
+    public EmbeddingProcessingResponse processPending(@RequestParam(defaultValue = "100") Integer limit) {
+        return embeddingProcessingService.processPending(limit);
+    }
+
+    @PostMapping("/{id}/process")
+    public EmbeddingProcessingResult processById(@PathVariable Long id) {
+        return embeddingProcessingService.processById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document embedding not found: " + id));
     }
 
     @GetMapping("/status")

@@ -51,6 +51,20 @@ public class EmbeddingBackfillService {
     }
 
     @Transactional
+    public EmbeddingBackfillResponse backfillFakeJobs(Integer limit) {
+        PageRequest page = PageRequest.of(0, normalizeLimit(limit), Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("id")
+        ));
+        List<Job> jobs = jobRepository.findAll(page).getContent();
+        Counter counter = new Counter();
+        for (Job job : jobs) {
+            counter.apply(() -> embeddingPreparationService.prepareFakeJob(job));
+        }
+        return counter.toResponse();
+    }
+
+    @Transactional
     public EmbeddingBackfillResponse backfillCandidateProfiles(Integer limit) {
         PageRequest page = PageRequest.of(0, normalizeLimit(limit), Sort.by(
                 Sort.Order.desc("updatedAt"),
@@ -65,6 +79,20 @@ public class EmbeddingBackfillService {
     }
 
     @Transactional
+    public EmbeddingBackfillResponse backfillFakeCandidateProfiles(Integer limit) {
+        PageRequest page = PageRequest.of(0, normalizeLimit(limit), Sort.by(
+                Sort.Order.desc("updatedAt"),
+                Sort.Order.desc("id")
+        ));
+        List<CandidateProfile> profiles = candidateProfileRepository.findAll(page).getContent();
+        Counter counter = new Counter();
+        for (CandidateProfile profile : profiles) {
+            counter.apply(() -> embeddingPreparationService.prepareFakeCandidateProfile(profile));
+        }
+        return counter.toResponse();
+    }
+
+    @Transactional
     public Optional<EmbeddingPreparationService.PreparationResult> prepareJobById(Long id) {
         if (id == null) {
             return Optional.empty();
@@ -73,11 +101,27 @@ public class EmbeddingBackfillService {
     }
 
     @Transactional
+    public Optional<EmbeddingPreparationService.PreparationResult> prepareFakeJobById(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return jobRepository.findById(id).map(embeddingPreparationService::prepareFakeJob);
+    }
+
+    @Transactional
     public Optional<EmbeddingPreparationService.PreparationResult> prepareCandidateProfileById(Long id) {
         if (id == null) {
             return Optional.empty();
         }
         return candidateProfileRepository.findById(id).map(embeddingPreparationService::prepareCandidateProfile);
+    }
+
+    @Transactional
+    public Optional<EmbeddingPreparationService.PreparationResult> prepareFakeCandidateProfileById(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return candidateProfileRepository.findById(id).map(embeddingPreparationService::prepareFakeCandidateProfile);
     }
 
     @Transactional(readOnly = true)

@@ -69,6 +69,34 @@ class EmbeddingPreparationServiceTest {
     }
 
     @Test
+    void createsSeparateFakeMetadataForJob() {
+        Job job = job(
+                42L,
+                "Backend Java Developer",
+                "DataLab",
+                "Buenos Aires",
+                "Build APIs with Spring Boot.",
+                "Java\nPostgreSQL",
+                null
+        );
+        when(repository.findByOwnerTypeAndOwnerIdAndSectionTypeAndEmbeddingModelAndNormalizerVersion(
+                eq(DocumentEmbeddingOwnerType.JOB),
+                eq(42L),
+                eq(DocumentEmbeddingSectionType.FULL_TEXT),
+                eq(DocumentEmbedding.FAKE_DETERMINISTIC_EMBEDDING_MODEL),
+                eq(EmbeddingTextNormalizer.VERSION)
+        )).thenReturn(Optional.empty());
+        when(repository.save(any(DocumentEmbedding.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PreparationResult result = service.prepareFakeJob(job);
+
+        assertEquals(PreparationAction.CREATED, result.action());
+        assertEquals(DocumentEmbedding.FAKE_DETERMINISTIC_EMBEDDING_MODEL, result.documentEmbedding().getEmbeddingModel());
+        assertEquals(DocumentEmbedding.DEFAULT_EMBEDDING_DIMENSIONS, result.documentEmbedding().getEmbeddingDimensions());
+        assertEquals(DocumentEmbeddingStatus.PENDING, result.documentEmbedding().getStatus());
+    }
+
+    @Test
     void createsPendingMetadataForCandidateProfileWithoutUsingName() {
         CandidateProfile profile = new CandidateProfile();
         profile.setId(7L);

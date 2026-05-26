@@ -33,6 +33,7 @@ import java.time.Instant;
 )
 public class DocumentEmbedding {
     public static final String DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3";
+    public static final String FAKE_DETERMINISTIC_EMBEDDING_MODEL = "fake-deterministic-1024";
     public static final int DEFAULT_EMBEDDING_DIMENSIONS = 1024;
 
     @Id

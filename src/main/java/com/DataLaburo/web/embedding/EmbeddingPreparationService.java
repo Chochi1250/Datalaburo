@@ -31,7 +31,25 @@ public class EmbeddingPreparationService {
         if (job == null || job.getId() == null) {
             return PreparationResult.skipped("Job id is required");
         }
-        return prepare(DocumentEmbeddingOwnerType.JOB, job.getId(), textBuilder.buildForJob(job));
+        return prepare(
+                DocumentEmbeddingOwnerType.JOB,
+                job.getId(),
+                textBuilder.buildForJob(job),
+                DocumentEmbedding.DEFAULT_EMBEDDING_MODEL
+        );
+    }
+
+    @Transactional
+    public PreparationResult prepareFakeJob(Job job) {
+        if (job == null || job.getId() == null) {
+            return PreparationResult.skipped("Job id is required");
+        }
+        return prepare(
+                DocumentEmbeddingOwnerType.JOB,
+                job.getId(),
+                textBuilder.buildForJob(job),
+                DocumentEmbedding.FAKE_DETERMINISTIC_EMBEDDING_MODEL
+        );
     }
 
     @Transactional
@@ -39,10 +57,33 @@ public class EmbeddingPreparationService {
         if (profile == null || profile.getId() == null) {
             return PreparationResult.skipped("Candidate profile id is required");
         }
-        return prepare(DocumentEmbeddingOwnerType.PROFILE, profile.getId(), textBuilder.buildForCandidateProfile(profile));
+        return prepare(
+                DocumentEmbeddingOwnerType.PROFILE,
+                profile.getId(),
+                textBuilder.buildForCandidateProfile(profile),
+                DocumentEmbedding.DEFAULT_EMBEDDING_MODEL
+        );
     }
 
-    private PreparationResult prepare(DocumentEmbeddingOwnerType ownerType, Long ownerId, String rawText) {
+    @Transactional
+    public PreparationResult prepareFakeCandidateProfile(CandidateProfile profile) {
+        if (profile == null || profile.getId() == null) {
+            return PreparationResult.skipped("Candidate profile id is required");
+        }
+        return prepare(
+                DocumentEmbeddingOwnerType.PROFILE,
+                profile.getId(),
+                textBuilder.buildForCandidateProfile(profile),
+                DocumentEmbedding.FAKE_DETERMINISTIC_EMBEDDING_MODEL
+        );
+    }
+
+    private PreparationResult prepare(
+            DocumentEmbeddingOwnerType ownerType,
+            Long ownerId,
+            String rawText,
+            String embeddingModel
+    ) {
         String normalizedText = textNormalizer.normalize(rawText);
         if (normalizedText.isBlank()) {
             return PreparationResult.skipped("Source text is blank");
@@ -50,7 +91,6 @@ public class EmbeddingPreparationService {
 
         String sourceTextHash = sourceTextHasher.sha256Hex(normalizedText);
         DocumentEmbeddingSectionType sectionType = DocumentEmbeddingSectionType.FULL_TEXT;
-        String embeddingModel = DocumentEmbedding.DEFAULT_EMBEDDING_MODEL;
         String normalizerVersion = EmbeddingTextNormalizer.VERSION;
 
         return documentEmbeddingRepository

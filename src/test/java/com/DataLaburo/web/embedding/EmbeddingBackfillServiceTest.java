@@ -77,6 +77,19 @@ class EmbeddingBackfillServiceTest {
     }
 
     @Test
+    void backfillsFakeJobsUsingFakePreparationService() {
+        Job job = job(8L);
+        when(jobRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(job)));
+        when(embeddingPreparationService.prepareFakeJob(job)).thenReturn(result(PreparationAction.CREATED));
+
+        EmbeddingBackfillResponse response = service.backfillFakeJobs(100);
+
+        assertEquals(1, response.scanned());
+        assertEquals(1, response.created());
+        verify(embeddingPreparationService).prepareFakeJob(job);
+    }
+
+    @Test
     void preparesSingleJobById() {
         Job job = job(42L);
         when(jobRepository.findById(42L)).thenReturn(Optional.of(job));
