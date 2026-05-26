@@ -128,6 +128,12 @@ docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select extn
 docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select table_name from information_schema.tables where table_schema = 'public' order by table_name;"
 ```
 
+## Pipeline vectorial
+
+pgvector ya esta preparado y el pipeline actual solo genera metadata `PENDING`; todavia no calcula embeddings reales. El detalle tecnico esta en:
+
+- [docs/embeddings-pipeline.md](docs/embeddings-pipeline.md)
+
 ## Extension de navegador
 
 La extension se encuentra en `browser-extension/`. Para probarla en Chrome/Chromium:
