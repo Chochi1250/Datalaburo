@@ -83,4 +83,50 @@ class CompatibilityExplanationServiceTest {
 
         assertEquals(List.of("Convertir Backend en practica concreta de Cloud"), explanation.roadmapSuggestions());
     }
+
+    @Test
+    void genericSkillsDoNotCreateGoodMatchWhenRoleAndSeniorityAreNotAligned() {
+        GapAnalysis gap = new GapAnalysis(
+                List.of("Git", "REST", "SQL"),
+                List.of(),
+                List.of(),
+                List.of("Git", "REST", "SQL"),
+                List.of("Git", "REST", "SQL"),
+                List.of()
+        );
+
+        CompatibilityCategory category = service.assignCategory(
+                gap,
+                List.of(),
+                EvidenceLevel.WORK_EXPERIENCE,
+                0.56d,
+                false,
+                new CompatibilitySignalContext("IAM", "SENIOR", "TRAINEE")
+        );
+
+        assertEquals(CompatibilityCategory.LOW_FIT, category);
+    }
+
+    @Test
+    void seniorRoleDowngradesGoodMatchForJuniorProfile() {
+        GapAnalysis gap = new GapAnalysis(
+                List.of("SQL"),
+                List.of(),
+                List.of("Azure"),
+                List.of("SQL"),
+                List.of("SQL"),
+                List.of("Azure")
+        );
+
+        CompatibilityCategory category = service.assignCategory(
+                gap,
+                List.of(),
+                EvidenceLevel.WORK_EXPERIENCE,
+                0.65d,
+                true,
+                new CompatibilitySignalContext("DATABASE", "SENIOR", "JUNIOR")
+        );
+
+        assertEquals(CompatibilityCategory.ASPIRATIONAL_MATCH, category);
+    }
 }

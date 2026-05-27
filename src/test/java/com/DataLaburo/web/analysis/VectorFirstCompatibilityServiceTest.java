@@ -114,7 +114,15 @@ class VectorFirstCompatibilityServiceTest {
         when(ruleBasedEnrichmentService.enrichJob("Backend Engineer Java Kubernetes", jobSkills)).thenReturn(jobEnriched);
         when(gapAnalysisService.analyze("Java Spring Boot project", profileSkills, job, catalog)).thenReturn(gap);
         when(transferabilityService.findTransferableSkills(List.of("Backend"), List.of("Kubernetes", "Backend"))).thenReturn(List.of());
-        when(explanationService.explain("Java Spring Boot project", 0.69d, gap, List.of(), profileEnriched, jobEnriched))
+        when(explanationService.explain(
+                "Java Spring Boot project",
+                0.69d,
+                gap,
+                List.of(),
+                profileEnriched,
+                jobEnriched,
+                new CompatibilitySignalContext("BACKEND", "MID", "MID")
+        ))
                 .thenReturn(explanation);
 
         VectorFirstCompatibilityResponse response = service.analyze(1L, 999);

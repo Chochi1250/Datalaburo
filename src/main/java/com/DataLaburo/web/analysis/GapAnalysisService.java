@@ -37,33 +37,36 @@ public class GapAnalysisService {
 
     public GapAnalysis analyze(String candidateText, ExtractedSkills candidateSkills, Job job, SkillCatalog catalog) {
         JobTextBuckets buckets = buildJobTextBuckets(job);
+        SkillCatalog analysisCatalog = augmentCatalog(catalog);
 
-        ExtractedSkills critical = skillExtractionService.extractSkills(buckets.criticalText(), catalog);
-        ExtractedSkills secondary = skillExtractionService.extractSkills(buckets.secondaryText(), catalog);
+        ExtractedSkills critical = skillExtractionService.extractSkills(buckets.criticalText(), analysisCatalog);
+        ExtractedSkills secondary = skillExtractionService.extractSkills(buckets.secondaryText(), analysisCatalog);
 
-        Set<Long> candidateIds = strongSkillIds(candidateSkills, candidateText, catalog, "PROFILE");
-        Set<Long> criticalIds = strongSkillIds(critical, buckets.criticalText(), catalog, "CRITICAL", job);
-        Set<Long> secondaryIds = subtract(strongSkillIds(secondary, buckets.secondaryText(), catalog, "SECONDARY", job), criticalIds);
+        Set<Long> candidateIds = strongSkillIds(candidateSkills, candidateText, analysisCatalog, "PROFILE");
+        Set<Long> criticalIds = strongSkillIds(critical, buckets.criticalText(), analysisCatalog, "CRITICAL", job);
+        Set<Long> secondaryIds = subtract(strongSkillIds(secondary, buckets.secondaryText(), analysisCatalog, "SECONDARY", job), criticalIds);
 
         Map<Long, List<SkillEvidence>> criticalEvidenceById = evidenceBySkillId(
                 critical,
                 buckets.criticalText(),
-                catalog,
+                analysisCatalog,
                 "CRITICAL",
                 job
         );
         Map<Long, List<SkillEvidence>> secondaryEvidenceById = evidenceBySkillId(
                 secondary,
                 buckets.secondaryText(),
-                catalog,
+                analysisCatalog,
                 "SECONDARY",
                 job
         );
 
+        applySatisfiedAlternativeGroups(criticalIds, secondaryIds, candidateIds, buckets.criticalText(), analysisCatalog, job);
+
         return analyze(
-                namesForIds(catalog, candidateIds),
-                namesForIds(catalog, criticalIds),
-                namesForIds(catalog, secondaryIds),
+                namesForIds(analysisCatalog, candidateIds),
+                namesForIds(analysisCatalog, criticalIds),
+                namesForIds(analysisCatalog, secondaryIds),
                 flattenEvidence(criticalEvidenceById, criticalIds),
                 flattenEvidence(secondaryEvidenceById, secondaryIds)
         );
@@ -302,6 +305,12 @@ public class GapAnalysisService {
     private static SkillEvidenceStrength evidenceStrength(String skillName, String aliasNormalized, String rawText) {
         String skillNormalized = normalizeForEvidence(skillName);
         String aliasForEvidence = normalizeForEvidence(aliasNormalized);
+        if (isDotNetSkill(skillName)) {
+            return hasExplicitDotNetEvidence(rawText) ? SkillEvidenceStrength.STRONG : SkillEvidenceStrength.WEAK;
+        }
+        if (isShortAmbiguousSkill(skillName, aliasForEvidence)) {
+            return containsExactCaseToken(rawText, skillName) ? SkillEvidenceStrength.STRONG : SkillEvidenceStrength.WEAK;
+        }
         if (aliasForEvidence.equals(skillNormalized)) {
             return SkillEvidenceStrength.STRONG;
         }
@@ -330,6 +339,34 @@ public class GapAnalysisService {
                 .replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}#+]+", " ")
                 .trim()
                 .replaceAll("\\s+", " ");
+    }
+
+    private static boolean isDotNetSkill(String skillName) {
+        String normalized = normalizeForEvidence(skillName);
+        return "net".equals(normalized);
+    }
+
+    private static boolean hasExplicitDotNetEvidence(String rawText) {
+        if (rawText == null || rawText.isBlank()) {
+            return false;
+        }
+        Pattern pattern = Pattern.compile(
+                "(?i)(?<![\\p{L}\\p{N}])(?:\\.net|asp\\.net|dotnet|dot\\s+net)(?![\\p{L}\\p{N}])"
+        );
+        return pattern.matcher(rawText).find();
+    }
+
+    private static boolean isShortAmbiguousSkill(String skillName, String aliasForEvidence) {
+        String skill = normalizeForEvidence(skillName);
+        return ("go".equals(skill) || "c".equals(skill)) && aliasForEvidence.length() <= 2;
+    }
+
+    private static boolean containsExactCaseToken(String rawText, String token) {
+        if (rawText == null || rawText.isBlank() || token == null || token.isBlank()) {
+            return false;
+        }
+        Pattern pattern = Pattern.compile("(?<![\\p{L}\\p{N}])" + Pattern.quote(token.trim()) + "(?![\\p{L}\\p{N}])");
+        return pattern.matcher(rawText).find();
     }
 
     private static boolean containsExactUppercaseToken(String rawText, String normalizedAlias) {
@@ -385,6 +422,146 @@ public class GapAnalysisService {
         );
     }
 
+    private static void applySatisfiedAlternativeGroups(
+            Set<Long> criticalIds,
+            Set<Long> secondaryIds,
+            Set<Long> candidateIds,
+            String criticalText,
+            SkillCatalog catalog,
+            Job job
+    ) {
+        if (criticalIds == null || criticalIds.isEmpty() || candidateIds == null || candidateIds.isEmpty()) {
+            return;
+        }
+        for (Set<Long> group : alternativeGroups(criticalText, catalog)) {
+            boolean hasCandidateAlternative = group.stream().anyMatch(candidateIds::contains);
+            if (!hasCandidateAlternative) {
+                continue;
+            }
+            Set<Long> removed = new LinkedHashSet<>();
+            for (Long id : group) {
+                if (candidateIds.contains(id)) {
+                    continue;
+                }
+                if (criticalIds.remove(id)) {
+                    removed.add(id);
+                }
+                if (secondaryIds != null) {
+                    secondaryIds.remove(id);
+                }
+            }
+            if (log.isDebugEnabled() && !removed.isEmpty()) {
+                log.debug(
+                        "Suppressing satisfied alternative gaps: jobId={} satisfied={} suppressed={}",
+                        job == null ? null : job.getId(),
+                        namesForIds(catalog, intersect(group, candidateIds)),
+                        namesForIds(catalog, removed)
+                );
+            }
+        }
+    }
+
+    private static List<Set<Long>> alternativeGroups(String rawText, SkillCatalog catalog) {
+        if (rawText == null || rawText.isBlank() || catalog == null) {
+            return List.of();
+        }
+        List<Set<Long>> groups = new ArrayList<>();
+        String[] lines = rawText.replace("\r", "").split("\n");
+        for (String line : lines) {
+            if (!hasAlternativeConnector(line)) {
+                continue;
+            }
+            Set<Long> ids = isSlashOnlyAlternative(line)
+                    ? slashAlternativeIds(line, catalog)
+                    : strongSkillIds(null, line, catalog, "ALTERNATIVE");
+            if (ids.size() >= 2) {
+                groups.add(ids);
+            }
+        }
+        return groups;
+    }
+
+    private static boolean hasAlternativeConnector(String line) {
+        String normalized = normalizeForEvidence(line);
+        if (normalized.isBlank()) {
+            return false;
+        }
+        if ((" " + normalized + " ").contains(" o ") || (" " + normalized + " ").contains(" or ")) {
+            return true;
+        }
+        return line != null && line.contains("/");
+    }
+
+    private static boolean isSlashOnlyAlternative(String line) {
+        if (line == null || !line.contains("/")) {
+            return false;
+        }
+        String normalized = " " + normalizeForEvidence(line) + " ";
+        return !normalized.contains(" o ") && !normalized.contains(" or ");
+    }
+
+    private static Set<Long> slashAlternativeIds(String line, SkillCatalog catalog) {
+        Set<Long> ids = new LinkedHashSet<>();
+        for (String part : line.split("/")) {
+            Set<Long> partIds = mostSpecificSkillIds(strongSkillIds(null, part, catalog, "ALTERNATIVE"), catalog);
+            if (partIds.size() == 1) {
+                ids.add(partIds.iterator().next());
+            }
+        }
+        return isKnownAlternativeFamily(ids, catalog) ? ids : Set.of();
+    }
+
+    private static Set<Long> mostSpecificSkillIds(Set<Long> ids, SkillCatalog catalog) {
+        if (ids == null || ids.size() <= 1 || catalog == null || catalog.skillIdToName() == null) {
+            return ids == null ? Set.of() : ids;
+        }
+        Set<Long> out = new LinkedHashSet<>(ids);
+        for (Long id : ids) {
+            String name = catalog.skillIdToName().get(id);
+            String normalized = normalizeForEvidence(name);
+            if (normalized.isBlank()) {
+                continue;
+            }
+            boolean coveredByMoreSpecificSkill = ids.stream()
+                    .filter(otherId -> !otherId.equals(id))
+                    .map(catalog.skillIdToName()::get)
+                    .map(GapAnalysisService::normalizeForEvidence)
+                    .anyMatch(other -> other.length() > normalized.length()
+                            && containsNormalizedToken(other, normalized));
+            if (coveredByMoreSpecificSkill) {
+                out.remove(id);
+            }
+        }
+        return out;
+    }
+
+    private static boolean isKnownAlternativeFamily(Set<Long> ids, SkillCatalog catalog) {
+        if (ids == null || ids.size() < 2 || catalog == null || catalog.skillIdToName() == null) {
+            return false;
+        }
+        Set<String> names = ids.stream()
+                .map(catalog.skillIdToName()::get)
+                .filter(name -> name != null && !name.isBlank())
+                .map(GapAnalysisService::normalizeForEvidence)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        Set<String> languages = Set.of("java", "go", "kotlin", "c#", "c++", "python", "ruby", "javascript", "typescript");
+        Set<String> databases = Set.of("postgresql", "oracle", "sql server", "mysql");
+        return languages.containsAll(names) || databases.containsAll(names);
+    }
+
+    private static Set<Long> intersect(Set<Long> left, Set<Long> right) {
+        Set<Long> out = new LinkedHashSet<>();
+        if (left == null || right == null) {
+            return out;
+        }
+        for (Long id : left) {
+            if (right.contains(id)) {
+                out.add(id);
+            }
+        }
+        return out;
+    }
+
     private static Set<Long> subtract(Set<Long> from, Set<Long> remove) {
         Set<Long> out = new LinkedHashSet<>();
         if (from == null) {
@@ -406,13 +583,24 @@ public class GapAnalysisService {
                 job.getTitle(),
                 job.getRequirementsText(),
                 firstLines(job.getDescription(), CRITICAL_LINES_FROM_DESCRIPTION),
-                firstLines(job.getVisibleText(), CRITICAL_LINES_FROM_DESCRIPTION)
+                hasMeaningfulJobBody(job) ? "" : firstLines(job.getVisibleText(), CRITICAL_LINES_FROM_DESCRIPTION)
         );
         String secondary = joinNonBlank(
                 removeFirstLines(job.getDescription(), CRITICAL_LINES_FROM_DESCRIPTION),
-                removeFirstLines(job.getVisibleText(), CRITICAL_LINES_FROM_DESCRIPTION)
+                hasMeaningfulJobBody(job) ? "" : removeFirstLines(job.getVisibleText(), CRITICAL_LINES_FROM_DESCRIPTION)
         );
         return new JobTextBuckets(critical, secondary);
+    }
+
+    private static boolean hasMeaningfulJobBody(Job job) {
+        if (job == null) {
+            return false;
+        }
+        return hasText(job.getRequirementsText()) || hasText(job.getDescription());
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private static String joinNonBlank(String... parts) {
@@ -469,5 +657,73 @@ public class GapAnalysisService {
     }
 
     private record JobTextBuckets(String criticalText, String secondaryText) {
+    }
+
+    private static SkillCatalog augmentCatalog(SkillCatalog catalog) {
+        Map<String, Long> aliasToSkillId = new LinkedHashMap<>();
+        Map<Long, String> skillIdToName = new LinkedHashMap<>();
+        if (catalog != null) {
+            if (catalog.aliasToSkillId() != null) {
+                aliasToSkillId.putAll(catalog.aliasToSkillId());
+            }
+            if (catalog.skillIdToName() != null) {
+                skillIdToName.putAll(catalog.skillIdToName());
+            }
+        }
+
+        long[] nextSyntheticId = {-1L};
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "PostgreSQL", "Postgre SQL", "PostgreSQL", "Postgres");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "Oracle", "Oracle DB", "Oracle Database");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "SQL Server", "Microsoft SQL Server", "MSSQL", "MS SQL");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "PL/SQL", "PL SQL", "PLSQL");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "ITIL", "ITIL processes");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "ITSM", "ITSM Operations");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "Windows Server", "Microsoft Windows Server");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "JBoss", "JBoss EAP", "Red Hat JBoss");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "IAM", "Identity and Access Management", "Identity & Access Management");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "OAuth");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "OIDC");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "SAML");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "PowerShell");
+        addSkill(aliasToSkillId, skillIdToName, nextSyntheticId, "Ruby");
+
+        return new SkillCatalog(aliasToSkillId, skillIdToName);
+    }
+
+    private static void addSkill(
+            Map<String, Long> aliasToSkillId,
+            Map<Long, String> skillIdToName,
+            long[] nextSyntheticId,
+            String skillName,
+            String... aliases
+    ) {
+        Long id = findSkillId(skillIdToName, skillName);
+        if (id == null) {
+            id = nextSyntheticId[0]--;
+            skillIdToName.put(id, skillName);
+        }
+        addAlias(aliasToSkillId, id, skillName);
+        if (aliases != null) {
+            for (String alias : aliases) {
+                addAlias(aliasToSkillId, id, alias);
+            }
+        }
+    }
+
+    private static Long findSkillId(Map<Long, String> skillIdToName, String skillName) {
+        String expected = normalizeForEvidence(skillName);
+        for (Map.Entry<Long, String> entry : skillIdToName.entrySet()) {
+            if (expected.equals(normalizeForEvidence(entry.getValue()))) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private static void addAlias(Map<String, Long> aliasToSkillId, Long id, String alias) {
+        String normalized = SkillExtractionService.normalizeText(alias);
+        if (id != null && !normalized.isBlank()) {
+            aliasToSkillId.putIfAbsent(normalized, id);
+        }
     }
 }

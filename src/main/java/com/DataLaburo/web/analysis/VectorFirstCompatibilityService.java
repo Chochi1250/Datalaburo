@@ -176,13 +176,16 @@ public class VectorFirstCompatibilityService {
                 transferSourceSignals(profileSkills, profileEnriched),
                 transferTargetSignals(gapAnalysis, jobEnriched)
         );
+        String role = detectedRole(job, jobText, jobEnriched);
+        String seniority = detectedSeniority(job, jobText, jobEnriched);
         CompatibilityExplanation explanation = explanationService.explain(
                 profileText,
                 vectorResult.similarity(),
                 gapAnalysis,
                 transferableSkills,
                 profileEnriched,
-                jobEnriched
+                jobEnriched,
+                new CompatibilitySignalContext(role, seniority, profileSeniority(profileEnriched, profileText))
         );
 
         return new VectorFirstCompatibilityResult(
@@ -192,8 +195,8 @@ public class VectorFirstCompatibilityService {
                 vectorRank,
                 vectorResult.similarity(),
                 vectorRank,
-                detectedRole(job, jobEnriched),
-                detectedSeniority(job, jobEnriched),
+                role,
+                seniority,
                 explanation.compatibilityCategory(),
                 explanation.evidenceLevel(),
                 gapAnalysis.matchedSkills(),
@@ -312,8 +315,29 @@ public class VectorFirstCompatibilityService {
                 .toList();
     }
 
-    private static String detectedRole(Job job, RuleBasedEnrichmentService.EnrichedDocument jobEnriched) {
+    static String detectedRole(Job job, String jobText, RuleBasedEnrichmentService.EnrichedDocument jobEnriched) {
         String title = SkillExtractionService.normalizeText(job == null ? null : job.getTitle());
+        String text = SkillExtractionService.normalizeText(jobText);
+        String combined = joinNonBlank(title, text);
+
+        if (containsAny(combined, "identity and access management", "identity access management", "iam engineer", " iam ", "access management", "sailpoint", "okta", "cyberark", "oauth", "oidc", "saml")) {
+            return "IAM";
+        }
+        if (containsAny(combined, "security operations", "security ops", "soc analyst", "incident response", "information security", "data protection")) {
+            return "SECURITY_OPS";
+        }
+        if (containsAny(combined, "application support", "soporte a aplicaciones", "soporte de aplicaciones", "soporte de apps", "app support", "mesa de ayuda apps")) {
+            return "APP_SUPPORT";
+        }
+        if (containsAny(combined, ".net", "dotnet", "asp.net", "c#")) {
+            if (containsAny(combined, "fullstack", "full stack", "javascript", "react", "angular", "frontend", "front end")) {
+                return "DOTNET_FULLSTACK";
+            }
+            return "DOTNET_BACKEND";
+        }
+        if (isDatabaseRole(title, combined)) {
+            return "DATABASE";
+        }
         if (containsAny(title, "full stack", "fullstack")) {
             return "FULL_STACK";
         }
@@ -326,7 +350,7 @@ public class VectorFirstCompatibilityService {
         if (containsAny(title, "devops", "sre")) {
             return "DEVOPS";
         }
-        if (containsAny(title, "cloud")) {
+        if (containsAny(title, "cloud") || (containsAny(combined, "cloud") && !isDatabaseRole(title, combined))) {
             return "CLOUD";
         }
         if (containsAny(title, "data analyst", "data engineer", "analytics")) {
@@ -377,9 +401,11 @@ public class VectorFirstCompatibilityService {
         return "UNKNOWN";
     }
 
-    private static String detectedSeniority(Job job, RuleBasedEnrichmentService.EnrichedDocument jobEnriched) {
+    static String detectedSeniority(Job job, String jobText, RuleBasedEnrichmentService.EnrichedDocument jobEnriched) {
         String title = SkillExtractionService.normalizeText(job == null ? null : job.getTitle());
-        if (containsAny(title, "trainee", "intern", "internship", "pasante", "pasantia", "entry level", "entry-level")) {
+        String text = SkillExtractionService.normalizeText(jobText);
+        String combined = joinNonBlank(title, firstWords(text, 180));
+        if (containsAny(combined, "trainee", "intern", "internship", "pasante", "pasantia", "entry level", "entry-level")) {
             return "TRAINEE";
         }
         if (containsAny(title, "junior", "jr")) {
@@ -388,16 +414,83 @@ public class VectorFirstCompatibilityService {
         if (containsAny(title, "semi senior", "semisenior", "ssr", "mid")) {
             return "MID";
         }
+        if (containsAny(title, "tech lead", "team lead", "principal", "staff")) {
+            return "LEAD";
+        }
         if (containsAny(title, "senior", "sr")) {
             return "SENIOR";
         }
-        if (containsAny(title, "tech lead", "team lead", "principal", "staff")) {
+        if (containsAny(combined, "tech lead", "team lead", "principal", "staff")) {
             return "LEAD";
+        }
+        if (containsExperienceYears(combined, 5) || containsAny(combined, "senior", "sr")) {
+            return "SENIOR";
+        }
+        if (containsExperienceYears(combined, 3)) {
+            return "MID";
+        }
+        if (containsAny(combined, "semi senior", "semisenior", "ssr", "mid")) {
+            return "MID";
+        }
+        if (containsAny(combined, "junior", "jr")) {
+            return "JUNIOR";
         }
         if (jobEnriched != null && jobEnriched.seniority() != null) {
             return jobEnriched.seniority().name();
         }
         return "UNKNOWN";
+    }
+
+    private static String profileSeniority(RuleBasedEnrichmentService.EnrichedDocument profileEnriched, String profileText) {
+        if (profileEnriched != null && profileEnriched.seniority() != null) {
+            return profileEnriched.seniority().name();
+        }
+        String text = SkillExtractionService.normalizeText(profileText);
+        if (containsAny(text, "trainee", "junior", "jr", "entry level")) {
+            return containsAny(text, "trainee") ? "TRAINEE" : "JUNIOR";
+        }
+        return "UNKNOWN";
+    }
+
+    private static boolean isDatabaseRole(String title, String combined) {
+        if (containsAny(title, "database", "base de datos", "db developer", "dba", "data base")) {
+            return true;
+        }
+        return containsAny(combined, "postgresql", "postgre sql", "oracle", "sql server", "pl/sql", "pl sql", "database developer", "desarrollador de base de datos")
+                && !containsAny(combined, "application support", "soporte a aplicaciones", "iam");
+    }
+
+    private static boolean containsExperienceYears(String normalizedText, int minimumYears) {
+        if (normalizedText == null || normalizedText.isBlank()) {
+            return false;
+        }
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("(?<!\\d)(\\d{1,2})\\s*(\\+)?\\s*(anos|anios|years|year)\\b")
+                .matcher(normalizedText);
+        while (matcher.find()) {
+            try {
+                if (Integer.parseInt(matcher.group(1)) >= minimumYears) {
+                    return true;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return false;
+    }
+
+    private static String firstWords(String value, int maxWords) {
+        if (value == null || value.isBlank() || maxWords <= 0) {
+            return "";
+        }
+        String[] parts = value.split("\\s+");
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < parts.length && i < maxWords; i++) {
+            if (!out.isEmpty()) {
+                out.append(' ');
+            }
+            out.append(parts[i]);
+        }
+        return out.toString();
     }
 
     private static boolean containsAny(String normalizedText, String... phrases) {
@@ -416,5 +509,22 @@ public class VectorFirstCompatibilityService {
 
     private static String coalesce(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private static String joinNonBlank(String... values) {
+        StringBuilder out = new StringBuilder();
+        if (values == null) {
+            return "";
+        }
+        for (String value : values) {
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            if (!out.isEmpty()) {
+                out.append(' ');
+            }
+            out.append(value);
+        }
+        return out.toString();
     }
 }

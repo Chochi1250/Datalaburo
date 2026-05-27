@@ -13,6 +13,8 @@ import java.util.Set;
 
 @Service
 public class CompatibilityExplanationService {
+    private static final Set<String> GENERIC_EVIDENCE_SKILLS = Set.of("git", "rest", "sql");
+
     public CompatibilityExplanation explain(
             String profileText,
             double vectorSimilarity,
@@ -21,14 +23,35 @@ public class CompatibilityExplanationService {
             RuleBasedEnrichmentService.EnrichedDocument profileEnriched,
             RuleBasedEnrichmentService.EnrichedDocument jobEnriched
     ) {
+        return explain(
+                profileText,
+                vectorSimilarity,
+                gapAnalysis,
+                transferableSkills,
+                profileEnriched,
+                jobEnriched,
+                CompatibilitySignalContext.empty()
+        );
+    }
+
+    public CompatibilityExplanation explain(
+            String profileText,
+            double vectorSimilarity,
+            GapAnalysis gapAnalysis,
+            List<TransferableSkill> transferableSkills,
+            RuleBasedEnrichmentService.EnrichedDocument profileEnriched,
+            RuleBasedEnrichmentService.EnrichedDocument jobEnriched,
+            CompatibilitySignalContext context
+    ) {
         EvidenceLevel evidenceLevel = detectEvidenceLevel(profileText, gapAnalysis, transferableSkills);
-        boolean roleAligned = roleAligned(profileEnriched, jobEnriched);
+        boolean roleAligned = roleAligned(profileEnriched, jobEnriched) || roleAligned(context);
         CompatibilityCategory category = assignCategory(
                 gapAnalysis,
                 transferableSkills,
                 evidenceLevel,
                 vectorSimilarity,
-                roleAligned
+                roleAligned,
+                context
         );
         return new CompatibilityExplanation(
                 category,
@@ -46,36 +69,67 @@ public class CompatibilityExplanationService {
             double vectorSimilarity,
             boolean roleAligned
     ) {
+        return assignCategory(
+                gapAnalysis,
+                transferableSkills,
+                evidenceLevel,
+                vectorSimilarity,
+                roleAligned,
+                CompatibilitySignalContext.empty()
+        );
+    }
+
+    public CompatibilityCategory assignCategory(
+            GapAnalysis gapAnalysis,
+            List<TransferableSkill> transferableSkills,
+            EvidenceLevel evidenceLevel,
+            double vectorSimilarity,
+            boolean roleAligned,
+            CompatibilitySignalContext context
+    ) {
         int matched = gapAnalysis == null ? 0 : gapAnalysis.directMatchCount();
         int criticalGaps = gapAnalysis == null ? 0 : gapAnalysis.criticalGapCount();
         int secondaryGaps = gapAnalysis == null ? 0 : gapAnalysis.secondaryGapCount();
         boolean hasTransfer = transferableSkills != null && !transferableSkills.isEmpty();
+        boolean genericOnly = matched > 0 && hasOnlyGenericMatchedSkills(gapAnalysis);
+        int seniorityDelta = seniorityDelta(context);
         boolean strongEvidence = evidenceLevel == EvidenceLevel.WORK_EXPERIENCE
                 || evidenceLevel == EvidenceLevel.PROJECT
                 || evidenceLevel == EvidenceLevel.CERTIFICATION;
 
+        if (matched == 0 && !hasTransfer && !roleAligned) {
+            return criticalGaps > 0 || secondaryGaps > 0
+                    ? CompatibilityCategory.LEARNING_ROADMAP_ONLY
+                    : CompatibilityCategory.LOW_FIT;
+        }
+        if (genericOnly && !roleAligned) {
+            if (seniorityDelta >= 2 || criticalGaps > 0) {
+                return CompatibilityCategory.LOW_FIT;
+            }
+            return CompatibilityCategory.ASPIRATIONAL_MATCH;
+        }
+
+        CompatibilityCategory category;
         if (matched >= 3 && criticalGaps == 0 && strongEvidence) {
-            return CompatibilityCategory.STRONG_MATCH;
-        }
-        if (matched > 0 && criticalGaps == 0) {
-            return CompatibilityCategory.GOOD_MATCH_WITH_MINOR_GAPS;
-        }
-        if (hasTransfer && (roleAligned || matched > 0 || vectorSimilarity >= 0.50d)) {
-            return CompatibilityCategory.TRANSFERABLE_OPPORTUNITY;
-        }
-        if (matched > 0
+            category = CompatibilityCategory.STRONG_MATCH;
+        } else if (matched > 0 && criticalGaps == 0) {
+            category = CompatibilityCategory.GOOD_MATCH_WITH_MINOR_GAPS;
+        } else if (hasTransfer && (roleAligned || matched > 0 || vectorSimilarity >= 0.50d)) {
+            category = CompatibilityCategory.TRANSFERABLE_OPPORTUNITY;
+        } else if (matched > 0
                 && evidenceLevel == EvidenceLevel.MENTIONED_ONLY
                 && criticalGaps > 0
                 && !hasTransfer) {
-            return CompatibilityCategory.KEYWORD_MATCH_RISK;
+            category = CompatibilityCategory.KEYWORD_MATCH_RISK;
+        } else if (matched > 0 || roleAligned || vectorSimilarity >= 0.55d) {
+            category = CompatibilityCategory.ASPIRATIONAL_MATCH;
+        } else if (criticalGaps > 0 || secondaryGaps > 0) {
+            category = CompatibilityCategory.LEARNING_ROADMAP_ONLY;
+        } else {
+            category = CompatibilityCategory.LOW_FIT;
         }
-        if (matched > 0 || roleAligned || vectorSimilarity >= 0.55d) {
-            return CompatibilityCategory.ASPIRATIONAL_MATCH;
-        }
-        if (criticalGaps > 0 || secondaryGaps > 0) {
-            return CompatibilityCategory.LEARNING_ROADMAP_ONLY;
-        }
-        return CompatibilityCategory.LOW_FIT;
+
+        return applySeniorityDowngrade(category, seniorityDelta, matched, criticalGaps, genericOnly);
     }
 
     public EvidenceLevel detectEvidenceLevel(
@@ -126,6 +180,17 @@ public class CompatibilityExplanationService {
             }
         }
         return false;
+    }
+
+    private static boolean roleAligned(CompatibilitySignalContext context) {
+        String role = normalize(context == null ? null : context.detectedRole());
+        if (role.isBlank()) {
+            return false;
+        }
+        return switch (role) {
+            case "backend", "full_stack", "dotnet_backend", "dotnet_fullstack", "database" -> true;
+            default -> false;
+        };
     }
 
     private static List<String> roadmapSuggestions(
@@ -247,6 +312,67 @@ public class CompatibilityExplanationService {
             return CompatibilityConfidence.MEDIUM;
         }
         return CompatibilityConfidence.LOW;
+    }
+
+    private static CompatibilityCategory applySeniorityDowngrade(
+            CompatibilityCategory category,
+            int seniorityDelta,
+            int matched,
+            int criticalGaps,
+            boolean genericOnly
+    ) {
+        if (seniorityDelta < 2) {
+            return category;
+        }
+        if (seniorityDelta >= 3 && (genericOnly || matched == 0)) {
+            return CompatibilityCategory.LOW_FIT;
+        }
+        if (criticalGaps > 0 && matched <= 1) {
+            return CompatibilityCategory.LEARNING_ROADMAP_ONLY;
+        }
+        return switch (category) {
+            case STRONG_MATCH, GOOD_MATCH_WITH_MINOR_GAPS, TRANSFERABLE_OPPORTUNITY -> CompatibilityCategory.ASPIRATIONAL_MATCH;
+            default -> category;
+        };
+    }
+
+    private static boolean hasOnlyGenericMatchedSkills(GapAnalysis gapAnalysis) {
+        if (gapAnalysis == null || gapAnalysis.matchedSkills() == null || gapAnalysis.matchedSkills().isEmpty()) {
+            return false;
+        }
+        for (String skill : gapAnalysis.matchedSkills()) {
+            if (!GENERIC_EVIDENCE_SKILLS.contains(normalize(skill))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static int seniorityDelta(CompatibilitySignalContext context) {
+        if (context == null) {
+            return 0;
+        }
+        int jobRank = seniorityRank(context.detectedSeniority());
+        int profileRank = seniorityRank(context.profileSeniority());
+        if (jobRank <= 0 || profileRank <= 0) {
+            return 0;
+        }
+        return jobRank - profileRank;
+    }
+
+    private static int seniorityRank(String seniority) {
+        return switch (normalize(seniority)) {
+            case "trainee" -> 1;
+            case "junior" -> 2;
+            case "mid", "semi_senior", "semisenior", "ssr" -> 3;
+            case "senior", "sr" -> 4;
+            case "lead" -> 5;
+            default -> 0;
+        };
+    }
+
+    private static String normalize(String value) {
+        return SkillExtractionService.normalizeText(value).replace(' ', '_');
     }
 
     private static boolean containsAny(String normalizedText, String... phrases) {
