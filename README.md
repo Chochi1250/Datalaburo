@@ -1,26 +1,41 @@
 # Datalaburo
 
-Datalaburo es mi proyecto de tesis para analizar la compatibilidad entre CVs y ofertas laborales. La aplicacion permite capturar ofertas desde LinkedIn mediante una extension de navegador, almacenarlas en PostgreSQL, visualizar los trabajos cargados y calcular un ranking de compatibilidad a partir de un CV pegado en la pantalla de matching.
+Datalaburo es mi proyecto de tesis para analizar la compatibilidad entre CVs y ofertas laborales tecnologicas. La aplicacion permite capturar ofertas desde LinkedIn mediante una extension de navegador, almacenarlas en PostgreSQL, visualizar los trabajos cargados y analizar compatibilidad entre perfiles profesionales y ofertas.
 
-## Estado actual del MVP
+La direccion estrategica del proyecto es vector-first: PostgreSQL + pgvector y `BAAI/bge-m3` son el corazon del sistema. El objetivo no es replicar un ATS por keywords, sino construir un sistema de asesoramiento profesional basado en similitud semantica, evidencia del perfil, brechas realistas y transferibilidad de habilidades.
+
+## Estado actual del proyecto
 
 - Backend Java con Spring Boot.
 - Vistas server-side con Thymeleaf.
-- Persistencia con Spring Data JPA. PostgreSQL + pgvector es la base objetivo.
-- JOBS es la fuente de verdad de ofertas.
-- Matching basado en reglas, catalogo de skills y aliases.
-- Extension de navegador para capturar ofertas desde LinkedIn.
-- PostgreSQL local con Flyway, pgvector, metadata de embeddings, worker fake deterministico y busqueda vectorial interna. Sin embeddings semanticos reales ni IA generativa en esta etapa.
+- Persistencia con Spring Data JPA.
+- PostgreSQL + pgvector como base objetivo.
+- Flyway gestiona el esquema PostgreSQL.
+- `jobs` es la fuente de verdad de ofertas capturadas.
+- `candidate_profiles` guarda perfiles/CVs.
+- `document_embeddings` guarda embeddings de perfiles y ofertas con `embedding vector(1024)`.
+- El modelo real elegido e integrado es `BAAI/bge-m3`.
+- Existe un servicio local Python/FastAPI en `embedding-service`.
+- Spring Boot llama al servicio local para generar embeddings reales.
+- Ya existen embeddings reales `BAAI/bge-m3` en estado `READY` para ofertas y perfiles.
+- Existe busqueda vectorial interna con pgvector usando `embeddingModel=BAAI/bge-m3`.
+- `fake-deterministic-1024` existe solo como infraestructura/test y no debe interpretarse como compatibilidad profesional real.
+- El matching por reglas sigue existiendo, pero debe entenderse como baseline historico/demo y fuente auxiliar de senales, no como arquitectura final.
 
-## Funcionalidades principales
+## Enfoque vector-first
 
-- Captura de ofertas laborales desde LinkedIn.
-- Ingesta y guardado de ofertas en PostgreSQL.
-- Visualizacion de trabajos cargados.
-- Pantalla `/matching` para pegar un CV.
-- Ranking de compatibilidad entre CV y ofertas.
-- Explicacion del match, afinidades y gaps.
-- Catalogo de skills y aliases para normalizar coincidencias.
+La busqueda vectorial debe recuperar ofertas semanticamente cercanas al perfil/CV usando `BAAI/bge-m3` y pgvector. Encima de esa recuperacion se agregaran senales estructuradas para explicar mejor los resultados:
+
+- rol detectado;
+- seniority estimado;
+- skills coincidentes;
+- skills faltantes;
+- evidencia del perfil;
+- brechas criticas y secundarias;
+- transferibilidad de habilidades;
+- explicacion entendible para el usuario.
+
+La primera etapa recomendada es `VECTOR_FIRST_WITH_EXPLANATION`: mantener el ranking vectorial como orden principal y enriquecer cada resultado con analisis, gaps, evidencia y recomendaciones. Una etapa posterior puede evolucionar hacia `VECTOR_FIRST_WITH_RERANKING`, con reranking trazable por senales estructuradas.
 
 ## Stack
 
@@ -29,13 +44,17 @@ Datalaburo es mi proyecto de tesis para analizar la compatibilidad entre CVs y o
 - Spring Data JPA
 - Thymeleaf
 - PostgreSQL
-- Flyway
 - pgvector
+- Flyway
 - Maven Wrapper
+- Python/FastAPI para el servicio local de embeddings
+- `BAAI/bge-m3` como modelo real de embeddings
 
 ## Requisitos
 
 - JDK compatible con la version configurada en `pom.xml`.
+- Docker para PostgreSQL local con pgvector.
+- Python 3.11 o superior recomendado para `embedding-service`.
 - Navegador Chromium/Chrome para cargar la extension local si se desea capturar ofertas.
 
 ## Ejecucion local
@@ -64,16 +83,32 @@ La aplicacion queda disponible en:
 http://localhost:8081
 ```
 
-## H2 legacy
+## Servicio local de embeddings
 
-H2 fue usado en una etapa inicial del MVP y puede existir en archivos locales o tests historicos, pero ya no es fallback vigente ni base local objetivo. El flujo documentado y defendible del proyecto es PostgreSQL + pgvector.
+El servicio local esta en `embedding-service/` y expone embeddings densos de dimension `1024` para `BAAI/bge-m3`.
 
-La carpeta `data/` puede contener restos de ejecuciones H2 locales y no debe versionarse:
+Instalacion inicial:
 
-- `data/datalaburo.mv.db`
-- `data/datalaburo.trace.db`
+```powershell
+cd .\embedding-service
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-Para arrancar con datos limpios, detener la aplicacion y borrar la carpeta `data/` localmente.
+Levantar el servicio:
+
+```powershell
+uvicorn app:app --host 127.0.0.1 --port 8001
+```
+
+Verificar estado:
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:8001/health"
+Invoke-RestMethod "http://127.0.0.1:8001/model-info"
+```
 
 ## PostgreSQL local
 
@@ -111,11 +146,35 @@ docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select tabl
 
 ## Pipeline vectorial
 
-El pipeline vectorial ya prepara metadata, procesa vectores fake deterministicos `fake-deterministic-1024` para validar infraestructura y expone una busqueda vectorial interna con pgvector. Esa busqueda devuelve `semanticMeaning=false`: no representa compatibilidad profesional real.
+El pipeline vectorial real funciona sobre PostgreSQL + pgvector:
 
-`BAAI/bge-m3` sigue siendo el modelo real futuro de dimension 1024, pero todavia no esta integrado. El detalle tecnico esta en:
+```text
+perfil/oferta -> texto normalizado -> embedding-service -> BAAI/bge-m3 -> vector 1024 -> document_embeddings -> pgvector search
+```
+
+Endpoints internos principales:
+
+```text
+POST /internal/embeddings/backfill/jobs?limit=100
+POST /internal/embeddings/backfill/profiles?limit=100
+POST /internal/embeddings/process/bge-m3/pending?limit=1
+GET  /internal/embeddings/status
+GET  /internal/embeddings/vector-search/profiles/{profileId}/jobs?limit=20&embeddingModel=BAAI/bge-m3
+```
+
+Detalle tecnico:
 
 - [docs/embeddings-pipeline.md](docs/embeddings-pipeline.md)
+
+Arquitectura objetivo vector-first:
+
+- [docs/vector-first-compatibility-strategy.md](docs/vector-first-compatibility-strategy.md)
+
+## H2 legacy
+
+H2 fue usado en una etapa inicial del MVP y hoy debe considerarse legacy/obsoleto. No es fallback vigente, no es base local objetivo y no debe guiar la arquitectura del motor de compatibilidad.
+
+Pueden existir archivos o configuraciones historicas relacionadas con H2 para compatibilidad local o tests antiguos, pero la direccion defendible del proyecto es PostgreSQL + pgvector.
 
 ## Extension de navegador
 
@@ -130,16 +189,24 @@ La extension se encuentra en `browser-extension/`. Para probarla en Chrome/Chrom
 
 - `/`: inicio.
 - `/jobs`: trabajos cargados.
-- `/matching`: matching entre CV y ofertas.
+- `/matching`: matching historico por reglas entre CV y ofertas.
+- `/profiles`: perfiles guardados.
 
 ## Alcance pendiente
 
-Fuera del alcance de este MVP actual:
+- Implementar endpoint interno vector-first con explicacion.
+- Extraer senales estructuradas mas ricas que las reglas actuales.
+- Diferenciar evidencia laboral, proyectos, formacion, certificaciones y menciones.
+- Agregar analisis de transferibilidad de skills.
+- Agregar gap analysis con brechas criticas y secundarias.
+- Evaluar manualmente resultados sobre el dataset actual.
+- Evolucionar hacia reranking vector-first trazable.
 
-- Finalizar sistema de creacion de perfiles
-- Ingresar informacion por documentos ( CVs en .docx o .pdf )
-- Integrar embeddings semanticos reales con `BAAI/bge-m3`.
-- Comparar resultados vectoriales reales contra el baseline por reglas.
-- Disenar feedback semantico util para el usuario.
-- Evaluar matching hibrido recien despues de validar embeddings reales.
-- Integracion con IA generativa.
+Fuera del alcance inmediato:
+
+- Tocar scraping.
+- Tocar extension.
+- Tocar captura.
+- Reintroducir H2 como fallback.
+- Mezclar `fake-deterministic-1024` con `BAAI/bge-m3`.
+- Reemplazar la arquitectura por un score hibrido ponderado sin evaluacion.
