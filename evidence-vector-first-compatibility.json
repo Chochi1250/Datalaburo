@@ -1,0 +1,689 @@
+﻿{
+    "profileId":  1,
+    "embeddingModel":  "BAAI/bge-m3",
+    "embeddingDimensions":  1024,
+    "retrieval":  {
+                      "limit":  20,
+                      "strategy":  "VECTOR_FIRST_WITH_EXPLANATION"
+                  },
+    "results":  [
+                    {
+                        "jobId":  14,
+                        "title":  "Software Engineer Backend - Platform Security",
+                        "company":  "Mercado Libre",
+                        "vectorRank":  1,
+                        "vectorSimilarity":  0.6806353330612183,
+                        "analysisRank":  1,
+                        "detectedRole":  "BACKEND",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "TRANSFERABLE_OPPORTUNITY",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "Java"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch",
+                                                      "Go"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+                                                   {
+                                                       "from":  "Backend",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   },
+                                                   {
+                                                       "from":  "Backend Development",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   },
+                                                   {
+                                                       "from":  "Backend Developer",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   }
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch",
+                                                   "Cubrir base practica de Go",
+                                                   "Convertir Backend en practica concreta de Cloud",
+                                                   "Convertir Backend Development en practica concreta de Cloud",
+                                                   "Convertir Backend Developer en practica concreta de Cloud"
+                                               ],
+                        "explanation":  "La oferta esta cerca semanticamente y hay una ruta defendible de transferencia desde habilidades existentes. (matches directos: 1, brechas criticas: 2, transferibilidad detectada).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  13,
+                        "title":  "Desarrollador de base de datos",
+                        "company":  "Softtek",
+                        "vectorRank":  2,
+                        "vectorSimilarity":  0.6552472114562988,
+                        "analysisRank":  2,
+                        "detectedRole":  "CLOUD",
+                        "detectedSeniority":  "SENIOR",
+                        "compatibilityCategory":  "TRANSFERABLE_OPPORTUNITY",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "SQL"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+                                                       "Azure"
+                                                   ],
+                        "transferableSkills":  [
+                                                   {
+                                                       "from":  "Backend",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   },
+                                                   {
+                                                       "from":  "Backend Development",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   },
+                                                   {
+                                                       "from":  "Backend Developer",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   }
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch",
+                                                   "Profundizar Azure basico",
+                                                   "Convertir Backend en practica concreta de Cloud",
+                                                   "Convertir Backend Development en practica concreta de Cloud",
+                                                   "Convertir Backend Developer en practica concreta de Cloud"
+                                               ],
+                        "explanation":  "La oferta esta cerca semanticamente y hay una ruta defendible de transferencia desde habilidades existentes. (matches directos: 1, brechas criticas: 1, brechas secundarias: 1, transferibilidad detectada).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  1,
+                        "title":  "Talentos IT",
+                        "company":  "La Segunda Seguros CLSG",
+                        "vectorRank":  3,
+                        "vectorSimilarity":  0.6260802932405563,
+                        "analysisRank":  3,
+                        "detectedRole":  "FRONTEND",
+                        "detectedSeniority":  "MID",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "Java"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Angular",
+                                                      "Elasticsearch",
+                                                      "Node.js"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Angular",
+                                                   "Cubrir base practica de Elasticsearch",
+                                                   "Cubrir base practica de Node.js"
+                                               ],
+                        "explanation":  "La oferta tiene afinidad de rol, pero requiere validar brechas antes de tomarla como match fuerte. (matches directos: 1, brechas criticas: 3).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  4,
+                        "title":  "Soporte a aplicaciones",
+                        "company":  "PwC",
+                        "vectorRank":  4,
+                        "vectorSimilarity":  0.6010366857360808,
+                        "analysisRank":  4,
+                        "detectedRole":  "IT_SUPPORT",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "SQL"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta tiene afinidad de rol, pero requiere validar brechas antes de tomarla como match fuerte. (matches directos: 1, brechas criticas: 1).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  8,
+                        "title":  "Technical Support Jr.",
+                        "company":  "Acciona IT",
+                        "vectorRank":  5,
+                        "vectorSimilarity":  0.5895862579345703,
+                        "analysisRank":  5,
+                        "detectedRole":  "IT_SUPPORT",
+                        "detectedSeniority":  "JUNIOR",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta aparece cerca por significado general, aunque todavia faltan senales directas suficientes. (brechas criticas: 1).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  7,
+                        "title":  "Analista de Soporte",
+                        "company":  "Confidential",
+                        "vectorRank":  6,
+                        "vectorSimilarity":  0.5763663649559021,
+                        "analysisRank":  6,
+                        "detectedRole":  "IT_SUPPORT",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Linux"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Linux"
+                                               ],
+                        "explanation":  "La oferta tiene afinidad de rol, pero requiere validar brechas antes de tomarla como match fuerte. (brechas criticas: 1).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  10,
+                        "title":  "Application Support",
+                        "company":  "Avenga",
+                        "vectorRank":  7,
+                        "vectorSimilarity":  0.5759147748896356,
+                        "analysisRank":  7,
+                        "detectedRole":  "IT_SUPPORT",
+                        "detectedSeniority":  "SENIOR",
+                        "compatibilityCategory":  "TRANSFERABLE_OPPORTUNITY",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "SQL"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch",
+                                                      "Kubernetes"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+                                                   {
+                                                       "from":  "Docker",
+                                                       "to":  "Kubernetes",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "base de contenedores transferible"
+                                                   },
+                                                   {
+                                                       "from":  "Backend",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   },
+                                                   {
+                                                       "from":  "Backend Development",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   },
+                                                   {
+                                                       "from":  "Backend Developer",
+                                                       "to":  "Cloud",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "experiencia backend ayuda a operar servicios en cloud"
+                                                   }
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch",
+                                                   "Cubrir base practica de Kubernetes",
+                                                   "Convertir Docker en practica concreta de Kubernetes",
+                                                   "Convertir Backend en practica concreta de Cloud",
+                                                   "Convertir Backend Development en practica concreta de Cloud"
+                                               ],
+                        "explanation":  "La oferta esta cerca semanticamente y hay una ruta defendible de transferencia desde habilidades existentes. (matches directos: 1, brechas criticas: 2, transferibilidad detectada).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  15,
+                        "title":  "Analista Programador",
+                        "company":  "IntÄgrity Seguros",
+                        "vectorRank":  8,
+                        "vectorSimilarity":  0.5583557486534119,
+                        "analysisRank":  8,
+                        "detectedRole":  "UNKNOWN",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "TRANSFERABLE_OPPORTUNITY",
+                        "evidenceLevel":  "TRANSFERABLE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      ".NET",
+                                                      "C#",
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+                                                       "React"
+                                                   ],
+                        "transferableSkills":  [
+                                                   {
+                                                       "from":  "Java",
+                                                       "to":  "C#",
+                                                       "strength":  "PARTIAL",
+                                                       "reason":  "base orientada a objetos transferible"
+                                                   }
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de .NET",
+                                                   "Cubrir base practica de C#",
+                                                   "Cubrir base practica de Elasticsearch",
+                                                   "Profundizar React basico",
+                                                   "Convertir Java en practica concreta de C#"
+                                               ],
+                        "explanation":  "La oferta esta cerca semanticamente y hay una ruta defendible de transferencia desde habilidades existentes. (brechas criticas: 3, brechas secundarias: 1, transferibilidad detectada).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  3,
+                        "title":  "IAM Engineer",
+                        "company":  "Randstad Argentina",
+                        "vectorRank":  9,
+                        "vectorSimilarity":  0.5538168815483532,
+                        "analysisRank":  9,
+                        "detectedRole":  "CONSULTING",
+                        "detectedSeniority":  "SENIOR",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "Git",
+                                              "REST",
+                                              "SQL"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta aparece cerca por significado general, aunque todavia faltan senales directas suficientes. (matches directos: 3, brechas criticas: 1).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  12,
+                        "title":  "Soporte de APPs Mesa de ayuda APPS SSR Pilar",
+                        "company":  "YEL Solutions",
+                        "vectorRank":  10,
+                        "vectorSimilarity":  0.5490656822362958,
+                        "analysisRank":  10,
+                        "detectedRole":  "IT_SUPPORT",
+                        "detectedSeniority":  "MID",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "SQL"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta tiene afinidad de rol, pero requiere validar brechas antes de tomarla como match fuerte. (matches directos: 1, brechas criticas: 1).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  20,
+                        "title":  "Application Security IT Risk Reviewer",
+                        "company":  "PwC",
+                        "vectorRank":  11,
+                        "vectorSimilarity":  0.5487624675773113,
+                        "analysisRank":  11,
+                        "detectedRole":  "DATA",
+                        "detectedSeniority":  "LEAD",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta tiene afinidad de rol, pero requiere validar brechas antes de tomarla como match fuerte. (brechas criticas: 1).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  18,
+                        "title":  "Desarrollador de Android",
+                        "company":  "Tata Consultancy Services",
+                        "vectorRank":  12,
+                        "vectorSimilarity":  0.5403896248108382,
+                        "analysisRank":  12,
+                        "detectedRole":  "UNKNOWN",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "REST"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch",
+                                                      "Kotlin"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch",
+                                                   "Cubrir base practica de Kotlin"
+                                               ],
+                        "explanation":  "La oferta aparece cerca por significado general, aunque todavia faltan senales directas suficientes. (matches directos: 1, brechas criticas: 2).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  6,
+                        "title":  "Analista Soporte TÃ©cnico (Turno Noche)",
+                        "company":  "Empresa Confidencial",
+                        "vectorRank":  13,
+                        "vectorSimilarity":  0.538239089355524,
+                        "analysisRank":  13,
+                        "detectedRole":  "IT_SUPPORT",
+                        "detectedSeniority":  "MID",
+                        "compatibilityCategory":  "LEARNING_ROADMAP_ONLY",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta sirve mejor como mapa de aprendizaje: faltan habilidades clave para tratarla como oportunidad inmediata. (brechas criticas: 1).",
+                        "confidence":  "LOW"
+                    },
+                    {
+                        "jobId":  9,
+                        "title":  "Technical Specialist",
+                        "company":  "BM Global Services Buenos Aires",
+                        "vectorRank":  14,
+                        "vectorSimilarity":  0.5302774906158447,
+                        "analysisRank":  14,
+                        "detectedRole":  "UNKNOWN",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "LEARNING_ROADMAP_ONLY",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta sirve mejor como mapa de aprendizaje: faltan habilidades clave para tratarla como oportunidad inmediata. (brechas criticas: 1).",
+                        "confidence":  "LOW"
+                    },
+                    {
+                        "jobId":  11,
+                        "title":  "Android Engineer",
+                        "company":  "MODO",
+                        "vectorRank":  15,
+                        "vectorSimilarity":  0.5294405221939087,
+                        "analysisRank":  15,
+                        "detectedRole":  "QA",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "CI/CD",
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de CI/CD",
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta tiene afinidad de rol, pero requiere validar brechas antes de tomarla como match fuerte. (brechas criticas: 2).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  5,
+                        "title":  "Junior Support \u0026 Training â Customer Success",
+                        "company":  "Loyal Guru",
+                        "vectorRank":  16,
+                        "vectorSimilarity":  0.5254622384630309,
+                        "analysisRank":  16,
+                        "detectedRole":  "IT_SUPPORT",
+                        "detectedSeniority":  "JUNIOR",
+                        "compatibilityCategory":  "LEARNING_ROADMAP_ONLY",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta sirve mejor como mapa de aprendizaje: faltan habilidades clave para tratarla como oportunidad inmediata. (brechas criticas: 1).",
+                        "confidence":  "LOW"
+                    },
+                    {
+                        "jobId":  17,
+                        "title":  "Technology OpS Support Practitioner",
+                        "company":  "Accenture Argentina",
+                        "vectorRank":  17,
+                        "vectorSimilarity":  0.5188734222129937,
+                        "analysisRank":  17,
+                        "detectedRole":  "IT_SUPPORT",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "LEARNING_ROADMAP_ONLY",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta sirve mejor como mapa de aprendizaje: faltan habilidades clave para tratarla como oportunidad inmediata. (brechas criticas: 1).",
+                        "confidence":  "LOW"
+                    },
+                    {
+                        "jobId":  21,
+                        "title":  "AI Chatbot Tester",
+                        "company":  "Alignerr",
+                        "vectorRank":  18,
+                        "vectorSimilarity":  0.5170257687568665,
+                        "analysisRank":  18,
+                        "detectedRole":  "UNKNOWN",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "LEARNING_ROADMAP_ONLY",
+                        "evidenceLevel":  "NO_EVIDENCE",
+                        "matchedSkills":  [
+
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Elasticsearch"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Elasticsearch"
+                                               ],
+                        "explanation":  "La oferta sirve mejor como mapa de aprendizaje: faltan habilidades clave para tratarla como oportunidad inmediata. (brechas criticas: 1).",
+                        "confidence":  "LOW"
+                    },
+                    {
+                        "jobId":  2,
+                        "title":  "ANALISTA FUNCIONAL TIC â Bioter S.A.",
+                        "company":  "BIOTER S.A.",
+                        "vectorRank":  19,
+                        "vectorSimilarity":  0.5132299661636353,
+                        "analysisRank":  19,
+                        "detectedRole":  "DATA",
+                        "detectedSeniority":  "MID",
+                        "compatibilityCategory":  "GOOD_MATCH_WITH_MINOR_GAPS",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "SQL"
+                                          ],
+                        "missingCriticalSkills":  [
+
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Preparar evidencia concreta sobre SQL"
+                                               ],
+                        "explanation":  "La oferta esta cerca semanticamente y comparte habilidades directas; las brechas detectadas son menores o secundarias. (matches directos: 1).",
+                        "confidence":  "MEDIUM"
+                    },
+                    {
+                        "jobId":  16,
+                        "title":  "Consultor de IA para HR",
+                        "company":  "Confidential",
+                        "vectorRank":  20,
+                        "vectorSimilarity":  0.5008370876312256,
+                        "analysisRank":  20,
+                        "detectedRole":  "DATA",
+                        "detectedSeniority":  "UNKNOWN",
+                        "compatibilityCategory":  "ASPIRATIONAL_MATCH",
+                        "evidenceLevel":  "WORK_EXPERIENCE",
+                        "matchedSkills":  [
+                                              "SQL"
+                                          ],
+                        "missingCriticalSkills":  [
+                                                      "Azure",
+                                                      "Elasticsearch",
+                                                      "GCP",
+                                                      "Python"
+                                                  ],
+                        "missingSecondarySkills":  [
+
+                                                   ],
+                        "transferableSkills":  [
+
+                                               ],
+                        "roadmapSuggestions":  [
+                                                   "Cubrir base practica de Azure",
+                                                   "Cubrir base practica de Elasticsearch",
+                                                   "Cubrir base practica de GCP",
+                                                   "Cubrir base practica de Python"
+                                               ],
+                        "explanation":  "La oferta tiene afinidad de rol, pero requiere validar brechas antes de tomarla como match fuerte. (matches directos: 1, brechas criticas: 4).",
+                        "confidence":  "MEDIUM"
+                    }
+                ]
+}

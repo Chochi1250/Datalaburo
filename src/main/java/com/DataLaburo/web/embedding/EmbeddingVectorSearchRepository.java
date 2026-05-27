@@ -5,6 +5,12 @@ import java.util.List;
 public interface EmbeddingVectorSearchRepository {
     boolean hasReadyProfileEmbedding(Long profileId, String embeddingModel, int embeddingDimensions);
 
+    boolean hasReadyProfileEmbeddingForModel(Long profileId, String embeddingModel);
+
+    boolean hasReadyJobEmbedding(String embeddingModel, int embeddingDimensions);
+
+    boolean hasReadyJobEmbeddingForModel(String embeddingModel);
+
     List<EmbeddingVectorSearchResult> searchReadyJobsForProfile(
             Long profileId,
             String embeddingModel,

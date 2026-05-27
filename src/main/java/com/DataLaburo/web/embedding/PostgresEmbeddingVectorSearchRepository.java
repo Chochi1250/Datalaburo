@@ -26,6 +26,44 @@ public class PostgresEmbeddingVectorSearchRepository implements EmbeddingVectorS
             )
             """;
 
+    private static final String PROFILE_EXISTS_FOR_MODEL_SQL = """
+            select exists (
+                select 1
+                  from document_embeddings
+                 where owner_type = 'PROFILE'
+                   and owner_id = ?
+                   and section_type = 'FULL_TEXT'
+                   and embedding_model = ?
+                   and status = 'READY'
+                   and embedding is not null
+            )
+            """;
+
+    private static final String JOB_EXISTS_SQL = """
+            select exists (
+                select 1
+                  from document_embeddings
+                 where owner_type = 'JOB'
+                   and section_type = 'FULL_TEXT'
+                   and embedding_model = ?
+                   and embedding_dimensions = ?
+                   and status = 'READY'
+                   and embedding is not null
+            )
+            """;
+
+    private static final String JOB_EXISTS_FOR_MODEL_SQL = """
+            select exists (
+                select 1
+                  from document_embeddings
+                 where owner_type = 'JOB'
+                   and section_type = 'FULL_TEXT'
+                   and embedding_model = ?
+                   and status = 'READY'
+                   and embedding is not null
+            )
+            """;
+
     private static final String VECTOR_SEARCH_SQL = """
             with profile_embedding as (
                 select embedding
@@ -70,6 +108,38 @@ public class PostgresEmbeddingVectorSearchRepository implements EmbeddingVectorS
                 profileId,
                 embeddingModel,
                 embeddingDimensions
+        );
+        return Boolean.TRUE.equals(exists);
+    }
+
+    @Override
+    public boolean hasReadyProfileEmbeddingForModel(Long profileId, String embeddingModel) {
+        Boolean exists = jdbcTemplate.queryForObject(
+                PROFILE_EXISTS_FOR_MODEL_SQL,
+                Boolean.class,
+                profileId,
+                embeddingModel
+        );
+        return Boolean.TRUE.equals(exists);
+    }
+
+    @Override
+    public boolean hasReadyJobEmbedding(String embeddingModel, int embeddingDimensions) {
+        Boolean exists = jdbcTemplate.queryForObject(
+                JOB_EXISTS_SQL,
+                Boolean.class,
+                embeddingModel,
+                embeddingDimensions
+        );
+        return Boolean.TRUE.equals(exists);
+    }
+
+    @Override
+    public boolean hasReadyJobEmbeddingForModel(String embeddingModel) {
+        Boolean exists = jdbcTemplate.queryForObject(
+                JOB_EXISTS_FOR_MODEL_SQL,
+                Boolean.class,
+                embeddingModel
         );
         return Boolean.TRUE.equals(exists);
     }
