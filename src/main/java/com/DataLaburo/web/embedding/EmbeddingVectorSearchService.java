@@ -14,9 +14,9 @@ public class EmbeddingVectorSearchService {
     static final int DEFAULT_LIMIT = 20;
     static final int MAX_LIMIT = 100;
     private static final int EMBEDDING_DIMENSIONS = DocumentEmbedding.DEFAULT_EMBEDDING_DIMENSIONS;
-    private static final boolean SEMANTIC_MEANING = false;
     private static final String FAKE_RESULT_MESSAGE = "Internal pgvector infrastructure search only. "
             + "fake-deterministic-1024 does not represent real professional compatibility.";
+    private static final String BGE_M3_RESULT_MESSAGE = "Semantic vector ranking based on real BGE-M3 embeddings.";
 
     private final EmbeddingVectorSearchRepository vectorSearchRepository;
 
@@ -35,6 +35,7 @@ public class EmbeddingVectorSearchService {
 
         String normalizedModel = normalizeEmbeddingModel(embeddingModel);
         int normalizedLimit = normalizeLimit(limit);
+        boolean semanticMeaning = hasSemanticMeaning(normalizedModel);
 
         boolean hasProfile = vectorSearchRepository.hasReadyProfileEmbedding(
                 profileId,
@@ -45,8 +46,8 @@ public class EmbeddingVectorSearchService {
             return response(
                     profileId,
                     normalizedModel,
-                    SEMANTIC_MEANING,
-                    "No READY profile embedding was found for the requested model.",
+                    semanticMeaning,
+                    messageFor(normalizedModel, "No READY profile embedding was found for the requested model."),
                     List.of()
             );
         }
@@ -56,13 +57,13 @@ public class EmbeddingVectorSearchService {
                 normalizedModel,
                 EMBEDDING_DIMENSIONS,
                 normalizedLimit,
-                SEMANTIC_MEANING
+                semanticMeaning
         );
         if (results.isEmpty()) {
             return response(
                     profileId,
                     normalizedModel,
-                    SEMANTIC_MEANING,
+                    semanticMeaning,
                     messageFor(normalizedModel, "No READY job embeddings were found for the requested model."),
                     results
             );
@@ -71,7 +72,7 @@ public class EmbeddingVectorSearchService {
         return response(
                 profileId,
                 normalizedModel,
-                SEMANTIC_MEANING,
+                semanticMeaning,
                 messageFor(normalizedModel, "Vector ranking returned successfully."),
                 results
         );
@@ -91,9 +92,16 @@ public class EmbeddingVectorSearchService {
         return embeddingModel.trim();
     }
 
+    static boolean hasSemanticMeaning(String embeddingModel) {
+        return DocumentEmbedding.DEFAULT_EMBEDDING_MODEL.equals(embeddingModel);
+    }
+
     private static String messageFor(String embeddingModel, String baseMessage) {
         if (DocumentEmbedding.FAKE_DETERMINISTIC_EMBEDDING_MODEL.equals(embeddingModel)) {
             return baseMessage + " " + FAKE_RESULT_MESSAGE;
+        }
+        if (DocumentEmbedding.DEFAULT_EMBEDDING_MODEL.equals(embeddingModel)) {
+            return baseMessage + " " + BGE_M3_RESULT_MESSAGE;
         }
         return baseMessage;
     }

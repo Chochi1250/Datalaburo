@@ -61,8 +61,8 @@ class EmbeddingVectorSearchServiceTest {
                 eq(DocumentEmbedding.DEFAULT_EMBEDDING_MODEL),
                 eq(DocumentEmbedding.DEFAULT_EMBEDDING_DIMENSIONS),
                 eq(20),
-                eq(false)
-        )).thenReturn(List.of(result(11L)));
+                eq(true)
+        )).thenReturn(List.of(result(11L, DocumentEmbedding.DEFAULT_EMBEDDING_MODEL, true)));
 
         EmbeddingVectorSearchResponse response = service.searchJobsForProfile(
                 profileId,
@@ -71,7 +71,9 @@ class EmbeddingVectorSearchServiceTest {
         );
 
         assertEquals(DocumentEmbedding.DEFAULT_EMBEDDING_MODEL, response.embeddingModel());
-        assertFalse(response.semanticMeaning());
+        assertTrue(response.semanticMeaning());
+        assertTrue(response.results().get(0).semanticMeaning());
+        assertTrue(response.message().contains("Semantic vector ranking based on real BGE-M3 embeddings"));
         verify(repository).hasReadyProfileEmbedding(
                 profileId,
                 DocumentEmbedding.DEFAULT_EMBEDDING_MODEL,
@@ -107,6 +109,33 @@ class EmbeddingVectorSearchServiceTest {
     }
 
     @Test
+    void responseIncludesSemanticMeaningTrueForBgeM3Model() {
+        Long profileId = 12L;
+        when(repository.hasReadyProfileEmbedding(
+                eq(profileId),
+                eq(DocumentEmbedding.DEFAULT_EMBEDDING_MODEL),
+                eq(DocumentEmbedding.DEFAULT_EMBEDDING_DIMENSIONS)
+        )).thenReturn(true);
+        when(repository.searchReadyJobsForProfile(
+                eq(profileId),
+                eq(DocumentEmbedding.DEFAULT_EMBEDDING_MODEL),
+                eq(DocumentEmbedding.DEFAULT_EMBEDDING_DIMENSIONS),
+                eq(20),
+                eq(true)
+        )).thenReturn(List.of(result(13L, DocumentEmbedding.DEFAULT_EMBEDDING_MODEL, true)));
+
+        EmbeddingVectorSearchResponse response = service.searchJobsForProfile(
+                profileId,
+                20,
+                DocumentEmbedding.DEFAULT_EMBEDDING_MODEL
+        );
+
+        assertTrue(response.semanticMeaning());
+        assertTrue(response.results().get(0).semanticMeaning());
+        assertTrue(response.message().contains("Semantic vector ranking based on real BGE-M3 embeddings"));
+    }
+
+    @Test
     void missingProfileEmbeddingReturnsClearResponseWithoutSearchingJobs() {
         Long profileId = 10L;
         when(repository.hasReadyProfileEmbedding(
@@ -118,7 +147,8 @@ class EmbeddingVectorSearchServiceTest {
         EmbeddingVectorSearchResponse response = service.searchJobsForProfile(profileId, 20, null);
 
         assertTrue(response.results().isEmpty());
-        assertEquals("No READY profile embedding was found for the requested model.", response.message());
+        assertTrue(response.message().contains("No READY profile embedding was found for the requested model."));
+        assertTrue(response.message().contains("does not represent real professional compatibility"));
         verify(repository).hasReadyProfileEmbedding(
                 profileId,
                 DocumentEmbedding.FAKE_DETERMINISTIC_EMBEDDING_MODEL,
@@ -150,13 +180,17 @@ class EmbeddingVectorSearchServiceTest {
     }
 
     private static EmbeddingVectorSearchResult result(Long jobId) {
+        return result(jobId, DocumentEmbedding.FAKE_DETERMINISTIC_EMBEDDING_MODEL, false);
+    }
+
+    private static EmbeddingVectorSearchResult result(Long jobId, String embeddingModel, boolean semanticMeaning) {
         return new EmbeddingVectorSearchResult(
                 jobId,
                 jobId + 1_000,
                 0.25d,
                 0.75d,
-                DocumentEmbedding.FAKE_DETERMINISTIC_EMBEDDING_MODEL,
-                false
+                embeddingModel,
+                semanticMeaning
         );
     }
 }

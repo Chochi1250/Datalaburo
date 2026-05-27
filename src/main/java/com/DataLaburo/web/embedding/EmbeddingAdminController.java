@@ -14,13 +14,16 @@ import org.springframework.web.server.ResponseStatusException;
 public class EmbeddingAdminController {
     private final EmbeddingBackfillService embeddingBackfillService;
     private final EmbeddingProcessingService embeddingProcessingService;
+    private final BgeM3EmbeddingProcessingService bgeM3EmbeddingProcessingService;
 
     public EmbeddingAdminController(
             EmbeddingBackfillService embeddingBackfillService,
-            EmbeddingProcessingService embeddingProcessingService
+            EmbeddingProcessingService embeddingProcessingService,
+            BgeM3EmbeddingProcessingService bgeM3EmbeddingProcessingService
     ) {
         this.embeddingBackfillService = embeddingBackfillService;
         this.embeddingProcessingService = embeddingProcessingService;
+        this.bgeM3EmbeddingProcessingService = bgeM3EmbeddingProcessingService;
     }
 
     @PostMapping("/backfill/jobs")
@@ -79,6 +82,23 @@ public class EmbeddingAdminController {
     @PostMapping("/{id}/process")
     public EmbeddingProcessingResult processById(@PathVariable Long id) {
         return embeddingProcessingService.processById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document embedding not found: " + id));
+    }
+
+    @PostMapping("/process/bge-m3/pending")
+    public EmbeddingProcessingResponse processBgeM3Pending(@RequestParam(defaultValue = "1") Integer limit) {
+        return bgeM3EmbeddingProcessingService.processPending(limit);
+    }
+
+    @PostMapping("/{id}/process-bge-m3")
+    public EmbeddingProcessingResult processBgeM3ById(@PathVariable Long id) {
+        return bgeM3EmbeddingProcessingService.processById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document embedding not found: " + id));
+    }
+
+    @PostMapping("/{id}/reset-bge-m3-failed")
+    public EmbeddingProcessingResult resetBgeM3FailedById(@PathVariable Long id) {
+        return bgeM3EmbeddingProcessingService.resetFailedById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document embedding not found: " + id));
     }
 
