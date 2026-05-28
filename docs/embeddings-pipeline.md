@@ -1,12 +1,12 @@
 # Pipeline vectorial de Datalaburo
 
-Este documento describe el pipeline real de embeddings y busqueda vectorial de Datalaburo.
+Este documento describe el pipeline real de embeddings y búsqueda vectorial de Datalaburo.
 
 PostgreSQL + pgvector es la base objetivo del proyecto. H2 fue usado en una etapa inicial del MVP y hoy debe considerarse legacy/obsoleto: no es fallback, no es arquitectura objetivo y no debe guiar decisiones nuevas.
 
 ## Objetivo
 
-El pipeline vectorial permite comparar semanticamente perfiles profesionales/CVs y ofertas laborales tecnologicas.
+El pipeline vectorial permite comparar semánticamente perfiles profesionales/CVs y ofertas laborales tecnológicas.
 
 El modelo real elegido e integrado es:
 
@@ -14,7 +14,7 @@ El modelo real elegido e integrado es:
 BAAI/bge-m3
 ```
 
-Dimension esperada:
+Dimensión esperada:
 
 ```text
 1024
@@ -34,23 +34,23 @@ Flyway crea `document_embeddings` con una columna:
 embedding vector(1024)
 ```
 
-La tabla guarda un documento vectorizable por origen, seccion, modelo y version de normalizacion.
+La tabla guarda un documento vectorizable por origen, sección, modelo y versión de normalización.
 
 Campos principales:
 
 - `owner_type`: origen (`JOB` o `PROFILE`).
 - `owner_id`: id del registro origen.
-- `section_type`: seccion vectorizada. Actualmente `FULL_TEXT`.
+- `section_type`: sección vectorizada. Actualmente `FULL_TEXT`.
 - `source_text_hash`: SHA-256 del texto normalizado.
 - `embedding_model`: modelo o generador usado.
-- `embedding_dimensions`: dimension esperada. Actualmente `1024`.
-- `normalizer_version`: version del normalizador.
+- `embedding_dimensions`: dimensión esperada. Actualmente `1024`.
+- `normalizer_version`: versión del normalizador.
 - `embedding`: vector pgvector `vector(1024)`.
 - `status`: `PENDING`, `READY` o `FAILED`.
 - `error_message`: error operativo si falla el procesamiento.
-- `last_embedded_at`: momento en que se guardo el vector.
+- `last_embedded_at`: momento en que se guardó el vector.
 
-La constraint logica evita duplicados para:
+La constraint lógica evita duplicados para:
 
 ```text
 owner_type + owner_id + section_type + embedding_model + normalizer_version
@@ -59,23 +59,23 @@ owner_type + owner_id + section_type + embedding_model + normalizer_version
 Validaciones relevantes:
 
 - `owner_type` debe ser `JOB` o `PROFILE`.
-- `section_type` debe identificar la seccion vectorizada; hoy se usa `FULL_TEXT`.
+- `section_type` debe identificar la sección vectorizada; hoy se usa `FULL_TEXT`.
 - `embedding_model` separa estrictamente `BAAI/bge-m3` de `fake-deterministic-1024`.
 - `embedding_dimensions` debe ser `1024`.
-- Para busqueda real, `status` debe ser `READY`.
-- Para busqueda real, `embedding` no debe ser `null`.
+- Para búsqueda real, `status` debe ser `READY`.
+- Para búsqueda real, `embedding` no debe ser `null`.
 - `vector_dims(embedding)` debe ser `1024`.
 
-## Construccion del texto fuente
+## Construcción del texto fuente
 
 `EmbeddingTextBuilder` arma el texto vectorizable.
 
 Para `Job` incluye:
 
-- titulo;
+- título;
 - empresa;
-- ubicacion;
-- descripcion;
+- ubicación;
+- descripción;
 - requisitos si existen.
 
 Para `CandidateProfile` incluye:
@@ -84,23 +84,23 @@ Para `CandidateProfile` incluye:
 
 Luego `EmbeddingTextNormalizer` normaliza el texto y `SourceTextHasher` calcula `source_text_hash`.
 
-## Preparacion de metadata
+## Preparación de metadata
 
 El metadata backfill prepara registros en `document_embeddings` a partir de `jobs` y `candidate_profiles`.
 
-No genera el vector por si mismo. Solo:
+No genera el vector por sí mismo. Solo:
 
 1. Construye el texto vectorizable.
 2. Normaliza el texto.
 3. Calcula `source_text_hash`.
 4. Crea o actualiza metadata.
-5. Deja el registro en `PENDING` si es nuevo o si el texto cambio.
+5. Deja el registro en `PENDING` si es nuevo o si el texto cambió.
 
-La operacion es idempotente:
+La operación es idempotente:
 
 - Si no existe registro, crea uno nuevo en `PENDING`.
-- Si existe y el hash no cambio, devuelve `unchanged`.
-- Si existe y el hash cambio, actualiza el hash, limpia errores, resetea `last_embedded_at` y vuelve a `PENDING`.
+- Si existe y el hash no cambió, devuelve `unchanged`.
+- Si existe y el hash cambió, actualiza el hash, limpia errores, resetea `last_embedded_at` y vuelve a `PENDING`.
 
 Endpoints:
 
@@ -131,10 +131,10 @@ El servicio:
 
 - carga `BAAI/bge-m3`;
 - genera embeddings densos;
-- devuelve vectores de dimension `1024`;
+- devuelve vectores de dimensión `1024`;
 - puede normalizar el vector;
 - rechaza modelos distintos;
-- rechaza inputs vacios;
+- rechaza inputs vacíos;
 - valida que no haya `NaN` ni infinitos;
 - se ejecuta localmente, sin APIs externas de embeddings.
 
@@ -170,7 +170,7 @@ El worker real:
 - reconstruye el texto fuente;
 - valida que el `source_text_hash` siga coincidiendo;
 - llama a `embedding-service`;
-- valida modelo, dimension y valores numericos;
+- valida modelo, dimensión y valores numéricos;
 - escribe el vector en PostgreSQL usando `PostgresDocumentEmbeddingVectorWriter`;
 - marca el registro como `READY`;
 - completa `last_embedded_at`;
@@ -186,7 +186,7 @@ POST /internal/embeddings/{id}/reset-bge-m3-failed
 
 ## Modelo fake de infraestructura
 
-Tambien existe:
+También existe:
 
 ```text
 fake-deterministic-1024
@@ -196,10 +196,10 @@ Este modelo sirve solo para infraestructura y tests:
 
 - validar escritura de `vector(1024)`;
 - validar transiciones `PENDING -> READY`;
-- validar busqueda pgvector sin depender del modelo real;
+- validar búsqueda pgvector sin depender del modelo real;
 - tests deterministas.
 
-No tiene significado semantico real y no debe usarse para:
+No tiene significado semántico real y no debe usarse para:
 
 - compatibilidad profesional;
 - ranking de ofertas;
@@ -217,7 +217,7 @@ POST /internal/embeddings/process/pending?limit=100
 POST /internal/embeddings/{id}/process
 ```
 
-## Busqueda vectorial interna
+## Búsqueda vectorial interna
 
 Endpoint actual:
 
@@ -225,7 +225,7 @@ Endpoint actual:
 GET /internal/embeddings/vector-search/profiles/{profileId}/jobs?limit=20&embeddingModel=BAAI/bge-m3
 ```
 
-La busqueda:
+La búsqueda:
 
 - toma el embedding `READY` de un `PROFILE`;
 - busca `JOBs` con embeddings `READY`;
@@ -244,9 +244,9 @@ Para compatibilidad profesional real se debe llamar con:
 embeddingModel=BAAI/bge-m3
 ```
 
-No usar `fake-deterministic-1024` para resultados semanticamente interpretables.
+No usar `fake-deterministic-1024` para resultados semánticamente interpretables.
 
-## SQL base de busqueda
+## SQL base de búsqueda
 
 La consulta interna usa la forma:
 
@@ -287,14 +287,14 @@ Estado confirmado al momento de actualizar este documento:
 ```text
 BAAI/bge-m3:
   JOB READY: 21
-  PROFILE READY: 1
+  PROFILE READY: 6
   vector_dims(embedding): 1024
 
 fake-deterministic-1024:
   disponible solo para infraestructura/test
 ```
 
-Query util:
+Query útil:
 
 ```sql
 select owner_type,
@@ -321,7 +321,7 @@ order by embedding_model;
 
 ## Probar con PowerShell
 
-Con PostgreSQL, `embedding-service` y la aplicacion corriendo:
+Con PostgreSQL, `embedding-service` y la aplicación corriendo:
 
 ```powershell
 Invoke-RestMethod "http://localhost:8081/internal/embeddings/status"
@@ -336,23 +336,24 @@ Ver Top 10 directamente desde PostgreSQL:
 docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "with profile_embedding as (select owner_id, embedding from document_embeddings where owner_type='PROFILE' and embedding_model='BAAI/bge-m3' and status='READY' and embedding is not null limit 1) select p.owner_id as profile_id, j.id as job_id, left(coalesce(j.title,'Untitled'),80) as title, round((de.embedding <=> p.embedding)::numeric, 4) as distance, round((1 - (de.embedding <=> p.embedding))::numeric, 4) as similarity from document_embeddings de cross join profile_embedding p join jobs j on j.id=de.owner_id where de.owner_type='JOB' and de.embedding_model='BAAI/bge-m3' and de.status='READY' and de.embedding is not null order by de.embedding <=> p.embedding limit 10;"
 ```
 
-## Relacion con el motor de compatibilidad
+## Relación con el motor de compatibilidad
 
-La busqueda vectorial actual es la base para la proxima capa de compatibilidad vector-first.
+La búsqueda vectorial actual es la base del endpoint de compatibilidad vector-first.
 
-La siguiente etapa recomendada no es mezclar reglas viejas con vectores mediante un score arbitrario. La etapa recomendada es:
+La estrategia activa no mezcla reglas viejas con vectores mediante un score arbitrario. La etapa actual es:
 
 ```text
-VECTOR_FIRST_WITH_EXPLANATION
+VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC
 ```
 
 Esto significa:
 
-1. pgvector + `BAAI/bge-m3` recuperan ofertas cercanas semanticamente.
-2. Una capa de analisis agrega senales estructuradas.
-3. El ranking vectorial se conserva como principal.
-4. Cada resultado se enriquece con rol, seniority, skills, gaps, evidencia, transferibilidad, explicacion y confianza.
-5. Una etapa posterior puede evolucionar hacia `VECTOR_FIRST_WITH_RERANKING`.
+1. pgvector + `BAAI/bge-m3` recuperan ofertas cercanas semánticamente.
+2. Una capa de análisis agrega señales estructuradas.
+3. `vectorRank` se conserva como auditoría y `analysisRank` sigue igual a `vectorRank`.
+4. Cada resultado se enriquece con rol, seniority, skills, gaps, evidencia, transferibilidad, explicación y confianza.
+5. `suggestedRerankRank` y `suggestedRankDelta` se calculan solo como diagnóstico.
+6. Una etapa posterior puede activar `VECTOR_FIRST_WITH_RERANKING` real después de validar los diagnósticos.
 
 Ver:
 
