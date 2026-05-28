@@ -57,7 +57,7 @@ La interpretacion vigente es:
 5. Guardar cada respuesta completa en `local-evidence/vector-reranking-diagnostic/`.
 6. Comparar Top N por perfil.
 7. Revisar `vectorRank`, `analysisRank`, `compatibilityBucket`, `suggestedRerankRank`, `suggestedRankDelta`, `matchedSkills` y `rerankWarnings`.
-8. Interpretar manualmente falsos positivos y falsos negativos.
+8. Interpretar manualmente falsos positivos, falsos negativos y buckets discutibles.
 
 Lectura recomendada de cada resultado:
 
@@ -99,13 +99,13 @@ Archivos encontrados:
 
 Resumen de evidencia local disponible, sin inventar resultados fuera de esos JSON:
 
-| Perfil / archivo | Observacion local |
-| --- | --- |
-| `profile-2.json` | `Software Engineer Backend - Platform Security` aparece en `vectorRank=1`, `analysisRank=1`, `compatibilityBucket=READY_NOW`, con matches `Java` y `REST`. Roles de soporte, security ops y data aparecen mas abajo o con buckets bajos/aspiracionales. |
-| `profile-3.json` | `Software Engineer Backend - Platform Security` tambien aparece primero y se mantiene en `suggestedRerankRank=1`. El Top 8 incluye database, app support, security ops y dotnet fullstack con buckets mas bajos, lo que permite revisar falsos positivos por cercania semantica. |
-| `profile-4.json` | El perfil de soporte prioriza `Technical Support Jr.`, `Analista de Soporte`, `Soporte a aplicaciones` y `Soporte de APPs Mesa de ayuda APPS SSR Pilar`. Aparecen matches como `Windows Server`, `Linux`, `SQL` e `ITIL`. |
-| `profile-5.json` | El perfil data/BI prioriza `Desarrollador de base de datos`, `ANALISTA FUNCIONAL TIC - Bioter S.A.` y resultados con `SQL`, `PostgreSQL` y `SQL Server`. El primer resultado queda como `ASPIRATIONAL` por brechas como `Oracle` y `Azure`, lo cual es una senal util para no venderlo como match fuerte. |
-| `profile-6.json` | La salida conserva `Software Engineer Backend - Platform Security` en primer lugar, pero el bucket observado es `LOW_FIT` y las razones mencionan un objetivo de perfil `QA`. Esta evidencia no debe usarse como confirmacion de Backend Strong Partial DevOps Transfer sin regenerarla o verificar el id/perfil consultado. |
+| Perfil | Principales ofertas arriba | Movimientos diagnosticos relevantes | Comportamiento observado | Lectura manual |
+| --- | --- | --- | --- | --- |
+| Backend Trainee Projects (`profile-2.json`) | `Software Engineer Backend - Platform Security`, `Desarrollador de base de datos`, `Soporte a aplicaciones`, `Talentos IT`. | Backend queda `vectorRank=1`, `analysisRank=1`, `suggestedRerankRank=1`; `Talentos IT` aparece con `suggestedRankDelta=2`; database baja respecto del ranking vectorial. | El perfil backend trainee mantiene arriba una oferta backend con matches `Java` y `REST`. Roles database, soporte y security ops aparecen con buckets mas debiles o aspiracionales. | Positivo para validar sensibilidad backend. Conviene revisar manualmente ofertas database/senior porque pueden ser cercanas semanticamente pero no necesariamente postulables. |
+| Backend Senior Java Cloud (`profile-3.json`) | `Software Engineer Backend - Platform Security`, `Desarrollador de base de datos`, `Talentos IT`, `Soporte a aplicaciones`. | Backend queda primero y `suggestedRerankRank=1`; `Talentos IT` sube diagnosticamente; database/app support/security ops quedan con buckets mas bajos. | El perfil senior backend tambien prioriza backend/platform, pero el Top N conserva candidatos no-backend por cercania semantica. | Positivo para conservar `vectorRank` como auditoria. Los candidatos no-backend son utiles para detectar falsos positivos antes de activar reranking real. |
+| IT Support Analyst Junior (`profile-4.json`) | `Technical Support Jr.`, `Analista de Soporte`, `Soporte a aplicaciones`, `Soporte de APPs Mesa de ayuda APPS SSR Pilar`. | Resultados de soporte quedan arriba; `Soporte de APPs Mesa de ayuda APPS SSR Pilar` sube diagnosticamente de `vectorRank=6` a `suggestedRerankRank=4`; roles data/fullstack bajan. | El endpoint cambia su comportamiento hacia IT_SUPPORT/APP_SUPPORT. Aparecen matches como `Windows Server`, `Linux`, `SQL` e `ITIL`. | Positivo para validar analisis multi-perfil. Algunos buckets siguen debiles por evidencia limitada o seniority discutible, lo que refuerza que son diagnosticos. |
+| Data BI SQL Profile (`profile-5.json`) | `Desarrollador de base de datos`, `ANALISTA FUNCIONAL TIC - Bioter S.A.`, `Analista Programador`, `Soporte a aplicaciones`. | Los primeros resultados bajan diagnosticamente por buckets `ASPIRATIONAL`, `WEAK_MATCH` o `LOW_FIT`; aparecen gaps como `Oracle` y `Azure`. | El perfil data/BI prioriza database/data/SQL, con matches `PostgreSQL`, `SQL` y `SQL Server`. La evidencia local no confirma Python arriba; si se necesita esa conclusion, hay que generar mas evidencia. | Positivo para mostrar que SQL/database aparece arriba, pero no debe venderse como match fuerte si hay brechas criticas o seniority alto. |
+| Backend Strong Partial DevOps Transfer (`profile-6.json`) | `Software Engineer Backend - Platform Security`, `Talentos IT`, `Desarrollador de base de datos`, `Soporte a aplicaciones`. | La salida conserva backend en `vectorRank=1`, pero asigna `LOW_FIT` y razones de rol periferico contra objetivo `QA`. | La evidencia observada parece inconsistente con el perfil esperado Backend Strong Partial DevOps Transfer. | No usar como confirmacion de transferencia backend -> DevOps sin regenerar o auditar el id/perfil consultado. Este caso es evidencia de por que la revision manual sigue siendo obligatoria. |
 
 La evidencia actual permite sostener que el endpoint cambia su comportamiento entre backend, soporte y data, especialmente en los perfiles `profile-2.json` a `profile-5.json`. Tambien muestra por que esta fase debe seguir siendo diagnostica: hay casos que requieren revision manual antes de usar `suggestedRerankRank` como orden real.
 
@@ -147,6 +147,7 @@ Motivos:
 - `suggestedRerankRank` ya produce informacion util para auditar, pero todavia muestra casos que necesitan calibracion.
 - El dataset es chico y debe ampliarse con mas perfiles, ofertas y revision humana.
 - Una futura activacion deberia hacerse detras de un flag, parametro o endpoint experimental.
+- `vectorRank` debe seguir conservandose como auditoria incluso si en el futuro existe un ranking experimental.
 
 ## Qué falta antes de frontend
 
@@ -237,6 +238,23 @@ Get-ChildItem ".\local-evidence\vector-reranking-diagnostic\profile-*.json" |
       Select-Object -First 10 vectorRank,analysisRank,suggestedRerankRank,suggestedRankDelta,title,detectedRole,detectedSeniority,compatibilityBucket,matchedSkills,rerankWarnings |
       Format-Table -AutoSize
   }
+```
+
+## Próximo paso recomendado
+
+Esta fase deja el proyecto mejor preparado para avanzar, pero no listo todavia para activar reranking real ni para vender una UI como resultado final.
+
+La recomendacion clara para la proxima fase es:
+
+1. Auditar `JOBS` vs `JOB_OFFERS` para confirmar la fuente vigente de ofertas y evitar evaluar sobre datos ambiguos.
+2. Regenerar evidencia de `Backend Strong Partial DevOps Transfer` y verificar que el `profileId` corresponde al perfil DIAG esperado.
+3. Despues de esa auditoria, construir una UI minima de compatibilidad vector-first que muestre evidencia, gaps y diagnostico, no porcentajes absolutos.
+4. Dejar `rankingMode` experimental para una fase posterior, detras de flag, parametro o endpoint separado, cuando haya mas evidencia revisada.
+
+Orden recomendado para manana:
+
+```text
+auditoria JOBS/JOB_OFFERS -> regenerar evidencia dudosa -> UI minima -> rankingMode experimental
 ```
 
 ## Criterio de cierre de esta fase
