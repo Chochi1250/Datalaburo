@@ -317,6 +317,7 @@ Los buckets son señales diagnósticas internas: ayudan a auditar compatibilidad
 - [Context.md](Context.md): contexto operativo para retomar trabajo con Codex/GPT.
 - [docs/embeddings-pipeline.md](docs/embeddings-pipeline.md): pipeline de embeddings, tabla `document_embeddings` y pgvector.
 - [docs/vector-first-compatibility-strategy.md](docs/vector-first-compatibility-strategy.md): decisión arquitectónica vector-first.
+- [docs/evaluation-vector-first-diagnostic.md](docs/evaluation-vector-first-diagnostic.md): evidence pack de evaluación diagnóstica multi-perfil.
 - [docs/postgres-setup.md](docs/postgres-setup.md): PostgreSQL local, Flyway, backup y restore.
 - [docs/vector-reranking-diagnostic-test-profiles.sql](docs/vector-reranking-diagnostic-test-profiles.sql): perfiles manuales para validación diagnóstica.
 
