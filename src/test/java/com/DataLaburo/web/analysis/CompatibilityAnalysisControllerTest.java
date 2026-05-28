@@ -25,7 +25,7 @@ class CompatibilityAnalysisControllerTest {
                 1L,
                 "BAAI/bge-m3",
                 1024,
-                new VectorFirstCompatibilityResponse.Retrieval(20, "VECTOR_FIRST_WITH_EXPLANATION"),
+                new VectorFirstCompatibilityResponse.Retrieval(20, "VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC"),
                 List.of(new VectorFirstCompatibilityResult(
                         14L,
                         "Software Engineer Backend",
@@ -48,7 +48,17 @@ class CompatibilityAnalysisControllerTest {
                         )),
                         List.of("Profundizar Kubernetes basico"),
                         "La oferta esta cerca semanticamente y comparte nucleo backend.",
-                        CompatibilityConfidence.MEDIUM
+                        CompatibilityConfidence.MEDIUM,
+                        CompatibilityBucket.GOOD_WITH_MINOR_GAPS,
+                        1,
+                        0,
+                        List.of("Subiria o se mantendria por alineacion de rol: BACKEND."),
+                        List.of(),
+                        List.of(new RerankSignal(
+                                "ROLE_ALIGNED",
+                                RerankSignalPolarity.POSITIVE,
+                                "Rol BACKEND alineado con el objetivo backend del perfil."
+                        ))
                 ))
         ));
 
@@ -58,10 +68,14 @@ class CompatibilityAnalysisControllerTest {
                 .andExpect(jsonPath("$.profileId").value(1))
                 .andExpect(jsonPath("$.embeddingModel").value("BAAI/bge-m3"))
                 .andExpect(jsonPath("$.embeddingDimensions").value(1024))
-                .andExpect(jsonPath("$.retrieval.strategy").value("VECTOR_FIRST_WITH_EXPLANATION"))
+                .andExpect(jsonPath("$.retrieval.strategy").value("VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC"))
                 .andExpect(jsonPath("$.results[0].jobId").value(14))
                 .andExpect(jsonPath("$.results[0].vectorRank").value(1))
                 .andExpect(jsonPath("$.results[0].analysisRank").value(1))
+                .andExpect(jsonPath("$.results[0].suggestedRerankRank").value(1))
+                .andExpect(jsonPath("$.results[0].suggestedRankDelta").value(0))
+                .andExpect(jsonPath("$.results[0].compatibilityBucket").value("GOOD_WITH_MINOR_GAPS"))
+                .andExpect(jsonPath("$.results[0].rerankSignals[0].name").value("ROLE_ALIGNED"))
                 .andExpect(jsonPath("$.results[0].compatibilityCategory").value("GOOD_MATCH_WITH_MINOR_GAPS"))
                 .andExpect(jsonPath("$.results[0].transferableSkills[0].from").value("Docker"));
 

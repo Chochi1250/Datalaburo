@@ -147,8 +147,12 @@ public class CompatibilityExplanationService {
         if (normalized.isBlank()) {
             return EvidenceLevel.MENTIONED_ONLY;
         }
+        if (containsAny(normalized, "project", "projects", "proyecto", "proyectos", "portfolio", "github")
+                && containsAny(normalized, "trainee", "junior", "academic", "academico", "personal", "no professional")) {
+            return EvidenceLevel.PROJECT;
+        }
         if (containsAny(normalized,
-                "experience", "experiencia", "worked", "trabaje", "trabajo", "desarrolle",
+                "professional experience", "work experience", "experiencia profesional", "worked", "trabaje", "trabajo", "desarrolle",
                 "implemente", "built", "mantuve", "produccion", "production")) {
             return EvidenceLevel.WORK_EXPERIENCE;
         }
@@ -187,8 +191,18 @@ public class CompatibilityExplanationService {
         if (role.isBlank()) {
             return false;
         }
-        return switch (role) {
-            case "backend", "full_stack", "dotnet_backend", "dotnet_fullstack", "database" -> true;
+        String profileRole = normalize(context == null ? null : context.profileRole());
+        if (profileRole.isBlank()) {
+            profileRole = "backend";
+        }
+        return switch (profileRole) {
+            case "backend" -> Set.of("backend", "full_stack", "dotnet_backend", "dotnet_fullstack", "database").contains(role);
+            case "frontend" -> Set.of("frontend", "full_stack", "dotnet_fullstack").contains(role);
+            case "data" -> Set.of("data", "database").contains(role);
+            case "it_support", "app_support" -> Set.of("it_support", "app_support").contains(role);
+            case "cloud", "devops" -> Set.of("cloud", "devops", "backend").contains(role);
+            case "qa" -> "qa".equals(role);
+            case "security_ops", "iam" -> Set.of("security_ops", "iam").contains(role);
             default -> false;
         };
     }

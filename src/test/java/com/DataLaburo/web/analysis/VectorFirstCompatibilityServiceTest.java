@@ -35,6 +35,7 @@ class VectorFirstCompatibilityServiceTest {
     private final GapAnalysisService gapAnalysisService = mock(GapAnalysisService.class);
     private final TransferabilityService transferabilityService = mock(TransferabilityService.class);
     private final CompatibilityExplanationService explanationService = mock(CompatibilityExplanationService.class);
+    private final RerankingDiagnosticService rerankingDiagnosticService = new RerankingDiagnosticService();
 
     private final VectorFirstCompatibilityService service = new VectorFirstCompatibilityService(
             candidateProfileRepository,
@@ -46,7 +47,8 @@ class VectorFirstCompatibilityServiceTest {
             ruleBasedEnrichmentService,
             gapAnalysisService,
             transferabilityService,
-            explanationService
+            explanationService,
+            rerankingDiagnosticService
     );
 
     @Test
@@ -121,7 +123,7 @@ class VectorFirstCompatibilityServiceTest {
                 List.of(),
                 profileEnriched,
                 jobEnriched,
-                new CompatibilitySignalContext("BACKEND", "MID", "MID")
+                new CompatibilitySignalContext("BACKEND", "MID", "MID", "BACKEND")
         ))
                 .thenReturn(explanation);
 
@@ -129,9 +131,11 @@ class VectorFirstCompatibilityServiceTest {
 
         assertEquals(DocumentEmbedding.DEFAULT_EMBEDDING_MODEL, response.embeddingModel());
         assertEquals(50, response.retrieval().limit());
-        assertEquals("VECTOR_FIRST_WITH_EXPLANATION", response.retrieval().strategy());
+        assertEquals("VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC", response.retrieval().strategy());
         assertEquals(1, response.results().get(0).vectorRank());
         assertEquals(1, response.results().get(0).analysisRank());
+        assertEquals(1, response.results().get(0).suggestedRerankRank());
+        assertEquals(0, response.results().get(0).suggestedRankDelta());
         assertEquals(0.69d, response.results().get(0).vectorSimilarity());
         verify(vectorSearchService).searchJobsForProfile(1L, 50, DocumentEmbedding.DEFAULT_EMBEDDING_MODEL);
     }

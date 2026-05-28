@@ -1,7 +1,11 @@
 package com.DataLaburo.web.analysis;
 
 import com.DataLaburo.web.model.Job;
+import com.DataLaburo.web.service.RuleBasedEnrichmentService;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -38,10 +42,56 @@ class RoleDetectionServiceTest {
         assertEquals("SENIOR", VectorFirstCompatibilityService.detectedSeniority(job, text, null));
     }
 
+    @Test
+    void backendTraineeProjectsProfileRoleIsBackendEvenWithTestingLibraries() {
+        String text = "Backend trainee developer. Academic and personal projects building REST APIs with Java, "
+                + "Spring Boot, Maven, JUnit, Mockito, PostgreSQL, MySQL, Docker and Git. Built CRUD services.";
+        RuleBasedEnrichmentService.EnrichedDocument enriched = enriched(
+                RuleBasedEnrichmentService.Category.BACKEND,
+                RuleBasedEnrichmentService.Category.QA
+        );
+
+        assertEquals("BACKEND", VectorFirstCompatibilityService.profileRole(enriched, text));
+    }
+
+    @Test
+    void minorTestingMentionDoesNotOverrideBackendProfileRole() {
+        String text = "Backend developer with Java, Spring Boot, REST APIs, PostgreSQL and automated testing experience.";
+        RuleBasedEnrichmentService.EnrichedDocument enriched = enriched(
+                RuleBasedEnrichmentService.Category.BACKEND,
+                RuleBasedEnrichmentService.Category.QA
+        );
+
+        assertEquals("BACKEND", VectorFirstCompatibilityService.profileRole(enriched, text));
+    }
+
+    @Test
+    void realQaProfileRoleRemainsQa() {
+        String text = "QA automation tester focused on quality assurance, manual testing, test automation, Selenium and regression suites.";
+        RuleBasedEnrichmentService.EnrichedDocument enriched = enriched(RuleBasedEnrichmentService.Category.QA);
+
+        assertEquals("QA", VectorFirstCompatibilityService.profileRole(enriched, text));
+    }
+
     private static Job job(String title) {
         Job job = new Job();
         job.setTitle(title);
         job.setSourceUrl("https://example.test/jobs");
         return job;
+    }
+
+    private static RuleBasedEnrichmentService.EnrichedDocument enriched(RuleBasedEnrichmentService.Category... categories) {
+        return new RuleBasedEnrichmentService.EnrichedDocument(
+                null,
+                Set.of(),
+                Set.of(categories),
+                Set.of(),
+                null,
+                null,
+                false,
+                null,
+                Map.of(),
+                Map.of()
+        );
     }
 }

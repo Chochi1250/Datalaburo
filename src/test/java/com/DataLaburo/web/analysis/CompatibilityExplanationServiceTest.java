@@ -129,4 +129,24 @@ class CompatibilityExplanationServiceTest {
 
         assertEquals(CompatibilityCategory.ASPIRATIONAL_MATCH, category);
     }
+
+    @Test
+    void traineeProfileWithProjectsUsesProjectEvidence() {
+        GapAnalysis gap = new GapAnalysis(
+                List.of("Java", "REST"),
+                List.of(),
+                List.of(),
+                List.of("Java", "REST"),
+                List.of("Java", "REST"),
+                List.of()
+        );
+
+        EvidenceLevel evidence = service.detectEvidenceLevel(
+                "Backend trainee developer. Personal projects building REST APIs with Java. No professional seniority yet.",
+                gap,
+                List.of()
+        );
+
+        assertEquals(EvidenceLevel.PROJECT, evidence);
+    }
 }

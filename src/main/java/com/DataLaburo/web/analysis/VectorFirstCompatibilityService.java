@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public class VectorFirstCompatibilityService {
     static final int DEFAULT_LIMIT = 20;
     static final int MAX_LIMIT = 50;
-    static final String STRATEGY = "VECTOR_FIRST_WITH_EXPLANATION";
+    static final String STRATEGY = "VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC";
 
     private static final String EMBEDDING_MODEL = DocumentEmbedding.DEFAULT_EMBEDDING_MODEL;
     private static final int EMBEDDING_DIMENSIONS = DocumentEmbedding.DEFAULT_EMBEDDING_DIMENSIONS;
@@ -51,6 +51,7 @@ public class VectorFirstCompatibilityService {
     private final GapAnalysisService gapAnalysisService;
     private final TransferabilityService transferabilityService;
     private final CompatibilityExplanationService explanationService;
+    private final RerankingDiagnosticService rerankingDiagnosticService;
 
     public VectorFirstCompatibilityService(
             CandidateProfileRepository candidateProfileRepository,
@@ -62,7 +63,8 @@ public class VectorFirstCompatibilityService {
             RuleBasedEnrichmentService ruleBasedEnrichmentService,
             GapAnalysisService gapAnalysisService,
             TransferabilityService transferabilityService,
-            CompatibilityExplanationService explanationService
+            CompatibilityExplanationService explanationService,
+            RerankingDiagnosticService rerankingDiagnosticService
     ) {
         this.candidateProfileRepository = candidateProfileRepository;
         this.jobRepository = jobRepository;
@@ -74,6 +76,7 @@ public class VectorFirstCompatibilityService {
         this.gapAnalysisService = gapAnalysisService;
         this.transferabilityService = transferabilityService;
         this.explanationService = explanationService;
+        this.rerankingDiagnosticService = rerankingDiagnosticService;
     }
 
     @Transactional(readOnly = true)
@@ -141,12 +144,15 @@ public class VectorFirstCompatibilityService {
             vectorRank++;
         }
 
+        List<VectorFirstCompatibilityResult> diagnosticsWithSuggestedRanks =
+                rerankingDiagnosticService.assignSuggestedRanks(results);
+
         return new VectorFirstCompatibilityResponse(
                 profileId,
                 EMBEDDING_MODEL,
                 EMBEDDING_DIMENSIONS,
                 new VectorFirstCompatibilityResponse.Retrieval(normalizedLimit, STRATEGY),
-                results
+                diagnosticsWithSuggestedRanks
         );
     }
 
@@ -178,6 +184,12 @@ public class VectorFirstCompatibilityService {
         );
         String role = detectedRole(job, jobText, jobEnriched);
         String seniority = detectedSeniority(job, jobText, jobEnriched);
+        CompatibilitySignalContext signalContext = new CompatibilitySignalContext(
+                role,
+                seniority,
+                profileSeniority(profileEnriched, profileText),
+                profileRole(profileEnriched, profileText)
+        );
         CompatibilityExplanation explanation = explanationService.explain(
                 profileText,
                 vectorResult.similarity(),
@@ -185,10 +197,10 @@ public class VectorFirstCompatibilityService {
                 transferableSkills,
                 profileEnriched,
                 jobEnriched,
-                new CompatibilitySignalContext(role, seniority, profileSeniority(profileEnriched, profileText))
+                signalContext
         );
 
-        return new VectorFirstCompatibilityResult(
+        VectorFirstCompatibilityResult result = new VectorFirstCompatibilityResult(
                 job.getId(),
                 coalesce(job.getTitle(), "Untitled"),
                 coalesce(job.getCompany(), "Unknown"),
@@ -207,6 +219,7 @@ public class VectorFirstCompatibilityService {
                 explanation.explanation(),
                 explanation.confidence()
         );
+        return result.withDiagnostic(rerankingDiagnosticService.evaluate(result, signalContext));
     }
 
     private void validateReadyBgeM3Embeddings(Long profileId) {
@@ -450,6 +463,89 @@ public class VectorFirstCompatibilityService {
             return containsAny(text, "trainee") ? "TRAINEE" : "JUNIOR";
         }
         return "UNKNOWN";
+    }
+
+    static String profileRole(RuleBasedEnrichmentService.EnrichedDocument profileEnriched, String profileText) {
+        String text = SkillExtractionService.normalizeText(profileText);
+        if (containsAny(text, "identity and access management", "iam", "oauth", "oidc", "saml")) {
+            return "IAM";
+        }
+        if (containsAny(text, "security operations", "soc analyst", "incident response", "information security")) {
+            return "SECURITY_OPS";
+        }
+        if (containsAny(text, "application support", "soporte a aplicaciones", "app support")) {
+            return "APP_SUPPORT";
+        }
+        if (containsAny(text, "help desk", "service desk", "technical support", "it support", "soporte tecnico", "it analyst")) {
+            return "IT_SUPPORT";
+        }
+        if (containsAny(text, "data analyst", "bi analyst", "business intelligence", "power bi", "dashboards", "reporting")) {
+            return "DATA";
+        }
+        if (hasBackendProfileCore(text)) {
+            return "BACKEND";
+        }
+        if (containsAny(text, "cloud", "devops", "kubernetes", "ci/cd", "aws")) {
+            return containsAny(text, "backend") ? "BACKEND" : "CLOUD";
+        }
+        if (containsAny(text, "frontend", "front end", "react", "angular")) {
+            return "FRONTEND";
+        }
+        if (hasQaProfileCore(text)) {
+            return "QA";
+        }
+        if (profileEnriched != null && profileEnriched.categories() != null) {
+            Set<RuleBasedEnrichmentService.Category> categories = profileEnriched.categories();
+            if (categories.contains(RuleBasedEnrichmentService.Category.DATA)) {
+                return "DATA";
+            }
+            if (categories.contains(RuleBasedEnrichmentService.Category.IT_SUPPORT)) {
+                return "IT_SUPPORT";
+            }
+            if (categories.contains(RuleBasedEnrichmentService.Category.CLOUD)) {
+                return "CLOUD";
+            }
+            if (categories.contains(RuleBasedEnrichmentService.Category.DEVOPS)) {
+                return "DEVOPS";
+            }
+            if (categories.contains(RuleBasedEnrichmentService.Category.BACKEND)) {
+                return "BACKEND";
+            }
+            if (categories.contains(RuleBasedEnrichmentService.Category.FRONTEND)) {
+                return "FRONTEND";
+            }
+            if (categories.contains(RuleBasedEnrichmentService.Category.QA)) {
+                return "QA";
+            }
+        }
+        return "BACKEND";
+    }
+
+    private static boolean hasBackendProfileCore(String text) {
+        return containsAny(
+                text,
+                "backend",
+                "back end",
+                "back-end",
+                "spring boot",
+                "java spring",
+                "rest apis",
+                "microservices",
+                "crud services"
+        );
+    }
+
+    private static boolean hasQaProfileCore(String text) {
+        return containsAny(
+                text,
+                "qa",
+                "quality assurance",
+                "qa automation",
+                "test automation",
+                "automation testing",
+                "manual testing",
+                "tester"
+        );
     }
 
     private static boolean isDatabaseRole(String title, String combined) {
