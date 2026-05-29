@@ -1,6 +1,6 @@
 # Evaluación diagnóstica vector-first
 
-Este documento convierte la validacion multi-perfil de Datalaburo en evidencia defendible para tesis. La fase es solo de evaluacion y documentacion: no activa reranking real, no modifica el pipeline funcional y no cambia scraping, extension, captura, UI, migraciones ni `CvMatchingService`.
+Este documento registra la validacion multi-perfil de Datalaburo como evidencia tecnica para tesis. La fase es solo de evaluacion y documentacion: no activa reranking real, no modifica el pipeline funcional y no cambia scraping, extension, captura, UI, migraciones ni `CvMatchingService`.
 
 ## Objetivo
 
@@ -12,7 +12,7 @@ La evaluacion busca responder:
 - si la capa de analisis distingue perfiles backend, soporte y data;
 - si los buckets diagnosticos son coherentes con rol, seniority, skills, gaps y evidencia;
 - si `suggestedRerankRank` aporta una hipotesis auditable sin reemplazar el ranking vectorial;
-- si aparecen falsos positivos o falsos negativos que obliguen a calibrar antes de exponer una UI.
+- si aparecen falsos positivos o falsos negativos que obliguen a calibrar antes de disenar una UI.
 
 ## Estado evaluado
 
@@ -104,7 +104,7 @@ Resumen de evidencia local disponible, sin inventar resultados fuera de esos JSO
 | Backend Trainee Projects (`profile-2.json`) | `Software Engineer Backend - Platform Security`, `Desarrollador de base de datos`, `Soporte a aplicaciones`, `Talentos IT`. | Backend queda `vectorRank=1`, `analysisRank=1`, `suggestedRerankRank=1`; `Talentos IT` aparece con `suggestedRankDelta=2`; database baja respecto del ranking vectorial. | El perfil backend trainee mantiene arriba una oferta backend con matches `Java` y `REST`. Roles database, soporte y security ops aparecen con buckets mas debiles o aspiracionales. | Positivo para validar sensibilidad backend. Conviene revisar manualmente ofertas database/senior porque pueden ser cercanas semanticamente pero no necesariamente postulables. |
 | Backend Senior Java Cloud (`profile-3.json`) | `Software Engineer Backend - Platform Security`, `Desarrollador de base de datos`, `Talentos IT`, `Soporte a aplicaciones`. | Backend queda primero y `suggestedRerankRank=1`; `Talentos IT` sube diagnosticamente; database/app support/security ops quedan con buckets mas bajos. | El perfil senior backend tambien prioriza backend/platform, pero el Top N conserva candidatos no-backend por cercania semantica. | Positivo para conservar `vectorRank` como auditoria. Los candidatos no-backend son utiles para detectar falsos positivos antes de activar reranking real. |
 | IT Support Analyst Junior (`profile-4.json`) | `Technical Support Jr.`, `Analista de Soporte`, `Soporte a aplicaciones`, `Soporte de APPs Mesa de ayuda APPS SSR Pilar`. | Resultados de soporte quedan arriba; `Soporte de APPs Mesa de ayuda APPS SSR Pilar` sube diagnosticamente de `vectorRank=6` a `suggestedRerankRank=4`; roles data/fullstack bajan. | El endpoint cambia su comportamiento hacia IT_SUPPORT/APP_SUPPORT. Aparecen matches como `Windows Server`, `Linux`, `SQL` e `ITIL`. | Positivo para validar analisis multi-perfil. Algunos buckets siguen debiles por evidencia limitada o seniority discutible, lo que refuerza que son diagnosticos. |
-| Data BI SQL Profile (`profile-5.json`) | `Desarrollador de base de datos`, `ANALISTA FUNCIONAL TIC - Bioter S.A.`, `Analista Programador`, `Soporte a aplicaciones`. | Los primeros resultados bajan diagnosticamente por buckets `ASPIRATIONAL`, `WEAK_MATCH` o `LOW_FIT`; aparecen gaps como `Oracle` y `Azure`. | El perfil data/BI prioriza database/data/SQL, con matches `PostgreSQL`, `SQL` y `SQL Server`. La evidencia local no confirma Python arriba; si se necesita esa conclusion, hay que generar mas evidencia. | Positivo para mostrar que SQL/database aparece arriba, pero no debe venderse como match fuerte si hay brechas criticas o seniority alto. |
+| Data BI SQL Profile (`profile-5.json`) | `Desarrollador de base de datos`, `ANALISTA FUNCIONAL TIC - Bioter S.A.`, `Analista Programador`, `Soporte a aplicaciones`. | Los primeros resultados bajan diagnosticamente por buckets `ASPIRATIONAL`, `WEAK_MATCH` o `LOW_FIT`; aparecen gaps como `Oracle` y `Azure`. | El perfil data/BI prioriza database/data/SQL, con matches `PostgreSQL`, `SQL` y `SQL Server`. La evidencia local no confirma Python arriba; si se necesita esa conclusion, hay que generar mas evidencia. | Positivo para mostrar que SQL/database aparece arriba, pero no debe presentarse como match fuerte si hay brechas criticas o seniority alto. |
 | Backend Strong Partial DevOps Transfer (`profile-6.json`) | `Software Engineer Backend - Platform Security`, `Talentos IT`, `Desarrollador de base de datos`, `Soporte a aplicaciones`. | La salida conserva backend en `vectorRank=1`, pero asigna `LOW_FIT` y razones de rol periferico contra objetivo `QA`. | La evidencia observada parece inconsistente con el perfil esperado Backend Strong Partial DevOps Transfer. | No usar como confirmacion de transferencia backend -> DevOps sin regenerar o auditar el id/perfil consultado. Este caso es evidencia de por que la revision manual sigue siendo obligatoria. |
 
 La evidencia actual permite sostener que el endpoint cambia su comportamiento entre backend, soporte y data, especialmente en los perfiles `profile-2.json` a `profile-5.json`. Tambien muestra por que esta fase debe seguir siendo diagnostica: hay casos que requieren revision manual antes de usar `suggestedRerankRank` como orden real.
@@ -149,15 +149,15 @@ Motivos:
 - Una futura activacion deberia hacerse detras de un flag, parametro o endpoint experimental.
 - `vectorRank` debe seguir conservandose como auditoria incluso si en el futuro existe un ranking experimental.
 
-## Qué falta antes de frontend
+## Qué falta antes de una UI
 
-Antes de construir una UI minima de compatibilidad vector-first, falta:
+Antes de disenar una UI minima de compatibilidad vector-first, falta:
 
 1. Completar la evaluacion multi-perfil documentada.
 2. Regenerar o verificar evidencia dudosa, especialmente el caso `profile-6.json`.
 3. Calibrar reglas menores si aparecen falsos positivos o falsos negativos claros.
 4. Hacer una auditoria minima de `JOBS` vs `JOB_OFFERS` para confirmar cual es la fuente vigente de ofertas.
-5. Recien despues, exponer una UI minima que muestre compatibilidad vector-first como evidencia explicable y no como score absoluto.
+5. Recien despues, disenar una UI minima que muestre compatibilidad vector-first como evidencia explicable y no como score absoluto.
 
 ## Comandos útiles
 
@@ -242,13 +242,13 @@ Get-ChildItem ".\local-evidence\vector-reranking-diagnostic\profile-*.json" |
 
 ## Próximo paso recomendado
 
-Esta fase deja el proyecto mejor preparado para avanzar, pero no listo todavia para activar reranking real ni para vender una UI como resultado final.
+Esta fase deja el proyecto mejor preparado para avanzar, pero no listo todavia para activar reranking real ni para presentar una UI como resultado final.
 
 La recomendacion clara para la proxima fase es:
 
 1. Auditar `JOBS` vs `JOB_OFFERS` para confirmar la fuente vigente de ofertas y evitar evaluar sobre datos ambiguos.
 2. Regenerar evidencia de `Backend Strong Partial DevOps Transfer` y verificar que el `profileId` corresponde al perfil DIAG esperado.
-3. Despues de esa auditoria, construir una UI minima de compatibilidad vector-first que muestre evidencia, gaps y diagnostico, no porcentajes absolutos.
+3. Despues de esa auditoria, disenar una UI minima de compatibilidad vector-first que muestre evidencia, gaps y diagnostico, no porcentajes absolutos.
 4. Dejar `rankingMode` experimental para una fase posterior, detras de flag, parametro o endpoint separado, cuando haya mas evidencia revisada.
 
 Orden recomendado para manana:
@@ -265,4 +265,4 @@ La fase Evaluation Evidence Pack queda completa cuando:
 - los resultados observados estan resumidos sin inventar datos;
 - los casos positivos y discutibles estan documentados;
 - queda explicita la decision de no activar reranking real;
-- queda claro que frontend debe esperar a una validacion minima adicional.
+- queda claro que una UI debe esperar a una validacion minima adicional.

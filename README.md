@@ -2,7 +2,7 @@
 
 Datalaburo es un proyecto de tesis para analizar compatibilidad entre perfiles profesionales/CVs y ofertas laborales tecnológicas.
 
-El enfoque actual es **vector-first**: PostgreSQL + pgvector recupera ofertas cercanas semánticamente con embeddings `BAAI/bge-m3`, y una capa de análisis explica roles, seniority, skills, brechas, evidencia y transferibilidad. El proyecto no busca replicar un ATS por keywords ni vender un porcentaje final como verdad absoluta.
+El enfoque actual es **vector-first**: PostgreSQL + pgvector recupera ofertas cercanas semánticamente con embeddings `BAAI/bge-m3`, y una capa de análisis explica roles, seniority, skills, brechas, evidencia y transferibilidad. El proyecto no busca replicar un ATS por keywords ni presentar un porcentaje final como verdad absoluta.
 
 ## Contenido
 
@@ -314,9 +314,9 @@ Los buckets son señales diagnósticas internas: ayudan a auditar compatibilidad
 
 ## Documentación extendida
 
-- [Context.md](Context.md): contexto operativo para retomar trabajo con Codex/GPT.
 - [docs/embeddings-pipeline.md](docs/embeddings-pipeline.md): pipeline de embeddings, tabla `document_embeddings` y pgvector.
 - [docs/vector-first-compatibility-strategy.md](docs/vector-first-compatibility-strategy.md): decisión arquitectónica vector-first.
+- [docs/evaluation/evaluation-evidence-pack.md](docs/evaluation/evaluation-evidence-pack.md): pack de evidencia de evaluación para la línea base vector-first.
 - [docs/evaluation-vector-first-diagnostic.md](docs/evaluation-vector-first-diagnostic.md): evidence pack de evaluación diagnóstica multi-perfil.
 - [docs/postgres-setup.md](docs/postgres-setup.md): PostgreSQL local, Flyway, backup y restore.
 - [docs/vector-reranking-diagnostic-test-profiles.sql](docs/vector-reranking-diagnostic-test-profiles.sql): perfiles manuales para validación diagnóstica.

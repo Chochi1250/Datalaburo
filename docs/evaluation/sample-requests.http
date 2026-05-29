@@ -1,0 +1,31 @@
+@host = http://localhost:8081
+@embeddingService = http://127.0.0.1:8001
+@profileId = 1
+@limit = 20
+
+### Embedding service health
+GET {{embeddingService}}/health
+
+### Embedding service model info
+GET {{embeddingService}}/model-info
+
+### Embeddings status
+GET {{host}}/internal/embeddings/status
+
+### Prepare job embeddings metadata
+POST {{host}}/internal/embeddings/backfill/jobs?limit=100
+
+### Prepare profile embeddings metadata
+POST {{host}}/internal/embeddings/backfill/profiles?limit=100
+
+### Prepare one profile embedding metadata
+POST {{host}}/internal/embeddings/profiles/{{profileId}}/prepare
+
+### Process pending BGE-M3 embeddings
+POST {{host}}/internal/embeddings/process/bge-m3/pending?limit=5
+
+### Raw vector search with real model
+GET {{host}}/internal/embeddings/vector-search/profiles/{{profileId}}/jobs?limit={{limit}}&embeddingModel=BAAI/bge-m3
+
+### Vector-first compatibility diagnostic
+GET {{host}}/internal/analysis/profiles/{{profileId}}/vector-first-compatibility?limit={{limit}}
