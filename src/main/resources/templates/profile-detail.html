@@ -19,6 +19,7 @@
 
 	<section class="actions">
 		<a class="btn btn-primary" th:href="@{/matching(profileId=${profile.id})}">Usar en matching</a>
+		<a class="btn btn-secondary" th:href="@{/profiles/{id}/vector-first-compatibility(id=${profile.id})}">Analizar compatibilidad vectorial</a>
 		<a class="btn btn-secondary" th:href="@{/profiles}">Volver a perfiles</a>
 	</section>
 
