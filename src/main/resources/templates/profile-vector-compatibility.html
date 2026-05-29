@@ -79,11 +79,11 @@
 					<div class="chips">
 						<span class="chip match-chip" th:text="${'analysisRank #' + row.analysisRank}">analysisRank</span>
 						<span class="chip match-chip" th:text="${'vectorRank #' + row.vectorRank}">vectorRank</span>
-						<span class="chip match-chip" th:if="${row.compatibilityCategory != null}" th:text="${row.compatibilityCategory}">Categoria</span>
-						<span class="chip match-chip" th:if="${row.evidenceLevel != null}" th:text="${'Evidencia: ' + row.evidenceLevel}">Evidencia</span>
+						<span class="chip match-chip" th:text="${row.categoryLabel}">Categoria</span>
+						<span class="chip match-chip" th:text="${'Evidencia: ' + row.evidenceLabel}">Evidencia</span>
 					</div>
 					<div class="actions">
-						<a class="link" th:href="@{/jobs/{id}(id=${row.jobId})}">Ver oferta</a>
+						<a class="btn btn-secondary btn-sm" th:href="@{/jobs/{id}(id=${row.jobId})}">Ver oferta</a>
 					</div>
 				</header>
 
@@ -95,19 +95,22 @@
 					<div>
 						<p class="muted small">Rol / seniority detectado</p>
 						<p>
-							<span th:text="${row.detectedRole != null ? row.detectedRole : 'UNKNOWN'}">ROLE</span>
-							<span class="muted" th:text="${row.detectedSeniority != null ? ' - ' + row.detectedSeniority : ''}"></span>
+							<span th:text="${row.detectedRoleLabel}">Rol</span>
+							<span class="muted" th:text="${' - ' + row.detectedSeniorityLabel}"></span>
 						</p>
 					</div>
 					<div>
 						<p class="muted small">Categoria</p>
-						<p th:text="${row.compatibilityCategory}">CATEGORY</p>
+						<p>
+							<span th:text="${row.categoryLabel}">Categoria</span>
+							<code class="muted" th:if="${row.categoryCode != null}" th:text="${row.categoryCode}">CATEGORY</code>
+						</p>
 					</div>
 					<div>
 						<p class="muted small">Evidencia / confianza</p>
 						<p>
-							<span th:text="${row.evidenceLevel}">EVIDENCE</span>
-							<span class="muted" th:text="${row.confidence != null ? ' - ' + row.confidence : ''}"></span>
+							<span th:text="${row.evidenceLabel}">Evidencia</span>
+							<span class="muted" th:text="${' - confianza ' + row.confidenceLabel}"></span>
 						</p>
 					</div>
 				</div>
@@ -155,7 +158,7 @@
 							<span class="chip match-chip" th:text="${skill.from}">from</span>
 							<span class="chip chip-muted">-&gt;</span>
 							<span class="chip match-chip" th:text="${skill.to}">to</span>
-							<span class="chip match-chip" th:if="${skill.strength != null}" th:text="${skill.strength}">strength</span>
+							<span class="chip match-chip" th:if="${skill.strengthLabel != null}" th:text="${skill.strengthLabel}">strength</span>
 						</div>
 						<p class="muted small" th:if="${skill.reason != null && !skill.reason.isBlank()}" th:text="${skill.reason}">Reason</p>
 					</div>
@@ -171,8 +174,7 @@
 					</div>
 				</div>
 
-				<details th:with="hasDiagnostic=${row.compatibilityBucket != null || row.suggestedRerankRank != null || row.suggestedRankDelta != null || !#lists.isEmpty(row.rerankWarnings) || !#lists.isEmpty(row.rerankReasons) || !#lists.isEmpty(row.rerankSignals)}"
-						 th:if="${hasDiagnostic}">
+				<details th:if="${row.hasDiagnostic}">
 					<summary>Diagnostico interno</summary>
 					<p class="muted">
 						Estos campos no cambian el orden mostrado, no son ranking real, no activan reranking y no representan un score hibrido productivo.
@@ -181,7 +183,10 @@
 					<div class="grid-2">
 						<div>
 							<p class="muted small">Bucket diagnostico</p>
-							<p th:text="${row.compatibilityBucket != null ? row.compatibilityBucket : 'N/A'}">N/A</p>
+							<p>
+								<span th:text="${row.bucketLabel}">N/A</span>
+								<code class="muted" th:if="${row.bucketCode != null}" th:text="${row.bucketCode}">BUCKET</code>
+							</p>
 						</div>
 						<div>
 							<p class="muted small">Ranking sugerido diagnostico</p>
@@ -217,14 +222,14 @@
 						<div th:each="signal, it : ${row.rerankSignals}" th:if="${it.index < 5}">
 							<div class="chips">
 								<span class="chip match-chip" th:text="${signal.name}">SIGNAL</span>
-								<span class="chip match-chip" th:if="${signal.polarity != null}" th:text="${signal.polarity}">POLARITY</span>
+								<span class="chip match-chip" th:if="${signal.polarityLabel != null}" th:text="${signal.polarityLabel}">POLARITY</span>
 							</div>
 							<p class="muted small" th:if="${signal.detail != null && !signal.detail.isBlank()}" th:text="${signal.detail}">Detail</p>
 						</div>
 					</div>
 				</details>
 				<p class="muted small"
-				   th:if="${row.compatibilityBucket == null && row.suggestedRerankRank == null && row.suggestedRankDelta == null && #lists.isEmpty(row.rerankWarnings) && #lists.isEmpty(row.rerankReasons) && #lists.isEmpty(row.rerankSignals)}">
+				   th:if="${!row.hasDiagnostic}">
 					Sin advertencias diagnosticas relevantes.
 				</p>
 			</article>

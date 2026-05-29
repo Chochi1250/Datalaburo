@@ -1,6 +1,9 @@
 package com.DataLaburo.web.controller;
 
 import com.DataLaburo.web.analysis.CompatibilityAnalysisException;
+import com.DataLaburo.web.analysis.RerankSignal;
+import com.DataLaburo.web.analysis.TransferableSkill;
+import com.DataLaburo.web.analysis.VectorFirstCompatibilityResult;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResponse;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityService;
 import com.DataLaburo.web.model.CandidateProfile;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -56,7 +60,9 @@ public class ProfileVectorCompatibilityController {
         try {
             VectorFirstCompatibilityResponse response = compatibilityService.analyze(profileId, limit);
             model.addAttribute("response", response);
-            model.addAttribute("results", response.results());
+            model.addAttribute("results", response.results() == null
+                    ? List.of()
+                    : response.results().stream().map(ResultView::from).toList());
             model.addAttribute("limit", response.retrieval() == null ? limit : response.retrieval().limit());
         } catch (CompatibilityAnalysisException e) {
             model.addAttribute("error", friendlyMessage(e.getMessage()));
@@ -109,5 +115,223 @@ public class ProfileVectorCompatibilityController {
             return "No se encontro el perfil seleccionado. Volve a perfiles y elegi otro.";
         }
         return message;
+    }
+
+    private record ResultView(
+            Long jobId,
+            String title,
+            String company,
+            int vectorRank,
+            double vectorSimilarity,
+            int analysisRank,
+            String detectedRoleLabel,
+            String detectedRoleCode,
+            String detectedSeniorityLabel,
+            String detectedSeniorityCode,
+            String categoryLabel,
+            String categoryCode,
+            String evidenceLabel,
+            String evidenceCode,
+            String confidenceLabel,
+            String confidenceCode,
+            List<String> matchedSkills,
+            List<String> missingCriticalSkills,
+            List<String> missingSecondarySkills,
+            List<TransferView> transferableSkills,
+            List<String> roadmapSuggestions,
+            String explanation,
+            String bucketLabel,
+            String bucketCode,
+            Integer suggestedRerankRank,
+            Integer suggestedRankDelta,
+            List<String> rerankReasons,
+            List<String> rerankWarnings,
+            List<SignalView> rerankSignals,
+            boolean hasDiagnostic
+    ) {
+        static ResultView from(VectorFirstCompatibilityResult result) {
+            String bucketCode = result.compatibilityBucket() == null ? null : result.compatibilityBucket().name();
+            Integer suggestedRank = result.suggestedRerankRank();
+            Integer suggestedDelta = result.suggestedRankDelta();
+            List<String> warnings = safeList(result.rerankWarnings());
+            List<String> reasons = safeList(result.rerankReasons());
+            List<SignalView> signals = safeList(result.rerankSignals()).stream()
+                    .map(SignalView::from)
+                    .toList();
+            boolean hasDiagnostic = bucketCode != null
+                    || suggestedRank != null
+                    || suggestedDelta != null
+                    || !warnings.isEmpty()
+                    || !reasons.isEmpty()
+                    || !signals.isEmpty();
+
+            return new ResultView(
+                    result.jobId(),
+                    result.title(),
+                    result.company(),
+                    result.vectorRank(),
+                    result.vectorSimilarity(),
+                    result.analysisRank(),
+                    labelRole(result.detectedRole()),
+                    codeOrUnknown(result.detectedRole()),
+                    labelSeniority(result.detectedSeniority()),
+                    codeOrUnknown(result.detectedSeniority()),
+                    labelCategory(result.compatibilityCategory() == null ? null : result.compatibilityCategory().name()),
+                    result.compatibilityCategory() == null ? null : result.compatibilityCategory().name(),
+                    labelEvidence(result.evidenceLevel() == null ? null : result.evidenceLevel().name()),
+                    result.evidenceLevel() == null ? null : result.evidenceLevel().name(),
+                    labelConfidence(result.confidence() == null ? null : result.confidence().name()),
+                    result.confidence() == null ? null : result.confidence().name(),
+                    safeList(result.matchedSkills()),
+                    safeList(result.missingCriticalSkills()),
+                    safeList(result.missingSecondarySkills()),
+                    safeList(result.transferableSkills()).stream().map(TransferView::from).toList(),
+                    safeList(result.roadmapSuggestions()),
+                    result.explanation(),
+                    labelBucket(bucketCode),
+                    bucketCode,
+                    suggestedRank,
+                    suggestedDelta,
+                    reasons,
+                    warnings,
+                    signals,
+                    hasDiagnostic
+            );
+        }
+    }
+
+    private record TransferView(
+            String from,
+            String to,
+            String strengthLabel,
+            String strengthCode,
+            String reason
+    ) {
+        static TransferView from(TransferableSkill skill) {
+            String strengthCode = skill.strength() == null ? null : skill.strength().name();
+            return new TransferView(
+                    skill.from(),
+                    skill.to(),
+                    labelTransferStrength(strengthCode),
+                    strengthCode,
+                    skill.reason()
+            );
+        }
+    }
+
+    private record SignalView(
+            String name,
+            String polarityLabel,
+            String polarityCode,
+            String detail
+    ) {
+        static SignalView from(RerankSignal signal) {
+            String polarityCode = signal.polarity() == null ? null : signal.polarity().name();
+            return new SignalView(
+                    signal.name(),
+                    labelPolarity(polarityCode),
+                    polarityCode,
+                    signal.detail()
+            );
+        }
+    }
+
+    private static <T> List<T> safeList(List<T> values) {
+        return values == null ? List.of() : values;
+    }
+
+    private static String codeOrUnknown(String value) {
+        return value == null || value.isBlank() ? "UNKNOWN" : value;
+    }
+
+    private static String labelCategory(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "STRONG_MATCH" -> "Match fuerte";
+            case "GOOD_MATCH_WITH_MINOR_GAPS" -> "Buen match con brechas menores";
+            case "TRANSFERABLE_OPPORTUNITY" -> "Oportunidad transferible";
+            case "ASPIRATIONAL_MATCH" -> "Match aspiracional";
+            case "KEYWORD_MATCH_RISK" -> "Riesgo de match por palabras clave";
+            case "LEARNING_ROADMAP_ONLY" -> "Roadmap de aprendizaje";
+            case "LOW_FIT" -> "Baja compatibilidad";
+            default -> "No detectado";
+        };
+    }
+
+    private static String labelEvidence(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "WORK_EXPERIENCE" -> "Experiencia laboral";
+            case "PROJECT" -> "Proyecto";
+            case "ACADEMIC" -> "Academica";
+            case "CERTIFICATION" -> "Certificacion";
+            case "MENTIONED_ONLY" -> "Solo mencionada";
+            case "TRANSFERABLE" -> "Transferible";
+            case "NO_EVIDENCE" -> "Sin evidencia suficiente";
+            default -> "No detectado";
+        };
+    }
+
+    private static String labelConfidence(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "HIGH" -> "Alta";
+            case "MEDIUM" -> "Media";
+            case "LOW" -> "Baja";
+            default -> "No detectada";
+        };
+    }
+
+    private static String labelRole(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "BACKEND" -> "Backend";
+            case "FRONTEND" -> "Frontend";
+            case "FULL_STACK" -> "Full stack";
+            case "DATA" -> "Data/BI";
+            case "DATABASE" -> "Base de datos";
+            case "IT_SUPPORT" -> "Soporte IT";
+            case "APP_SUPPORT" -> "Soporte de aplicaciones";
+            case "CLOUD" -> "Cloud";
+            case "DEVOPS" -> "DevOps";
+            case "QA" -> "QA";
+            case "SECURITY_OPS", "IAM" -> "Seguridad/IAM";
+            default -> "No detectado";
+        };
+    }
+
+    private static String labelSeniority(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "TRAINEE" -> "Trainee";
+            case "JUNIOR" -> "Junior";
+            case "MID" -> "Semi senior";
+            case "SENIOR" -> "Senior";
+            default -> "No detectado";
+        };
+    }
+
+    private static String labelBucket(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "READY_NOW" -> "Listo para postular";
+            case "GOOD_WITH_MINOR_GAPS" -> "Bueno con brechas menores";
+            case "TRANSFERABLE" -> "Transferible";
+            case "ASPIRATIONAL" -> "Aspiracional";
+            case "WEAK_MATCH" -> "Match debil";
+            case "LOW_FIT" -> "Baja compatibilidad";
+            default -> "N/A";
+        };
+    }
+
+    private static String labelTransferStrength(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "STRONG" -> "Fuerte";
+            case "PARTIAL" -> "Parcial";
+            default -> "No detectado";
+        };
+    }
+
+    private static String labelPolarity(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "POSITIVE" -> "Positiva";
+            case "NEGATIVE" -> "Negativa";
+            case "NEUTRAL" -> "Neutral";
+            default -> "No detectado";
+        };
     }
 }
