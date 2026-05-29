@@ -25,20 +25,21 @@
     </section>
 
     <section class="card">
-        <h2>H2 Console</h2>
+        <h2>Base de datos actual</h2>
         <p class="muted">
-            Console: <code>http://localhost:8081/h2-console</code><br/>
-            JDBC URL: <code>jdbc:h2:file:./data/datalaburo</code><br/>
-            User: <code>sa</code> / Password: (vacío)
+            PostgreSQL + pgvector es la base principal actual de Datalaburo. Las capturas se guardan en
+            <code>JOBS</code>, los snapshots quedan en <code>JOB_SNAPSHOTS</code> y los vectores viven en
+            <code>document_embeddings</code>. H2 queda solo como legado histórico/test.
         </p>
     </section>
 
     <section class="card">
-        <h2>Queries de verificación (objetivo)</h2>
-        <p class="muted">Pegá esto en la consola de H2 para confirmar dónde se guardan las capturas:</p>
+        <h2>Queries de verificación (PostgreSQL)</h2>
+        <p class="muted">Ejecutá estas consultas en PostgreSQL para confirmar dónde se guardan las capturas:</p>
         <pre class="code">select count(*) from jobs;
 select count(*) from job_snapshots;
 select count(*) from job_offers;
+select owner_type, count(*) from document_embeddings group by owner_type;
 
 select id, created_at, title, company, location
 from jobs
