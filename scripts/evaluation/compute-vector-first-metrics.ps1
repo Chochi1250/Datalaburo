@@ -12,7 +12,16 @@ $rows = Import-Csv -LiteralPath $CsvPath
 $positiveLabels = @(
     "STRONG_MATCH",
     "GOOD_MATCH_WITH_GAPS",
+    "GOOD_MATCH_WITH_MINOR_GAPS",
     "TRANSFERABLE_OPPORTUNITY"
+)
+$guideLabels = @(
+    "STRONG_MATCH",
+    "GOOD_MATCH_WITH_GAPS",
+    "TRANSFERABLE_OPPORTUNITY",
+    "ASPIRATIONAL_MATCH",
+    "LOW_FIT",
+    "UNCLEAR"
 )
 
 function Is-TrueValue {
@@ -52,6 +61,9 @@ $labeledRows = @($rows | Where-Object { Has-Label $_ })
 $falsePositiveCount = @($rows | Where-Object { Is-TrueValue $_.is_false_positive }).Count
 $unclearCount = @($rows | Where-Object { $_.human_label -eq "UNCLEAR" }).Count
 $needsReviewCount = @($rows | Where-Object { Is-TrueValue $_.needs_review }).Count
+$nonGuideLabels = @($rows | Where-Object {
+        (Has-Label $_) -and ($guideLabels -notcontains $_.human_label.Trim())
+    })
 
 Write-Host "Vector-first evaluation metrics"
 Write-Host "CSV: $CsvPath"
@@ -60,6 +72,13 @@ Write-Host "Labeled rows: $($labeledRows.Count)"
 Write-Host "False positives: $falsePositiveCount"
 Write-Host "UNCLEAR: $unclearCount"
 Write-Host "Needs review: $needsReviewCount"
+Write-Host "Non-guide labels: $($nonGuideLabels.Count)"
+if ($nonGuideLabels.Count -gt 0) {
+    $nonGuideLabels |
+        Group-Object human_label |
+        Sort-Object Name |
+        ForEach-Object { Write-Host "  $($_.Name): $($_.Count)" }
+}
 Write-Host ""
 
 Write-Host "Labels by profile"
