@@ -1,0 +1,77 @@
+@host = http://localhost:8081
+@embeddingService = http://127.0.0.1:8001
+@limit10 = 10
+@limit20 = 20
+
+### Embedding service health
+GET {{embeddingService}}/health
+
+### Embedding service model info
+GET {{embeddingService}}/model-info
+
+### Embeddings status
+GET {{host}}/internal/embeddings/status
+
+### Prepare job embeddings metadata
+POST {{host}}/internal/embeddings/backfill/jobs?limit=100
+
+### Prepare profile embeddings metadata
+POST {{host}}/internal/embeddings/backfill/profiles?limit=100
+
+### Process pending BGE-M3 embeddings
+POST {{host}}/internal/embeddings/process/bge-m3/pending?limit=5
+
+### Backend Senior Java Cloud - Top 10
+GET {{host}}/internal/analysis/profiles/2/vector-first-compatibility?limit={{limit10}}
+
+### Backend Senior Java Cloud - Top 20
+GET {{host}}/internal/analysis/profiles/2/vector-first-compatibility?limit={{limit20}}
+
+### Backend Strong Partial DevOps Transfer - Top 10
+GET {{host}}/internal/analysis/profiles/3/vector-first-compatibility?limit={{limit10}}
+
+### Backend Strong Partial DevOps Transfer - Top 20
+GET {{host}}/internal/analysis/profiles/3/vector-first-compatibility?limit={{limit20}}
+
+### IT Support Analyst Junior - Top 10
+GET {{host}}/internal/analysis/profiles/4/vector-first-compatibility?limit={{limit10}}
+
+### IT Support Analyst Junior - Top 20
+GET {{host}}/internal/analysis/profiles/4/vector-first-compatibility?limit={{limit20}}
+
+### Data BI SQL Profile - Top 10
+GET {{host}}/internal/analysis/profiles/5/vector-first-compatibility?limit={{limit10}}
+
+### Data BI SQL Profile - Top 20
+GET {{host}}/internal/analysis/profiles/5/vector-first-compatibility?limit={{limit20}}
+
+### Backend Trainee Projects - Top 10
+GET {{host}}/internal/analysis/profiles/6/vector-first-compatibility?limit={{limit10}}
+
+### Backend Trainee Projects - Top 20
+GET {{host}}/internal/analysis/profiles/6/vector-first-compatibility?limit={{limit20}}
+
+### Raw vector search - Backend Senior Java Cloud
+GET {{host}}/internal/embeddings/vector-search/profiles/2/jobs?limit={{limit20}}&embeddingModel=BAAI/bge-m3
+
+### Raw vector search - Backend Strong Partial DevOps Transfer
+GET {{host}}/internal/embeddings/vector-search/profiles/3/jobs?limit={{limit20}}&embeddingModel=BAAI/bge-m3
+
+### Raw vector search - IT Support Analyst Junior
+GET {{host}}/internal/embeddings/vector-search/profiles/4/jobs?limit={{limit20}}&embeddingModel=BAAI/bge-m3
+
+### Raw vector search - Data BI SQL Profile
+GET {{host}}/internal/embeddings/vector-search/profiles/5/jobs?limit={{limit20}}&embeddingModel=BAAI/bge-m3
+
+### Raw vector search - Backend Trainee Projects
+GET {{host}}/internal/embeddings/vector-search/profiles/6/jobs?limit={{limit20}}&embeddingModel=BAAI/bge-m3
+
+# Notes:
+# - Validate real profile IDs before freezing the dataset:
+#   docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -c "select id, name from candidate_profiles where name like 'DIAG - %' order by id;"
+# - Save full JSON locally under local-evidence/vector-first-dataset/.
+# - Do not version local-evidence/.
+# - Example PowerShell:
+#   New-Item -ItemType Directory -Force ".\local-evidence\vector-first-dataset" | Out-Null
+#   $response = Invoke-RestMethod "http://localhost:8081/internal/analysis/profiles/2/vector-first-compatibility?limit=20"
+#   $response | ConvertTo-Json -Depth 12 | Set-Content -Encoding UTF8 ".\local-evidence\vector-first-dataset\profile-2-top20.json"
