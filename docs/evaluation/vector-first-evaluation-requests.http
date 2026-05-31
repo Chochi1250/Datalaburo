@@ -51,6 +51,26 @@ GET {{host}}/internal/analysis/profiles/6/vector-first-compatibility?limit={{lim
 ### Backend Trainee Projects - Top 20
 GET {{host}}/internal/analysis/profiles/6/vector-first-compatibility?limit={{limit20}}
 
+### Fase 6.1 - Skill equivalence evidence refresh
+# Save Top 20 responses locally under:
+# local-evidence/skill-equivalence-refresh/
+#
+# Suggested PowerShell:
+# $profilesRaw = docker exec datalaburo-postgres psql -U datalaburo -d datalaburo -t -A -F "," -c "select id, name from candidate_profiles where name like 'DIAG - %' order by id;"
+# $profiles = $profilesRaw | Where-Object { $_ -match '^\d+,' } | ForEach-Object { $parts = $_.Split(",", 2); [pscustomobject]@{ id = [int]$parts[0]; name = $parts[1] } }
+# New-Item -ItemType Directory -Force ".\local-evidence\skill-equivalence-refresh" | Out-Null
+# foreach ($profile in $profiles) {
+#   $response = Invoke-RestMethod "http://localhost:8081/internal/analysis/profiles/$($profile.id)/vector-first-compatibility?limit=20"
+#   $response | ConvertTo-Json -Depth 20 | Set-Content -Encoding UTF8 ".\local-evidence\skill-equivalence-refresh\profile-$($profile.id)-top20.json"
+# }
+#
+# Then extract columns from docs/evaluation/skill-equivalence-evidence-template.csv:
+# profileId, profileName, vectorRank, analysisRank, title, matchedSkills,
+# criticalGaps, skillEquivalenceSignals, signalJudgement, notes.
+#
+# Verify that analysisRank remains equal to vectorRank. skillEquivalenceSignals
+# are diagnostic only and must not be interpreted as reranking or as a hybrid score.
+
 ### Raw vector search - Backend Senior Java Cloud
 GET {{host}}/internal/embeddings/vector-search/profiles/2/jobs?limit={{limit20}}&embeddingModel=BAAI/bge-m3
 
