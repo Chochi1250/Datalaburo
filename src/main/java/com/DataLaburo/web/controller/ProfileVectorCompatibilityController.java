@@ -62,7 +62,7 @@ public class ProfileVectorCompatibilityController {
             model.addAttribute("response", response);
             model.addAttribute("results", response.results() == null
                     ? List.of()
-                    : response.results().stream().map(ResultView::from).toList());
+                    : response.results().stream().map(result -> ResultView.from(result, profile.get())).toList());
             model.addAttribute("limit", response.retrieval() == null ? limit : response.retrieval().limit());
         } catch (CompatibilityAnalysisException e) {
             model.addAttribute("error", friendlyMessage(e.getMessage()));
@@ -147,9 +147,10 @@ public class ProfileVectorCompatibilityController {
             List<String> rerankReasons,
             List<String> rerankWarnings,
             List<SignalView> rerankSignals,
+            List<TargetDiagnosticView> targetDiagnostics,
             boolean hasDiagnostic
     ) {
-        static ResultView from(VectorFirstCompatibilityResult result) {
+        static ResultView from(VectorFirstCompatibilityResult result, CandidateProfile profile) {
             String bucketCode = result.compatibilityBucket() == null ? null : result.compatibilityBucket().name();
             Integer suggestedRank = result.suggestedRerankRank();
             Integer suggestedDelta = result.suggestedRankDelta();
@@ -195,6 +196,7 @@ public class ProfileVectorCompatibilityController {
                     reasons,
                     warnings,
                     signals,
+                    buildTargetDiagnostics(profile, result),
                     hasDiagnostic
             );
         }
@@ -236,8 +238,114 @@ public class ProfileVectorCompatibilityController {
         }
     }
 
+    private record TargetDiagnosticView(
+            String label,
+            String detail,
+            String category
+    ) {
+    }
+
+    private static List<TargetDiagnosticView> buildTargetDiagnostics(CandidateProfile profile, VectorFirstCompatibilityResult result) {
+        if (profile == null || result == null) {
+            return List.of();
+        }
+
+        String targetRole = codeOrDefault(profile.getTargetRole(), "UNDECIDED");
+        String targetSeniority = codeOrDefault(profile.getTargetSeniority(), "ANY");
+        String searchMode = codeOrDefault(profile.getSearchMode(), "FOCUSED");
+        String detectedRole = codeOrUnknown(result.detectedRole());
+        String detectedSeniority = codeOrUnknown(result.detectedSeniority());
+
+        List<TargetDiagnosticView> out = new java.util.ArrayList<>();
+        out.add(roleDiagnostic(targetRole, detectedRole, searchMode));
+        out.add(seniorityDiagnostic(targetSeniority, detectedSeniority));
+        if (isAdjacentRole(targetRole, detectedRole) && !"FOCUSED".equals(searchMode)) {
+            out.add(new TargetDiagnosticView(
+                    "Oportunidad adyacente",
+                    "El modo de busqueda permite revisar roles cercanos al objetivo.",
+                    "adjacent"
+            ));
+        }
+        out.add(new TargetDiagnosticView(
+                "Modo: " + labelSearchMode(searchMode),
+                modeDetail(searchMode),
+                "mode"
+        ));
+        return out;
+    }
+
+    private static TargetDiagnosticView roleDiagnostic(String targetRole, String detectedRole, String searchMode) {
+        if ("UNDECIDED".equals(targetRole)) {
+            return new TargetDiagnosticView(
+                    "Rol objetivo sin definir",
+                    "El perfil no prioriza un rol especifico.",
+                    "neutral"
+            );
+        }
+        if (rolesAligned(targetRole, detectedRole)) {
+            return new TargetDiagnosticView(
+                    "Rol alineado",
+                    "La oferta detectada coincide con el rol objetivo.",
+                    "positive"
+            );
+        }
+        if (isAdjacentRole(targetRole, detectedRole)) {
+            String detail = "FOCUSED".equals(searchMode)
+                    ? "Es un rol cercano, pero no es el foco principal declarado."
+                    : "Es un rol cercano al objetivo declarado.";
+            return new TargetDiagnosticView("Oportunidad adyacente", detail, "adjacent");
+        }
+        return new TargetDiagnosticView(
+                "Rol no prioritario",
+                "La oferta detectada no coincide con el rol objetivo.",
+                "warning"
+        );
+    }
+
+    private static TargetDiagnosticView seniorityDiagnostic(String targetSeniority, String detectedSeniority) {
+        if ("ANY".equals(targetSeniority)) {
+            return new TargetDiagnosticView(
+                    "Seniority abierto",
+                    "El perfil acepta evaluar distintos niveles.",
+                    "neutral"
+            );
+        }
+        int targetRank = seniorityRank(targetSeniority);
+        int detectedRank = seniorityRank(detectedSeniority);
+        if (targetRank <= 0 || detectedRank <= 0) {
+            return new TargetDiagnosticView(
+                    "Seniority no concluyente",
+                    "No hay senales suficientes para comparar el seniority.",
+                    "neutral"
+            );
+        }
+        if (targetRank == detectedRank || Math.abs(targetRank - detectedRank) == 1) {
+            return new TargetDiagnosticView(
+                    "Seniority compatible",
+                    "El seniority detectado esta cerca del objetivo.",
+                    "positive"
+            );
+        }
+        if (targetRank > detectedRank) {
+            return new TargetDiagnosticView(
+                    "Posible sobrecalificacion",
+                    "El objetivo declarado esta por encima del seniority detectado en la oferta.",
+                    "warning"
+            );
+        }
+        return new TargetDiagnosticView(
+                "Seniority aspiracional",
+                "La oferta parece pedir un nivel superior al objetivo declarado.",
+                "warning"
+        );
+    }
+
     private static <T> List<T> safeList(List<T> values) {
         return values == null ? List.of() : values;
+    }
+
+    private static String codeOrDefault(String value, String defaultValue) {
+        return value == null || value.isBlank() ? defaultValue : value.trim();
     }
 
     private static String codeOrUnknown(String value) {
@@ -282,8 +390,10 @@ public class ProfileVectorCompatibilityController {
     private static String labelRole(String code) {
         return switch (codeOrUnknown(code)) {
             case "BACKEND" -> "Backend";
+            case "DOTNET_BACKEND" -> ".NET backend";
             case "FRONTEND" -> "Frontend";
             case "FULL_STACK" -> "Full stack";
+            case "DOTNET_FULLSTACK" -> ".NET full stack";
             case "DATA" -> "Data/BI";
             case "DATABASE" -> "Base de datos";
             case "IT_SUPPORT" -> "Soporte IT";
@@ -302,7 +412,71 @@ public class ProfileVectorCompatibilityController {
             case "JUNIOR" -> "Junior";
             case "MID" -> "Semi senior";
             case "SENIOR" -> "Senior";
+            case "LEAD" -> "Lead";
             default -> "No detectado";
+        };
+    }
+
+    private static String labelSearchMode(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "FOCUSED" -> "Enfocado";
+            case "BALANCED" -> "Balanceado";
+            case "EXPLORATORY" -> "Exploratorio";
+            default -> "No detectado";
+        };
+    }
+
+    private static String modeDetail(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "BALANCED" -> "Se muestran senales de foco y oportunidades cercanas sin reordenar.";
+            case "EXPLORATORY" -> "Se permite revisar oportunidades amplias sin filtrar resultados.";
+            default -> "Se prioriza leer el foco declarado sin filtrar ni reordenar.";
+        };
+    }
+
+    private static boolean rolesAligned(String targetRole, String detectedRole) {
+        String target = normalizeRole(targetRole);
+        String detected = normalizeRole(detectedRole);
+        return !"UNKNOWN".equals(target) && target.equals(detected);
+    }
+
+    private static boolean isAdjacentRole(String targetRole, String detectedRole) {
+        String target = normalizeRole(targetRole);
+        String detected = normalizeRole(detectedRole);
+        if ("UNKNOWN".equals(target) || "UNKNOWN".equals(detected) || target.equals(detected)) {
+            return false;
+        }
+        return switch (target) {
+            case "BACKEND" -> detected.equals("FULL_STACK") || detected.equals("DATABASE") || detected.equals("CLOUD") || detected.equals("DEVOPS");
+            case "FRONTEND" -> detected.equals("FULL_STACK");
+            case "FULL_STACK" -> detected.equals("BACKEND") || detected.equals("FRONTEND");
+            case "DATA" -> detected.equals("DATABASE") || detected.equals("BACKEND");
+            case "DATABASE" -> detected.equals("DATA") || detected.equals("BACKEND");
+            case "IT_SUPPORT" -> detected.equals("APP_SUPPORT") || detected.equals("SECURITY_OPS") || detected.equals("IAM");
+            case "APP_SUPPORT" -> detected.equals("IT_SUPPORT") || detected.equals("DATABASE");
+            case "SECURITY_OPS", "IAM" -> detected.equals("IT_SUPPORT") || detected.equals("APP_SUPPORT") || detected.equals("CLOUD");
+            case "DEVOPS", "CLOUD" -> detected.equals("BACKEND") || detected.equals("SECURITY_OPS");
+            case "QA" -> detected.equals("BACKEND") || detected.equals("FULL_STACK");
+            default -> false;
+        };
+    }
+
+    private static String normalizeRole(String role) {
+        return switch (codeOrUnknown(role)) {
+            case "DOTNET_BACKEND" -> "BACKEND";
+            case "DOTNET_FULLSTACK" -> "FULL_STACK";
+            default -> codeOrUnknown(role);
+        };
+    }
+
+    private static int seniorityRank(String seniority) {
+        return switch (codeOrUnknown(seniority)) {
+            case "TRAINEE" -> 1;
+            case "JUNIOR" -> 2;
+            case "MID" -> 3;
+            case "SENIOR" -> 4;
+            case "LEAD" -> 5;
+            default -> 0;
         };
     }
 

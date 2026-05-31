@@ -420,6 +420,41 @@ html[data-theme="dark"] .cat-chip[data-cat] {
 	cursor: default;
 }
 
+.target-diag-chip {
+	cursor: default;
+	font-weight: 800;
+}
+
+.target-diag-chip.is-positive {
+	background: rgba(16, 185, 129, 0.14);
+	color: #065f46;
+	border-color: rgba(16, 185, 129, 0.35);
+}
+
+.target-diag-chip.is-warning {
+	background: rgba(245, 158, 11, 0.14);
+	color: #92400e;
+	border-color: rgba(245, 158, 11, 0.35);
+}
+
+.target-diag-chip.is-adjacent {
+	background: rgba(14, 165, 233, 0.14);
+	color: #0369a1;
+	border-color: rgba(14, 165, 233, 0.35);
+}
+
+.target-diag-chip.is-mode,
+.target-diag-chip.is-neutral {
+	background: var(--surface-2);
+	color: var(--muted);
+	border-color: var(--border);
+}
+
+html[data-theme="dark"] .target-diag-chip {
+	color: var(--text);
+	border-color: #223055;
+}
+
 .match-grid > .card {
 	display: flex;
 	flex-direction: column;
