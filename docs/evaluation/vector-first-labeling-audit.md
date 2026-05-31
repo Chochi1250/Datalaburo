@@ -28,10 +28,10 @@ contenia la primera pasada humana. Se sincronizaron al CSV solo las columnas man
 | Filas etiquetadas | 50 |
 | Filas sin label | 0 |
 | Perfiles evaluados | 5 |
-| `needs_review=true` | 13 |
+| `needs_review=true` | 12 |
 | `is_false_positive=true` | 2 |
-| `is_false_negative_candidate=true` | 4 |
-| `UNCLEAR` | 5 |
+| `is_false_negative_candidate=true` | 0 |
+| `UNCLEAR` | 6 |
 | Labels fuera de la guia | 0 |
 
 Nota de normalizacion:
@@ -48,9 +48,9 @@ Se normalizaron 17 filas para alinear el dataset con la guia de etiquetado human
 | ---: | --- | ---: | ---: | --- | ---: | ---: | ---: |
 | 2 | DIAG - Backend Senior Java Cloud | 10 | 10 | `STRONG_MATCH=2`; `GOOD_MATCH_WITH_GAPS=4`; `TRANSFERABLE_OPPORTUNITY=1`; `LOW_FIT=3` | 1 | 1 | 0 |
 | 3 | DIAG - Backend Strong Partial DevOps Transfer | 10 | 10 | `STRONG_MATCH=3`; `GOOD_MATCH_WITH_GAPS=4`; `TRANSFERABLE_OPPORTUNITY=1`; `LOW_FIT=1`; `UNCLEAR=1` | 2 | 0 | 0 |
-| 4 | DIAG - IT Support Analyst Junior | 10 | 10 | `STRONG_MATCH=4`; `GOOD_MATCH_WITH_GAPS=1`; `TRANSFERABLE_OPPORTUNITY=2`; `ASPIRATIONAL_MATCH=2`; `UNCLEAR=1` | 4 | 0 | 2 |
-| 5 | DIAG - Data BI SQL Profile | 10 | 10 | `STRONG_MATCH=2`; `GOOD_MATCH_WITH_GAPS=3`; `TRANSFERABLE_OPPORTUNITY=1`; `ASPIRATIONAL_MATCH=2`; `LOW_FIT=1`; `UNCLEAR=1` | 2 | 0 | 1 |
-| 6 | DIAG - Backend Trainee Projects | 10 | 10 | `STRONG_MATCH=1`; `GOOD_MATCH_WITH_GAPS=5`; `ASPIRATIONAL_MATCH=1`; `LOW_FIT=1`; `UNCLEAR=2` | 4 | 1 | 1 |
+| 4 | DIAG - IT Support Analyst Junior | 10 | 10 | `STRONG_MATCH=4`; `GOOD_MATCH_WITH_GAPS=1`; `TRANSFERABLE_OPPORTUNITY=2`; `ASPIRATIONAL_MATCH=2`; `UNCLEAR=1` | 3 | 0 | 0 |
+| 5 | DIAG - Data BI SQL Profile | 10 | 10 | `STRONG_MATCH=2`; `GOOD_MATCH_WITH_GAPS=3`; `TRANSFERABLE_OPPORTUNITY=1`; `ASPIRATIONAL_MATCH=2`; `LOW_FIT=1`; `UNCLEAR=1` | 2 | 0 | 0 |
+| 6 | DIAG - Backend Trainee Projects | 10 | 10 | `GOOD_MATCH_WITH_GAPS=5`; `ASPIRATIONAL_MATCH=1`; `LOW_FIT=1`; `UNCLEAR=3` | 4 | 1 | 0 |
 
 ## Hallazgos principales
 
@@ -165,16 +165,15 @@ No quedan filas con `is_false_positive=true` y label positivo. En una pasada pos
 
 Recomendacion: reservar `is_false_positive=true` para resultados que el humano considere `LOW_FIT` o, excepcionalmente, `UNCLEAR` por mala evidencia.
 
-### `is_false_negative_candidate=true` usado para categoria demasiado conservadora
+### `is_false_negative_candidate=true` depurado
 
-Quedan casos con buen ranking marcados como false negative candidate:
+No quedan filas con `is_false_negative_candidate=true`.
 
-- `P4-J8-R1`
-- `P4-J7-R2`
-- `P5-J13-R1`
-- `P6-J4-R4`
+Revision aplicada:
 
-Esto no es un falso negativo de recuperacion, porque las ofertas si fueron recuperadas arriba. Parece mas bien `SYSTEM_TOO_CONSERVATIVE` o desacuerdo con `system_category`.
+- `P4-J8-R1` y `P4-J7-R2`: se consideran `SYSTEM_TOO_CONSERVATIVE`, no falsos negativos de recuperacion.
+- `P5-J13-R1`: se mantiene como `GOOD_MATCH_WITH_GAPS`; tambien es un caso conservador del sistema.
+- `P6-J4-R4`: se cambia a `UNCLEAR` y queda con `needs_review=true` por objetivo del perfil y seniority no verificada.
 
 Recomendacion: separar en segunda pasada:
 
@@ -183,7 +182,7 @@ Recomendacion: separar en segunda pasada:
 
 ### `needs_review=true` refinado
 
-El dataset tenia 34 filas con `needs_review=true` antes de la depuracion de flags. Luego de aplicar el criterio de metricas limpias, quedaron 13:
+El dataset tenia 34 filas con `needs_review=true` antes de la depuracion de flags. Luego de aplicar el criterio de metricas limpias, quedaron 12:
 
 - `UNCLEAR` por informacion insuficiente o texto dudoso;
 - dudas explicitas de label;
@@ -331,9 +330,9 @@ El script reporta `Non-guide labels: 0` despues de la normalizacion.
 | --- | ---: | ---: | --- |
 | 2 - Backend Senior Java Cloud | 0.600 | 0.700 | 1 `needs_review`. |
 | 3 - Backend Strong Partial DevOps Transfer | 1.000 | 0.800 | 1 `UNCLEAR`, 2 `needs_review`. |
-| 4 - IT Support Analyst Junior | 1.000 | 0.700 | 1 `UNCLEAR`, 4 `needs_review`. |
+| 4 - IT Support Analyst Junior | 1.000 | 0.700 | 1 `UNCLEAR`, 3 `needs_review`. |
 | 5 - Data BI SQL Profile | 0.800 | 0.600 | 1 `UNCLEAR`, 2 `needs_review`. |
-| 6 - Backend Trainee Projects | 0.600 | 0.600 | 2 `UNCLEAR`, 4 `needs_review`. |
+| 6 - Backend Trainee Projects | 0.400 | 0.500 | 3 `UNCLEAR`, 4 `needs_review`. |
 
 Estas metricas son preliminares. No deben usarse como conclusion final hasta:
 
