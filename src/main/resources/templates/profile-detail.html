@@ -34,6 +34,83 @@
 	</section>
 
 	<section class="card">
+		<h2>Evidencia por proyectos</h2>
+		<p class="muted small">Proyectos cargados manualmente como evidencia estructurada. Todavia no alteran ranking ni embeddings.</p>
+
+		<p class="error" th:if="${projectError != null}" th:text="${projectError}">Error</p>
+
+		<p class="muted" th:if="${#lists.isEmpty(projects)}">Todavia no hay proyectos cargados para este perfil.</p>
+
+		<div class="project-list" th:if="${!#lists.isEmpty(projects)}">
+			<article class="project-evidence" th:each="project : ${projects}">
+				<div class="project-header">
+					<div>
+						<h3 class="project-title" th:text="${project.title}">API REST de ofertas laborales</h3>
+						<p class="muted small" th:if="${project.createdAt != null}" th:text="${'Cargado: ' + project.createdAt}">Cargado</p>
+					</div>
+					<span class="chip match-chip profile-chip" th:text="${project.evidenceType}">PERSONAL_PROJECT</span>
+				</div>
+
+				<p th:text="${project.description}">Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests.</p>
+
+				<div class="chips" th:if="${!#lists.isEmpty(project.skillTags)}">
+					<span class="chip match-chip" th:each="skill : ${project.skillTags}" th:text="${skill}">Java</span>
+				</div>
+
+				<div class="links">
+					<a class="link" th:if="${project.repositoryUrl != null}" th:href="${project.repositoryUrl}" target="_blank" rel="noopener">Repositorio</a>
+					<a class="link" th:if="${project.demoUrl != null}" th:href="${project.demoUrl}" target="_blank" rel="noopener">Demo</a>
+					<form class="inline-form" method="post" th:action="@{/profiles/{profileId}/projects/{projectId}/delete(profileId=${profile.id},projectId=${project.id})}">
+						<button class="btn btn-ghost btn-sm danger-button" type="submit">Eliminar</button>
+					</form>
+				</div>
+			</article>
+		</div>
+
+		<form class="project-form" method="post" th:action="@{/profiles/{id}/projects(id=${profile.id})}" th:object="${projectForm}">
+			<h3 class="project-form-title">Agregar proyecto</h3>
+			<div class="grid-2">
+				<div class="field">
+					<label for="projectTitle">Titulo</label>
+					<input id="projectTitle" type="text" th:field="*{title}" placeholder="API REST de ofertas laborales"/>
+				</div>
+				<div class="field">
+					<label for="projectEvidenceType">Tipo de evidencia</label>
+					<select id="projectEvidenceType" th:field="*{evidenceType}">
+						<option th:each="type : ${evidenceTypes}" th:value="${type}" th:text="${type}">PERSONAL_PROJECT</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="field">
+				<label for="projectDescription">Descripcion</label>
+				<textarea id="projectDescription" rows="4" th:field="*{description}" placeholder="Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests."></textarea>
+			</div>
+
+			<div class="field">
+				<label for="projectSkills">Skills evidenciadas</label>
+				<input id="projectSkills" type="text" th:field="*{skillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, SQL, Git"/>
+				<p class="hint muted">Texto simple separado por comas. En esta fase no se normaliza contra el catalogo de skills.</p>
+			</div>
+
+			<div class="grid-2">
+				<div class="field">
+					<label for="repositoryUrl">URL repo opcional</label>
+					<input id="repositoryUrl" type="url" th:field="*{repositoryUrl}" placeholder="https://github.com/..."/>
+				</div>
+				<div class="field">
+					<label for="demoUrl">URL demo opcional</label>
+					<input id="demoUrl" type="url" th:field="*{demoUrl}" placeholder="https://..."/>
+				</div>
+			</div>
+
+			<div class="actions">
+				<button type="submit">Guardar proyecto</button>
+			</div>
+		</form>
+	</section>
+
+	<section class="card">
 		<h2>CV guardado</h2>
 		<div class="code" th:text="${profile.cvText}"></div>
 	</section>

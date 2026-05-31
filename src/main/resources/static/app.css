@@ -180,6 +180,34 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libe
 .row { display: grid; grid-template-columns: 2fr 1.2fr 1.2fr 1fr; gap: 10px; align-items: start; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); box-shadow: var(--shadow); }
 .row.head { background: transparent; border: none; padding: 0 10px; font-weight: 800; color: var(--muted); box-shadow: none; }
 .links { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.inline-form { display: inline; margin: 0; }
+.project-list { display: grid; gap: 10px; margin: 12px 0 18px; }
+.project-evidence {
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--surface-2);
+	padding: 12px;
+}
+.project-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+.project-title { margin: 0 0 4px; font-size: 15px; }
+.project-form {
+	display: grid;
+	gap: 12px;
+	padding-top: 12px;
+	border-top: 1px solid var(--border);
+}
+.project-form-title { margin: 0; font-size: 15px; }
+.danger-button {
+	color: #991b1b;
+	border-color: rgba(239, 68, 68, 0.35);
+	background: rgba(239, 68, 68, 0.08);
+}
 
 /* Jobs master-detail */
 .jobs-layout { display: grid; gap: 12px; grid-template-columns: 360px 1fr; }

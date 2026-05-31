@@ -1,6 +1,7 @@
 package com.DataLaburo.web.embedding;
 
 import com.DataLaburo.web.model.CandidateProfile;
+import com.DataLaburo.web.model.CandidateProfileProject;
 import com.DataLaburo.web.model.Job;
 import org.junit.jupiter.api.Test;
 
@@ -57,6 +58,24 @@ class EmbeddingTextBuilderTest {
 
         assertTrue(text.contains("CV:\nJava developer with PostgreSQL experience."));
         assertFalse(text.contains("Ada Lovelace"));
+    }
+
+    @Test
+    void candidateProfileTextDoesNotIncludeProjectEvidence() {
+        CandidateProfile profile = new CandidateProfile();
+        profile.setCvText("Java developer with PostgreSQL experience.");
+
+        CandidateProfileProject project = new CandidateProfileProject();
+        project.setCandidateProfile(profile);
+        project.setTitle("GraphQL portfolio API");
+        project.setSkillsText("GraphQL, Docker");
+
+        String text = builder.buildForCandidateProfile(profile);
+
+        assertTrue(text.contains("CV:\nJava developer with PostgreSQL experience."));
+        assertFalse(text.contains("GraphQL portfolio API"));
+        assertFalse(text.contains("GraphQL"));
+        assertFalse(text.contains("Docker"));
     }
 
     @Test

@@ -1,7 +1,10 @@
 package com.DataLaburo.web.controller;
 
 import com.DataLaburo.web.dto.CandidateProfileForm;
+import com.DataLaburo.web.dto.CandidateProfileProjectForm;
 import com.DataLaburo.web.model.CandidateProfile;
+import com.DataLaburo.web.model.ProjectEvidenceType;
+import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,9 +18,14 @@ import java.util.List;
 @Controller
 public class ProfileController {
     private final CandidateProfileService candidateProfileService;
+    private final CandidateProfileProjectService candidateProfileProjectService;
 
-    public ProfileController(CandidateProfileService candidateProfileService) {
+    public ProfileController(
+            CandidateProfileService candidateProfileService,
+            CandidateProfileProjectService candidateProfileProjectService
+    ) {
         this.candidateProfileService = candidateProfileService;
+        this.candidateProfileProjectService = candidateProfileProjectService;
     }
 
     @GetMapping("/profiles")
@@ -60,7 +68,49 @@ public class ProfileController {
         if (profile == null) {
             return "redirect:/profiles";
         }
-        model.addAttribute("profile", profile);
+        populateProfileDetailModel(model, profile, new CandidateProfileProjectForm(), null);
         return "profile-detail";
+    }
+
+    @PostMapping("/profiles/{profileId}/projects")
+    public String createProject(
+            @PathVariable Long profileId,
+            @ModelAttribute("projectForm") CandidateProfileProjectForm projectForm,
+            Model model
+    ) {
+        CandidateProfile profile = candidateProfileService.findById(profileId).orElse(null);
+        if (profile == null) {
+            return "redirect:/profiles";
+        }
+
+        try {
+            candidateProfileProjectService.create(profileId, projectForm);
+        } catch (IllegalArgumentException ex) {
+            populateProfileDetailModel(model, profile, projectForm, ex.getMessage());
+            return "profile-detail";
+        }
+
+        return "redirect:/profiles/" + profileId;
+    }
+
+    @PostMapping("/profiles/{profileId}/projects/{projectId}/delete")
+    public String deleteProject(@PathVariable Long profileId, @PathVariable Long projectId) {
+        candidateProfileProjectService.delete(profileId, projectId);
+        return "redirect:/profiles/" + profileId;
+    }
+
+    private void populateProfileDetailModel(
+            Model model,
+            CandidateProfile profile,
+            CandidateProfileProjectForm projectForm,
+            String projectError
+    ) {
+        model.addAttribute("profile", profile);
+        model.addAttribute("projects", candidateProfileProjectService.findByProfileId(profile.getId()));
+        model.addAttribute("projectForm", projectForm == null ? new CandidateProfileProjectForm() : projectForm);
+        model.addAttribute("evidenceTypes", ProjectEvidenceType.values());
+        if (projectError != null && !projectError.isBlank()) {
+            model.addAttribute("projectError", projectError);
+        }
     }
 }
