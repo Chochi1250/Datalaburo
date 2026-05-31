@@ -6,6 +6,9 @@ public class CandidateProfileForm {
 	private String skillsText;
 	private Integer yearsExperience;
 	private String cvText;
+	private String targetRole = "UNDECIDED";
+	private String targetSeniority = "ANY";
+	private String searchMode = "FOCUSED";
 
 	public String getName() {
 		return name;
@@ -45,5 +48,29 @@ public class CandidateProfileForm {
 
 	public void setCvText(String cvText) {
 		this.cvText = cvText;
+	}
+
+	public String getTargetRole() {
+		return targetRole;
+	}
+
+	public void setTargetRole(String targetRole) {
+		this.targetRole = targetRole;
+	}
+
+	public String getTargetSeniority() {
+		return targetSeniority;
+	}
+
+	public void setTargetSeniority(String targetSeniority) {
+		this.targetSeniority = targetSeniority;
+	}
+
+	public String getSearchMode() {
+		return searchMode;
+	}
+
+	public void setSearchMode(String searchMode) {
+		this.searchMode = searchMode;
 	}
 }

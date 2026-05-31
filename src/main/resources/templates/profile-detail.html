@@ -24,6 +24,16 @@
 	</section>
 
 	<section class="card">
+		<h2>Objetivo profesional</h2>
+		<div class="chips">
+			<span class="chip match-chip" th:text="${'Rol: ' + (profile.targetRole != null ? profile.targetRole : 'UNDECIDED')}">Rol</span>
+			<span class="chip match-chip" th:text="${'Seniority: ' + (profile.targetSeniority != null ? profile.targetSeniority : 'ANY')}">Seniority</span>
+			<span class="chip match-chip" th:text="${'Modo: ' + (profile.searchMode != null ? profile.searchMode : 'FOCUSED')}">Modo</span>
+		</div>
+		<p class="muted small">Estos campos son contexto guardado del perfil. Todavia no cambian ranking, embeddings ni matching.</p>
+	</section>
+
+	<section class="card">
 		<h2>CV guardado</h2>
 		<div class="code" th:text="${profile.cvText}"></div>
 	</section>

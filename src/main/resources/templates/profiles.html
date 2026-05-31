@@ -29,6 +29,11 @@
 				<h2 th:text="${profile.name}">Perfil</h2>
 				<p class="muted small" th:if="${profile.updatedAt != null}" th:text="${'Actualizado: ' + profile.updatedAt}"></p>
 			</header>
+			<div class="chips">
+				<span class="chip match-chip" th:text="${profile.targetRole != null ? profile.targetRole : 'UNDECIDED'}">UNDECIDED</span>
+				<span class="chip match-chip" th:text="${profile.targetSeniority != null ? profile.targetSeniority : 'ANY'}">ANY</span>
+				<span class="chip match-chip" th:text="${profile.searchMode != null ? profile.searchMode : 'FOCUSED'}">FOCUSED</span>
+			</div>
 			<p class="muted" th:text="${#strings.abbreviate(profile.cvText, 220)}"></p>
 			<div class="actions">
 				<a class="link" th:href="@{/profiles/{id}(id=${profile.id})}">Ver detalle</a>

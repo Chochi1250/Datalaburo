@@ -25,6 +25,49 @@
 				<input id="name" type="text" th:field="*{name}" placeholder="Ej: Mi CV backend"/>
 			</div>
 
+			<div class="grid-2">
+				<div class="field">
+					<label for="targetRole">Rol objetivo</label>
+					<select id="targetRole" th:field="*{targetRole}">
+						<option value="UNDECIDED">Sin definir</option>
+						<option value="BACKEND">Backend</option>
+						<option value="FRONTEND">Frontend</option>
+						<option value="FULL_STACK">Full stack</option>
+						<option value="DATA">Data</option>
+						<option value="QA">QA</option>
+						<option value="DEVOPS">DevOps</option>
+						<option value="CLOUD">Cloud</option>
+						<option value="IT_SUPPORT">IT support</option>
+						<option value="APP_SUPPORT">App support</option>
+						<option value="SECURITY_OPS">Security ops</option>
+						<option value="IAM">IAM</option>
+						<option value="DATABASE">Database</option>
+					</select>
+				</div>
+
+				<div class="field">
+					<label for="targetSeniority">Seniority objetivo</label>
+					<select id="targetSeniority" th:field="*{targetSeniority}">
+						<option value="ANY">Cualquiera</option>
+						<option value="TRAINEE">Trainee</option>
+						<option value="JUNIOR">Junior</option>
+						<option value="MID">Mid</option>
+						<option value="SENIOR">Senior</option>
+						<option value="LEAD">Lead</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="field">
+				<label for="searchMode">Modo de busqueda</label>
+				<select id="searchMode" th:field="*{searchMode}">
+					<option value="FOCUSED">Enfocado</option>
+					<option value="BALANCED">Balanceado</option>
+					<option value="EXPLORATORY">Exploratorio</option>
+				</select>
+				<p class="hint muted">Estos campos se guardan como contexto del perfil. Todavia no cambian ranking, embeddings ni matching.</p>
+			</div>
+
 			<div class="field">
 				<label for="cvText">CV (texto)</label>
 				<textarea id="cvText" rows="14" th:field="*{cvText}"

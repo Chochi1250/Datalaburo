@@ -11,6 +11,10 @@ import java.util.Optional;
 
 @Service
 public class CandidateProfileService {
+    private static final String DEFAULT_TARGET_ROLE = "UNDECIDED";
+    private static final String DEFAULT_TARGET_SENIORITY = "ANY";
+    private static final String DEFAULT_SEARCH_MODE = "FOCUSED";
+
     private final CandidateProfileRepository candidateProfileRepository;
 
     public CandidateProfileService(CandidateProfileRepository candidateProfileRepository) {
@@ -35,10 +39,18 @@ public class CandidateProfileService {
         CandidateProfile profile = new CandidateProfile();
         profile.setName(clean(form.getName()));
         profile.setCvText(clean(form.getCvText()));
+        profile.setTargetRole(defaultIfBlank(form.getTargetRole(), DEFAULT_TARGET_ROLE));
+        profile.setTargetSeniority(defaultIfBlank(form.getTargetSeniority(), DEFAULT_TARGET_SENIORITY));
+        profile.setSearchMode(defaultIfBlank(form.getSearchMode(), DEFAULT_SEARCH_MODE));
         return candidateProfileRepository.save(profile);
     }
 
     private String clean(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private String defaultIfBlank(String value, String defaultValue) {
+        String cleaned = clean(value);
+        return cleaned.isBlank() ? defaultValue : cleaned;
     }
 }

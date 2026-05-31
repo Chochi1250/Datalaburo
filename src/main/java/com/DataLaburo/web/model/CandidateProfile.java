@@ -30,6 +30,15 @@ public class CandidateProfile {
     @Column(name = "cv_text", nullable = false, columnDefinition = "TEXT")
     private String cvText;
 
+    @Column(name = "target_role", nullable = false, length = 64)
+    private String targetRole = "UNDECIDED";
+
+    @Column(name = "target_seniority", nullable = false, length = 32)
+    private String targetSeniority = "ANY";
+
+    @Column(name = "search_mode", nullable = false, length = 32)
+    private String searchMode = "FOCUSED";
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -60,6 +69,30 @@ public class CandidateProfile {
 
     public void setCvText(String cvText) {
         this.cvText = cvText;
+    }
+
+    public String getTargetRole() {
+        return targetRole;
+    }
+
+    public void setTargetRole(String targetRole) {
+        this.targetRole = targetRole;
+    }
+
+    public String getTargetSeniority() {
+        return targetSeniority;
+    }
+
+    public void setTargetSeniority(String targetSeniority) {
+        this.targetSeniority = targetSeniority;
+    }
+
+    public String getSearchMode() {
+        return searchMode;
+    }
+
+    public void setSearchMode(String searchMode) {
+        this.searchMode = searchMode;
     }
 
     public Instant getCreatedAt() {
