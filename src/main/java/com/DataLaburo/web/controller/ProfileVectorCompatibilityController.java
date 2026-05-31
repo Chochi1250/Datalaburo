@@ -2,6 +2,7 @@ package com.DataLaburo.web.controller;
 
 import com.DataLaburo.web.analysis.CompatibilityAnalysisException;
 import com.DataLaburo.web.analysis.RerankSignal;
+import com.DataLaburo.web.analysis.SkillEquivalenceSignal;
 import com.DataLaburo.web.analysis.TransferableSkill;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResult;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResponse;
@@ -147,6 +148,7 @@ public class ProfileVectorCompatibilityController {
             List<String> rerankReasons,
             List<String> rerankWarnings,
             List<SignalView> rerankSignals,
+            List<SkillEquivalenceView> skillEquivalenceSignals,
             List<TargetDiagnosticView> targetDiagnostics,
             boolean hasDiagnostic
     ) {
@@ -159,12 +161,16 @@ public class ProfileVectorCompatibilityController {
             List<SignalView> signals = safeList(result.rerankSignals()).stream()
                     .map(SignalView::from)
                     .toList();
+            List<SkillEquivalenceView> skillEquivalenceSignals = safeList(result.skillEquivalenceSignals()).stream()
+                    .map(SkillEquivalenceView::from)
+                    .toList();
             boolean hasDiagnostic = bucketCode != null
                     || suggestedRank != null
                     || suggestedDelta != null
                     || !warnings.isEmpty()
                     || !reasons.isEmpty()
-                    || !signals.isEmpty();
+                    || !signals.isEmpty()
+                    || !skillEquivalenceSignals.isEmpty();
 
             return new ResultView(
                     result.jobId(),
@@ -196,6 +202,7 @@ public class ProfileVectorCompatibilityController {
                     reasons,
                     warnings,
                     signals,
+                    skillEquivalenceSignals,
                     buildTargetDiagnostics(profile, result),
                     hasDiagnostic
             );
@@ -234,6 +241,24 @@ public class ProfileVectorCompatibilityController {
                     labelPolarity(polarityCode),
                     polarityCode,
                     signal.detail()
+            );
+        }
+    }
+
+    private record SkillEquivalenceView(
+            String candidateSkill,
+            String targetSkill,
+            String relationLabel,
+            String relationCode,
+            String reason
+    ) {
+        static SkillEquivalenceView from(SkillEquivalenceSignal signal) {
+            return new SkillEquivalenceView(
+                    signal.candidateSkill(),
+                    signal.targetSkill(),
+                    labelSkillRelation(signal.relation()),
+                    signal.relation(),
+                    signal.reason()
             );
         }
     }
@@ -506,6 +531,16 @@ public class ProfileVectorCompatibilityController {
             case "NEGATIVE" -> "Negativa";
             case "NEUTRAL" -> "Neutral";
             default -> "No detectado";
+        };
+    }
+
+    private static String labelSkillRelation(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "PARTIAL_EQUIVALENCE" -> "Equivalencia parcial";
+            case "PARTIAL_TRANSFER" -> "Transferencia parcial";
+            case "RELATED" -> "Relacionado";
+            case "CONTEXTUAL" -> "Contextual";
+            default -> "Relacion parcial";
         };
     }
 }

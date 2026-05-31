@@ -33,6 +33,7 @@ class VectorFirstCompatibilityServiceTest {
     private final SkillExtractionService skillExtractionService = mock(SkillExtractionService.class);
     private final RuleBasedEnrichmentService ruleBasedEnrichmentService = mock(RuleBasedEnrichmentService.class);
     private final GapAnalysisService gapAnalysisService = mock(GapAnalysisService.class);
+    private final SkillEquivalenceService skillEquivalenceService = new SkillEquivalenceService();
     private final TransferabilityService transferabilityService = mock(TransferabilityService.class);
     private final CompatibilityExplanationService explanationService = mock(CompatibilityExplanationService.class);
     private final RerankingDiagnosticService rerankingDiagnosticService = new RerankingDiagnosticService();
@@ -46,6 +47,7 @@ class VectorFirstCompatibilityServiceTest {
             skillExtractionService,
             ruleBasedEnrichmentService,
             gapAnalysisService,
+            skillEquivalenceService,
             transferabilityService,
             explanationService,
             rerankingDiagnosticService
@@ -72,10 +74,10 @@ class VectorFirstCompatibilityServiceTest {
         GapAnalysis gap = new GapAnalysis(
                 List.of("Java"),
                 List.of(),
-                List.of("Kubernetes"),
+                List.of("SQL"),
+                List.of("Java", "PostgreSQL"),
                 List.of("Java"),
-                List.of("Java"),
-                List.of("Kubernetes")
+                List.of("SQL")
         );
         CompatibilityExplanation explanation = new CompatibilityExplanation(
                 CompatibilityCategory.GOOD_MATCH_WITH_MINOR_GAPS,
@@ -115,7 +117,7 @@ class VectorFirstCompatibilityServiceTest {
         when(ruleBasedEnrichmentService.enrichCandidate("Java Spring Boot project", profileSkills)).thenReturn(profileEnriched);
         when(ruleBasedEnrichmentService.enrichJob("Backend Engineer Java Kubernetes", jobSkills)).thenReturn(jobEnriched);
         when(gapAnalysisService.analyze("Java Spring Boot project", profileSkills, job, catalog)).thenReturn(gap);
-        when(transferabilityService.findTransferableSkills(List.of("Backend"), List.of("Kubernetes", "Backend"))).thenReturn(List.of());
+        when(transferabilityService.findTransferableSkills(List.of("Backend"), List.of("SQL", "Backend"))).thenReturn(List.of());
         when(explanationService.explain(
                 "Java Spring Boot project",
                 0.69d,
@@ -137,6 +139,9 @@ class VectorFirstCompatibilityServiceTest {
         assertEquals(1, response.results().get(0).suggestedRerankRank());
         assertEquals(0, response.results().get(0).suggestedRankDelta());
         assertEquals(0.69d, response.results().get(0).vectorSimilarity());
+        assertEquals(1, response.results().get(0).skillEquivalenceSignals().size());
+        assertEquals("PostgreSQL", response.results().get(0).skillEquivalenceSignals().get(0).candidateSkill());
+        assertEquals("SQL", response.results().get(0).skillEquivalenceSignals().get(0).targetSkill());
         verify(vectorSearchService).searchJobsForProfile(1L, 50, DocumentEmbedding.DEFAULT_EMBEDDING_MODEL);
     }
 

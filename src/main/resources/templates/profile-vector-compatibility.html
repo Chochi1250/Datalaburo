@@ -177,6 +177,20 @@
 					</div>
 				</div>
 
+				<div th:if="${!#lists.isEmpty(row.skillEquivalenceSignals)}">
+					<p class="muted small">Relaciones parciales entre skills</p>
+					<div th:each="signal, it : ${row.skillEquivalenceSignals}" th:if="${it.index < 4}">
+						<div class="chips">
+							<span class="chip match-chip" th:text="${signal.candidateSkill}">candidate</span>
+							<span class="chip chip-muted">-&gt;</span>
+							<span class="chip match-chip" th:text="${signal.targetSkill}">target</span>
+							<span class="chip match-chip" th:text="${signal.relationLabel}">relation</span>
+						</div>
+						<p class="muted small" th:if="${signal.reason != null && !signal.reason.isBlank()}" th:text="${signal.reason}">Reason</p>
+					</div>
+					<p class="muted small">Diagnostico solamente: no convierte gaps en matches y no cambia el ranking.</p>
+				</div>
+
 				<div th:if="${!#lists.isEmpty(row.transferableSkills)}">
 					<p class="muted small">Skills transferibles</p>
 					<div th:each="skill, it : ${row.transferableSkills}" th:if="${it.index < 4}">

@@ -28,6 +28,8 @@ public class RerankingDiagnosticService {
         boolean rolePeripheral = rolePeripheral(context, role);
         boolean genericOnly = matchedCount > 0 && onlyGenericMatches(result.matchedSkills());
         boolean hasTransfer = result.transferableSkills() != null && !result.transferableSkills().isEmpty();
+        boolean hasSkillEquivalence = result.skillEquivalenceSignals() != null
+                && !result.skillEquivalenceSignals().isEmpty();
         boolean hasStrongTransfer = result.transferableSkills() != null
                 && result.transferableSkills().stream().anyMatch(skill -> skill.strength() == TransferStrength.STRONG);
         boolean strongEvidence = result.evidenceLevel() == EvidenceLevel.WORK_EXPERIENCE
@@ -46,6 +48,7 @@ public class RerankingDiagnosticService {
                 rolePeripheral,
                 genericOnly,
                 hasTransfer,
+                hasSkillEquivalence,
                 hasStrongTransfer,
                 strongEvidence,
                 weakEvidence,
@@ -182,6 +185,7 @@ public class RerankingDiagnosticService {
             boolean rolePeripheral,
             boolean genericOnly,
             boolean hasTransfer,
+            boolean hasSkillEquivalence,
             boolean hasStrongTransfer,
             boolean strongEvidence,
             boolean weakEvidence,
@@ -255,6 +259,12 @@ public class RerankingDiagnosticService {
         } else if (hasTransfer) {
             addSignal(signals, "PARTIAL_TRANSFERABILITY", RerankSignalPolarity.NEUTRAL,
                     "La transferencia es parcial o complementaria.");
+        }
+
+        if (hasSkillEquivalence) {
+            addSignal(signals, "SKILL_EQUIVALENCE_DIAGNOSTIC", RerankSignalPolarity.NEUTRAL,
+                    skillEquivalenceDetail(result.skillEquivalenceSignals()));
+            reasons.add("Hay equivalencias o relaciones parciales de skills; se informan sin cambiar gaps ni ranking.");
         }
 
         if (strongEvidence) {
@@ -334,6 +344,18 @@ public class RerankingDiagnosticService {
         if ("unknown".equals(role)) {
             warnings.add("Rol no determinado; no conviene usar reranking para tapar este caso.");
         }
+    }
+
+    private static String skillEquivalenceDetail(List<SkillEquivalenceSignal> skillEquivalenceSignals) {
+        if (skillEquivalenceSignals == null || skillEquivalenceSignals.isEmpty()) {
+            return "No hay equivalencias parciales detectadas.";
+        }
+        SkillEquivalenceSignal first = skillEquivalenceSignals.get(0);
+        String detail = first.candidateSkill() + " -> " + first.targetSkill() + " (" + first.relation() + ")";
+        if (skillEquivalenceSignals.size() > 1) {
+            detail = detail + " y " + (skillEquivalenceSignals.size() - 1) + " relacion(es) mas";
+        }
+        return detail + ". Diagnostico solamente; no modifica ranking.";
     }
 
     private static boolean hasRoleWarning(VectorFirstCompatibilityResult result) {

@@ -25,8 +25,62 @@ public record VectorFirstCompatibilityResult(
         Integer suggestedRankDelta,
         List<String> rerankReasons,
         List<String> rerankWarnings,
-        List<RerankSignal> rerankSignals
+        List<RerankSignal> rerankSignals,
+        List<SkillEquivalenceSignal> skillEquivalenceSignals
 ) {
+    public VectorFirstCompatibilityResult(
+            Long jobId,
+            String title,
+            String company,
+            int vectorRank,
+            double vectorSimilarity,
+            int analysisRank,
+            String detectedRole,
+            String detectedSeniority,
+            CompatibilityCategory compatibilityCategory,
+            EvidenceLevel evidenceLevel,
+            List<String> matchedSkills,
+            List<String> missingCriticalSkills,
+            List<String> missingSecondarySkills,
+            List<TransferableSkill> transferableSkills,
+            List<String> roadmapSuggestions,
+            String explanation,
+            CompatibilityConfidence confidence,
+            CompatibilityBucket compatibilityBucket,
+            Integer suggestedRerankRank,
+            Integer suggestedRankDelta,
+            List<String> rerankReasons,
+            List<String> rerankWarnings,
+            List<RerankSignal> rerankSignals
+    ) {
+        this(
+                jobId,
+                title,
+                company,
+                vectorRank,
+                vectorSimilarity,
+                analysisRank,
+                detectedRole,
+                detectedSeniority,
+                compatibilityCategory,
+                evidenceLevel,
+                matchedSkills,
+                missingCriticalSkills,
+                missingSecondarySkills,
+                transferableSkills,
+                roadmapSuggestions,
+                explanation,
+                confidence,
+                compatibilityBucket,
+                suggestedRerankRank,
+                suggestedRankDelta,
+                rerankReasons,
+                rerankWarnings,
+                rerankSignals,
+                List.of()
+        );
+    }
+
     public VectorFirstCompatibilityResult(
             Long jobId,
             String title,
@@ -69,6 +123,7 @@ public record VectorFirstCompatibilityResult(
                 0,
                 List.of(),
                 List.of(),
+                List.of(),
                 List.of()
         );
     }
@@ -97,7 +152,39 @@ public record VectorFirstCompatibilityResult(
                 suggestedRankDelta,
                 diagnostic == null ? rerankReasons : diagnostic.rerankReasons(),
                 diagnostic == null ? rerankWarnings : diagnostic.rerankWarnings(),
-                diagnostic == null ? rerankSignals : diagnostic.rerankSignals()
+                diagnostic == null ? rerankSignals : diagnostic.rerankSignals(),
+                skillEquivalenceSignals
+        );
+    }
+
+    public VectorFirstCompatibilityResult withSkillEquivalenceSignals(
+            List<SkillEquivalenceSignal> nextSkillEquivalenceSignals
+    ) {
+        return new VectorFirstCompatibilityResult(
+                jobId,
+                title,
+                company,
+                vectorRank,
+                vectorSimilarity,
+                analysisRank,
+                detectedRole,
+                detectedSeniority,
+                compatibilityCategory,
+                evidenceLevel,
+                matchedSkills,
+                missingCriticalSkills,
+                missingSecondarySkills,
+                transferableSkills,
+                roadmapSuggestions,
+                explanation,
+                confidence,
+                compatibilityBucket,
+                suggestedRerankRank,
+                suggestedRankDelta,
+                rerankReasons,
+                rerankWarnings,
+                rerankSignals,
+                nextSkillEquivalenceSignals == null ? List.of() : nextSkillEquivalenceSignals
         );
     }
 
@@ -129,7 +216,8 @@ public record VectorFirstCompatibilityResult(
                 nextSuggestedRankDelta,
                 nextRerankReasons,
                 rerankWarnings,
-                rerankSignals
+                rerankSignals,
+                skillEquivalenceSignals
         );
     }
 }

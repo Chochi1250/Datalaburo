@@ -49,6 +49,7 @@ public class VectorFirstCompatibilityService {
     private final SkillExtractionService skillExtractionService;
     private final RuleBasedEnrichmentService ruleBasedEnrichmentService;
     private final GapAnalysisService gapAnalysisService;
+    private final SkillEquivalenceService skillEquivalenceService;
     private final TransferabilityService transferabilityService;
     private final CompatibilityExplanationService explanationService;
     private final RerankingDiagnosticService rerankingDiagnosticService;
@@ -62,6 +63,7 @@ public class VectorFirstCompatibilityService {
             SkillExtractionService skillExtractionService,
             RuleBasedEnrichmentService ruleBasedEnrichmentService,
             GapAnalysisService gapAnalysisService,
+            SkillEquivalenceService skillEquivalenceService,
             TransferabilityService transferabilityService,
             CompatibilityExplanationService explanationService,
             RerankingDiagnosticService rerankingDiagnosticService
@@ -74,6 +76,7 @@ public class VectorFirstCompatibilityService {
         this.skillExtractionService = skillExtractionService;
         this.ruleBasedEnrichmentService = ruleBasedEnrichmentService;
         this.gapAnalysisService = gapAnalysisService;
+        this.skillEquivalenceService = skillEquivalenceService;
         this.transferabilityService = transferabilityService;
         this.explanationService = explanationService;
         this.rerankingDiagnosticService = rerankingDiagnosticService;
@@ -182,6 +185,10 @@ public class VectorFirstCompatibilityService {
                 transferSourceSignals(profileSkills, profileEnriched),
                 transferTargetSignals(gapAnalysis, jobEnriched)
         );
+        List<SkillEquivalenceSignal> skillEquivalenceSignals = skillEquivalenceService.findSignals(
+                gapAnalysis.candidateSkills(),
+                skillEquivalenceTargetSignals(gapAnalysis, jobEnriched)
+        );
         String role = detectedRole(job, jobText, jobEnriched);
         String seniority = detectedSeniority(job, jobText, jobEnriched);
         CompatibilitySignalContext signalContext = new CompatibilitySignalContext(
@@ -218,7 +225,7 @@ public class VectorFirstCompatibilityService {
                 explanation.roadmapSuggestions(),
                 explanation.explanation(),
                 explanation.confidence()
-        );
+        ).withSkillEquivalenceSignals(skillEquivalenceSignals);
         return result.withDiagnostic(rerankingDiagnosticService.evaluate(result, signalContext));
     }
 
@@ -312,6 +319,43 @@ public class VectorFirstCompatibilityService {
             out.addAll(gapAnalysis.missingCriticalSkills());
             out.addAll(gapAnalysis.missingSecondarySkills());
         }
+        if (jobEnriched != null) {
+            if (jobEnriched.inferred() != null) {
+                jobEnriched.inferred().forEach(item -> out.add(item.label()));
+            }
+            if (jobEnriched.categories() != null) {
+                jobEnriched.categories().stream()
+                        .map(RuleBasedEnrichmentService::displayCategory)
+                        .filter(Objects::nonNull)
+                        .forEach(out::add);
+            }
+        }
+        return out.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .toList();
+    }
+
+    private static List<String> missingSkills(GapAnalysis gapAnalysis) {
+        if (gapAnalysis == null) {
+            return List.of();
+        }
+        Set<String> out = new LinkedHashSet<>();
+        if (gapAnalysis.missingCriticalSkills() != null) {
+            out.addAll(gapAnalysis.missingCriticalSkills());
+        }
+        if (gapAnalysis.missingSecondarySkills() != null) {
+            out.addAll(gapAnalysis.missingSecondarySkills());
+        }
+        return out.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .toList();
+    }
+
+    private static List<String> skillEquivalenceTargetSignals(
+            GapAnalysis gapAnalysis,
+            RuleBasedEnrichmentService.EnrichedDocument jobEnriched
+    ) {
+        Set<String> out = new LinkedHashSet<>(missingSkills(gapAnalysis));
         if (jobEnriched != null) {
             if (jobEnriched.inferred() != null) {
                 jobEnriched.inferred().forEach(item -> out.add(item.label()));
