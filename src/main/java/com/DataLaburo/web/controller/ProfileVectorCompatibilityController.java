@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Controller
@@ -149,6 +150,7 @@ public class ProfileVectorCompatibilityController {
             List<String> rerankWarnings,
             List<SignalView> rerankSignals,
             List<SkillEquivalenceView> skillEquivalenceSignals,
+            RequirementChecklistView requirementChecklist,
             List<TargetDiagnosticView> targetDiagnostics,
             boolean hasDiagnostic
     ) {
@@ -161,9 +163,22 @@ public class ProfileVectorCompatibilityController {
             List<SignalView> signals = safeList(result.rerankSignals()).stream()
                     .map(SignalView::from)
                     .toList();
+            List<TransferView> transferableSkills = safeList(result.transferableSkills()).stream()
+                    .filter(Objects::nonNull)
+                    .map(TransferView::from)
+                    .toList();
             List<SkillEquivalenceView> skillEquivalenceSignals = safeList(result.skillEquivalenceSignals()).stream()
+                    .filter(Objects::nonNull)
                     .map(SkillEquivalenceView::from)
                     .toList();
+            RequirementChecklistView requirementChecklist = RequirementChecklistView.from(
+                    safeList(result.matchedSkills()),
+                    safeList(result.missingCriticalSkills()),
+                    safeList(result.missingSecondarySkills()),
+                    transferableSkills,
+                    skillEquivalenceSignals,
+                    safeList(result.roadmapSuggestions())
+            );
             boolean hasDiagnostic = bucketCode != null
                     || suggestedRank != null
                     || suggestedDelta != null
@@ -192,7 +207,7 @@ public class ProfileVectorCompatibilityController {
                     safeList(result.matchedSkills()),
                     safeList(result.missingCriticalSkills()),
                     safeList(result.missingSecondarySkills()),
-                    safeList(result.transferableSkills()).stream().map(TransferView::from).toList(),
+                    transferableSkills,
                     safeList(result.roadmapSuggestions()),
                     result.explanation(),
                     labelBucket(bucketCode),
@@ -203,6 +218,7 @@ public class ProfileVectorCompatibilityController {
                     warnings,
                     signals,
                     skillEquivalenceSignals,
+                    requirementChecklist,
                     buildTargetDiagnostics(profile, result),
                     hasDiagnostic
             );
@@ -259,6 +275,49 @@ public class ProfileVectorCompatibilityController {
                     labelSkillRelation(signal.relation()),
                     signal.relation(),
                     signal.reason()
+            );
+        }
+    }
+
+    private record RequirementChecklistView(
+            List<String> presentSkills,
+            List<String> missingCriticalSkills,
+            List<String> missingSecondarySkills,
+            List<TransferView> transferableSkills,
+            List<SkillEquivalenceView> partialRelations,
+            List<String> suggestions,
+            boolean hasItems
+    ) {
+        static RequirementChecklistView from(
+                List<String> presentSkills,
+                List<String> missingCriticalSkills,
+                List<String> missingSecondarySkills,
+                List<TransferView> transferableSkills,
+                List<SkillEquivalenceView> partialRelations,
+                List<String> suggestions
+        ) {
+            List<String> safePresent = nonBlankStrings(presentSkills);
+            List<String> safeMissingCritical = nonBlankStrings(missingCriticalSkills);
+            List<String> safeMissingSecondary = nonBlankStrings(missingSecondarySkills);
+            List<TransferView> safeTransferable = safeList(transferableSkills);
+            List<SkillEquivalenceView> safePartialRelations = safeList(partialRelations);
+            List<String> limitedSuggestions = nonBlankStrings(suggestions).stream()
+                    .limit(3)
+                    .toList();
+            boolean hasItems = !safePresent.isEmpty()
+                    || !safeMissingCritical.isEmpty()
+                    || !safeMissingSecondary.isEmpty()
+                    || !safeTransferable.isEmpty()
+                    || !safePartialRelations.isEmpty()
+                    || !limitedSuggestions.isEmpty();
+            return new RequirementChecklistView(
+                    safePresent,
+                    safeMissingCritical,
+                    safeMissingSecondary,
+                    safeTransferable,
+                    safePartialRelations,
+                    limitedSuggestions,
+                    hasItems
             );
         }
     }
@@ -367,6 +426,12 @@ public class ProfileVectorCompatibilityController {
 
     private static <T> List<T> safeList(List<T> values) {
         return values == null ? List.of() : values;
+    }
+
+    private static List<String> nonBlankStrings(List<String> values) {
+        return safeList(values).stream()
+                .filter(value -> value != null && !value.isBlank())
+                .toList();
     }
 
     private static String codeOrDefault(String value, String defaultValue) {

@@ -146,6 +146,77 @@
 					<p th:text="${row.explanation}"></p>
 				</div>
 
+				<div class="vector-secondary-block" th:if="${row.requirementChecklist != null && row.requirementChecklist.hasItems}">
+					<p class="muted small">Checklist diagnóstico preliminar</p>
+					<p class="muted small">No es un filtro, no decide aptitud y no modifica el ranking.</p>
+
+					<div th:if="${!#lists.isEmpty(row.requirementChecklist.presentSkills)}">
+						<p class="muted small">Presentes</p>
+						<div class="chips">
+							<span class="chip match-chip skill-chip"
+								  th:each="skill : ${row.requirementChecklist.presentSkills}"
+								  th:attr="data-skill=${#strings.toLowerCase(skill)}"
+								  th:text="${skill}">Skill</span>
+						</div>
+					</div>
+
+					<div class="grid-2 vector-gap-grid">
+						<div th:if="${!#lists.isEmpty(row.requirementChecklist.missingCriticalSkills)}">
+							<p class="muted small">Faltantes críticos</p>
+							<div class="chips">
+								<span class="chip match-chip skill-chip gap-chip is-critical"
+									  th:each="skill : ${row.requirementChecklist.missingCriticalSkills}"
+									  th:attr="data-skill=${#strings.toLowerCase(skill)}"
+									  th:text="${skill}">Skill</span>
+							</div>
+						</div>
+						<div th:if="${!#lists.isEmpty(row.requirementChecklist.missingSecondarySkills)}">
+							<p class="muted small">Faltantes secundarios</p>
+							<div class="chips">
+								<span class="chip match-chip skill-chip gap-chip"
+									  th:each="skill : ${row.requirementChecklist.missingSecondarySkills}"
+									  th:attr="data-skill=${#strings.toLowerCase(skill)}"
+									  th:text="${skill}">Skill</span>
+							</div>
+						</div>
+					</div>
+
+					<div th:if="${!#lists.isEmpty(row.requirementChecklist.transferableSkills)}">
+						<p class="muted small">Transferibles</p>
+						<div th:each="skill : ${row.requirementChecklist.transferableSkills}" class="vector-mini-relation">
+							<div class="chips">
+								<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(skill.from)}" th:text="${skill.from}">from</span>
+								<span class="chip chip-muted">-&gt;</span>
+								<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(skill.to)}" th:text="${skill.to}">to</span>
+								<span class="chip match-chip evidence-chip" th:if="${skill.strengthLabel != null}" th:text="${skill.strengthLabel}">strength</span>
+							</div>
+							<p class="muted small" th:if="${skill.reason != null && !skill.reason.isBlank()}" th:text="${skill.reason}">Reason</p>
+						</div>
+					</div>
+
+					<div th:if="${!#lists.isEmpty(row.requirementChecklist.partialRelations)}">
+						<p class="muted small">Relaciones parciales</p>
+						<div th:each="signal : ${row.requirementChecklist.partialRelations}" class="vector-mini-relation">
+							<div class="chips">
+								<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(signal.candidateSkill)}" th:text="${signal.candidateSkill}">candidate</span>
+								<span class="chip chip-muted">-&gt;</span>
+								<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(signal.targetSkill)}" th:text="${signal.targetSkill}">target</span>
+								<span class="chip match-chip evidence-chip" th:text="${signal.relationLabel}">relation</span>
+							</div>
+							<p class="muted small" th:if="${signal.reason != null && !signal.reason.isBlank()}" th:text="${signal.reason}">Reason</p>
+						</div>
+					</div>
+
+					<div th:if="${!#lists.isEmpty(row.requirementChecklist.suggestions)}">
+						<p class="muted small">Sugerencias</p>
+						<div class="chips">
+							<span class="chip match-chip roadmap-chip"
+								  th:each="item : ${row.requirementChecklist.suggestions}"
+								  th:text="${item}">Sugerencia</span>
+						</div>
+					</div>
+				</div>
+
 				<div th:if="${!#lists.isEmpty(row.matchedSkills)}">
 					<p class="muted small">Skills coincidentes</p>
 					<div class="chips">
@@ -153,27 +224,6 @@
 							  th:attr="data-skill=${#strings.toLowerCase(skill)}"
 							  th:text="${skill}">Skill</span>
 						<span class="chip match-chip chip-muted" th:if="${#lists.size(row.matchedSkills) > 8}" th:text="${'+' + (#lists.size(row.matchedSkills) - 8) + ' mas'}">+N</span>
-					</div>
-				</div>
-
-				<div class="grid-2 vector-gap-grid">
-					<div th:if="${!#lists.isEmpty(row.missingCriticalSkills)}">
-						<p class="muted small">Brechas criticas</p>
-						<div class="chips">
-							<span class="chip match-chip skill-chip gap-chip is-critical" th:each="skill, it : ${row.missingCriticalSkills}" th:if="${it.index < 4}"
-								  th:attr="data-skill=${#strings.toLowerCase(skill)}"
-								  th:text="${skill}">Skill</span>
-							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.missingCriticalSkills) > 4}" th:text="${'+' + (#lists.size(row.missingCriticalSkills) - 4) + ' mas'}">+N</span>
-						</div>
-					</div>
-					<div th:if="${!#lists.isEmpty(row.missingSecondarySkills)}">
-						<p class="muted small">Brechas secundarias</p>
-						<div class="chips">
-							<span class="chip match-chip skill-chip gap-chip" th:each="skill, it : ${row.missingSecondarySkills}" th:if="${it.index < 4}"
-								  th:attr="data-skill=${#strings.toLowerCase(skill)}"
-								  th:text="${skill}">Skill</span>
-							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.missingSecondarySkills) > 4}" th:text="${'+' + (#lists.size(row.missingSecondarySkills) - 4) + ' mas'}">+N</span>
-						</div>
 					</div>
 				</div>
 
@@ -203,23 +253,14 @@
 					</div>
 				</div>
 
-				<div th:if="${!#lists.isEmpty(row.roadmapSuggestions)}" class="vector-secondary-block">
-					<p class="muted small">Sugerencias de roadmap</p>
-					<div class="chips">
-						<span class="chip match-chip roadmap-chip" th:each="item, it : ${row.roadmapSuggestions}" th:if="${it.index < 3}"
-							  th:text="${item}">Sugerencia</span>
-						<span class="chip match-chip chip-muted" th:if="${#lists.size(row.roadmapSuggestions) > 3}" th:text="${'+' + (#lists.size(row.roadmapSuggestions) - 3) + ' mas'}">+N</span>
-					</div>
-				</div>
-
 				<details class="vector-diagnostic-details" th:if="${row.hasDiagnostic || !#lists.isEmpty(row.targetDiagnostics)}">
-					<summary>Diagnostico interno</summary>
+					<summary>Diagnóstico interno</summary>
 					<p class="muted">
-						Estos campos no cambian el orden mostrado, no son ranking real, no activan reranking y no representan un score hibrido productivo.
+						Estos campos no cambian el orden mostrado, no son ranking real, no activan reranking y no representan un score híbrido productivo.
 					</p>
 
 					<div th:if="${!#lists.isEmpty(row.targetDiagnostics)}">
-						<p class="muted small">Diagnostico contra objetivo del perfil</p>
+						<p class="muted small">Diagnóstico contra objetivo del perfil</p>
 						<ul class="small">
 							<li th:each="diagnostic : ${row.targetDiagnostics}" th:text="${diagnostic.detail}">Detalle</li>
 						</ul>
@@ -227,14 +268,14 @@
 
 					<div class="grid-2">
 						<div>
-							<p class="muted small">Bucket diagnostico</p>
+							<p class="muted small">Bucket diagnóstico</p>
 							<p>
 								<span th:text="${row.bucketLabel}">N/A</span>
 								<code class="muted" th:if="${row.bucketCode != null}" th:text="${row.bucketCode}">BUCKET</code>
 							</p>
 						</div>
 						<div>
-							<p class="muted small">Ranking sugerido diagnostico</p>
+							<p class="muted small">Ranking sugerido diagnóstico</p>
 							<p>
 								<span th:text="${row.suggestedRerankRank != null ? row.suggestedRerankRank : 'N/A'}">N/A</span>
 								<span class="muted" th:text="${row.suggestedRankDelta != null ? ' - delta ' + row.suggestedRankDelta : ''}"></span>
