@@ -374,6 +374,31 @@ Después:
 - documentar cada señal que ajusta el orden;
 - validar con etiquetas humanas.
 
+## Roadmap post-paper y guardrails de demo
+
+Despues de la entrega del paper, el objetivo inmediato es mejorar la aplicacion para la exposicion sin alterar el nucleo vector-first.
+
+La siguiente fase recomendada es:
+
+```text
+Fase 8.0 - CV textual editable y refresco de embedding de perfil
+```
+
+Guardrails:
+
+- mantener `analysisRank == vectorRank`;
+- conservar `vectorRank` como auditoria;
+- mantener `suggestedRerankRank` y `suggestedRankDelta` como diagnosticos;
+- no activar reranking real;
+- no activar score hibrido productivo;
+- no usar proyectos manuales en embeddings hasta una decision explicita;
+- no presentar un checklist preliminar como ATS real;
+- no usar checklist de requisitos como filtro duro ni ranking.
+
+El roadmap vigente de demo esta documentado en:
+
+- [post-paper-demo-roadmap.md](post-paper-demo-roadmap.md)
+
 ## Endpoint interno actual
 
 Endpoint interno:

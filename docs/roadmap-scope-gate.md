@@ -1,5 +1,7 @@
 # Roadmap tecnico y scope gate
 
+> Nota post-paper: este documento registra el roadmap metodologico previo a la entrega del paper/tesina. La demo base ya fue entregada y aprobada como prueba de concepto. Para el roadmap vigente de mejora de la app de cara a la exposicion, ver [post-paper-demo-roadmap.md](post-paper-demo-roadmap.md). La proxima fase recomendada ahora es `Fase 8.0 - CV textual editable y refresco de embedding de perfil`.
+
 ## Objetivo
 
 Definir un roadmap tecnico priorizado para las proximas fases de Datalaburo, separando:

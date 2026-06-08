@@ -1,5 +1,7 @@
 # Auditoria de fuentes de datos de ofertas laborales
 
+> Nota post-paper: este documento es una auditoria historica previa a la UI vector-first. La decision central sigue vigente: `JOBS` / `jobs` es la fuente de verdad y `JOB_OFFERS` / `job_offers` es legacy. Las menciones a que no existia UI vector-first corresponden a esa fase anterior; la UI MVC posterior esta registrada en [ui-vector-first-smoke-test.md](ui-vector-first-smoke-test.md).
+
 ## Objetivo
 
 Esta auditoria busca decidir la fuente de verdad para ofertas laborales antes de adaptar la UI minima y el flujo de compatibilidad vector-first.

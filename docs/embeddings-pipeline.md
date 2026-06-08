@@ -82,6 +82,13 @@ Para `CandidateProfile` incluye:
 
 - texto completo del CV/perfil.
 
+Nota post-paper:
+
+- En Fase 8.0 se recomienda permitir editar `cvText` y refrescar/preparar el embedding `PROFILE` cuando cambie ese texto fuente.
+- El texto editable del CV sigue siendo la fuente canonica productiva del embedding de perfil en esta etapa.
+- Los proyectos manuales existen como evidencia estructurada visible, pero todavia no entran en embeddings productivos.
+- No incluir headline, rol objetivo, seniority objetivo, modo de busqueda, links ni proyectos en el texto vectorizable salvo decision explicita posterior.
+
 Luego `EmbeddingTextNormalizer` normaliza el texto y `SourceTextHasher` calcula `source_text_hash`.
 
 ## Preparación de metadata
