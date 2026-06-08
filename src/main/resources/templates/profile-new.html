@@ -25,6 +25,23 @@
 				<input id="name" type="text" th:field="*{name}" placeholder="Ej: Mi CV backend"/>
 			</div>
 
+			<div class="field">
+				<label for="headline">Titulo profesional breve</label>
+				<input id="headline" type="text" th:field="*{headline}" placeholder="Backend Java junior | Spring Boot | PostgreSQL"/>
+			</div>
+
+			<div class="field">
+				<label for="summary">Resumen corto</label>
+				<textarea id="summary" rows="4" th:field="*{summary}" placeholder="Resumen visible para presentar el perfil en la demo."></textarea>
+				<p class="hint muted">Estos campos son presentacion visible. No cambian embeddings, ranking ni matching.</p>
+			</div>
+
+			<div class="field">
+				<label for="declaredSkillsText">Skills declaradas</label>
+				<input id="declaredSkillsText" type="text" th:field="*{declaredSkillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, Git"/>
+				<p class="hint muted">Texto simple separado por comas. No se normaliza contra el catalogo en esta fase.</p>
+			</div>
+
 			<div class="grid-2">
 				<div class="field">
 					<label for="targetRole">Rol objetivo</label>
@@ -66,6 +83,21 @@
 					<option value="EXPLORATORY">Exploratorio</option>
 				</select>
 				<p class="hint muted">Estos campos se guardan como contexto del perfil. Todavia no cambian ranking, embeddings ni matching.</p>
+			</div>
+
+			<div class="grid-3">
+				<div class="field">
+					<label for="linkedinUrl">LinkedIn opcional</label>
+					<input id="linkedinUrl" type="url" th:field="*{linkedinUrl}" placeholder="https://www.linkedin.com/in/..."/>
+				</div>
+				<div class="field">
+					<label for="githubUrl">GitHub opcional</label>
+					<input id="githubUrl" type="url" th:field="*{githubUrl}" placeholder="https://github.com/..."/>
+				</div>
+				<div class="field">
+					<label for="portfolioUrl">Portfolio opcional</label>
+					<input id="portfolioUrl" type="url" th:field="*{portfolioUrl}" placeholder="https://..."/>
+				</div>
 			</div>
 
 			<div class="field">

@@ -7,10 +7,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 
 @Entity
 @Table(
@@ -29,6 +32,24 @@ public class CandidateProfile {
 
     @Column(name = "cv_text", nullable = false, columnDefinition = "TEXT")
     private String cvText;
+
+    @Column(length = 180)
+    private String headline;
+
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    @Column(name = "declared_skills_text", columnDefinition = "TEXT")
+    private String declaredSkillsText;
+
+    @Column(name = "linkedin_url", length = 2048)
+    private String linkedinUrl;
+
+    @Column(name = "github_url", length = 2048)
+    private String githubUrl;
+
+    @Column(name = "portfolio_url", length = 2048)
+    private String portfolioUrl;
 
     @Column(name = "target_role", nullable = false, length = 64)
     private String targetRole = "UNDECIDED";
@@ -71,6 +92,54 @@ public class CandidateProfile {
         this.cvText = cvText;
     }
 
+    public String getHeadline() {
+        return headline;
+    }
+
+    public void setHeadline(String headline) {
+        this.headline = headline;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public String getDeclaredSkillsText() {
+        return declaredSkillsText;
+    }
+
+    public void setDeclaredSkillsText(String declaredSkillsText) {
+        this.declaredSkillsText = declaredSkillsText;
+    }
+
+    public String getLinkedinUrl() {
+        return linkedinUrl;
+    }
+
+    public void setLinkedinUrl(String linkedinUrl) {
+        this.linkedinUrl = linkedinUrl;
+    }
+
+    public String getGithubUrl() {
+        return githubUrl;
+    }
+
+    public void setGithubUrl(String githubUrl) {
+        this.githubUrl = githubUrl;
+    }
+
+    public String getPortfolioUrl() {
+        return portfolioUrl;
+    }
+
+    public void setPortfolioUrl(String portfolioUrl) {
+        this.portfolioUrl = portfolioUrl;
+    }
+
     public String getTargetRole() {
         return targetRole;
     }
@@ -109,5 +178,17 @@ public class CandidateProfile {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    @Transient
+    public List<String> getDeclaredSkillTags() {
+        if (declaredSkillsText == null || declaredSkillsText.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(declaredSkillsText.split(","))
+                .map(String::trim)
+                .filter(skill -> !skill.isBlank())
+                .distinct()
+                .toList();
     }
 }

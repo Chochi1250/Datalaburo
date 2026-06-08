@@ -1,5 +1,6 @@
 package com.DataLaburo.web.service;
 
+import com.DataLaburo.web.dto.CandidateProfileForm;
 import com.DataLaburo.web.embedding.DocumentEmbedding;
 import com.DataLaburo.web.embedding.DocumentEmbeddingOwnerType;
 import com.DataLaburo.web.embedding.DocumentEmbeddingRepository;
@@ -11,9 +12,11 @@ import com.DataLaburo.web.model.CandidateProfile;
 import com.DataLaburo.web.repository.CandidateProfileRepository;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,6 +36,75 @@ class CandidateProfileServiceTest {
             documentEmbeddingRepository,
             embeddingPreparationService
     );
+
+    @Test
+    void createsProfileWithVisibleMetadata() {
+        CandidateProfileForm form = profileForm();
+        form.setName("Backend profile");
+        form.setCvText("Java backend CV");
+        form.setHeadline("Backend Java junior");
+        form.setSummary("Builds APIs with Spring Boot.");
+        form.setDeclaredSkillsText(" Java, Spring Boot, PostgreSQL ");
+        form.setLinkedinUrl(" https://www.linkedin.com/in/example ");
+        form.setGithubUrl(" https://github.com/example ");
+        form.setPortfolioUrl(" https://example.dev ");
+        when(candidateProfileRepository.save(any(CandidateProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CandidateProfile profile = service.create(form);
+
+        assertEquals("Backend profile", profile.getName());
+        assertEquals("Java backend CV", profile.getCvText());
+        assertEquals("Backend Java junior", profile.getHeadline());
+        assertEquals("Builds APIs with Spring Boot.", profile.getSummary());
+        assertEquals("Java, Spring Boot, PostgreSQL", profile.getDeclaredSkillsText());
+        assertEquals("https://www.linkedin.com/in/example", profile.getLinkedinUrl());
+        assertEquals("https://github.com/example", profile.getGithubUrl());
+        assertEquals("https://example.dev", profile.getPortfolioUrl());
+        assertEquals("BACKEND", profile.getTargetRole());
+        assertEquals("JUNIOR", profile.getTargetSeniority());
+        assertEquals("FOCUSED", profile.getSearchMode());
+        verify(embeddingPreparationService, never()).prepareCandidateProfile(any(CandidateProfile.class));
+    }
+
+    @Test
+    void updatesVisibleMetadataWithoutPreparingEmbedding() {
+        CandidateProfile profile = profile(7L, "Existing CV");
+        CandidateProfileForm form = profileForm();
+        form.setHeadline("Data analyst");
+        form.setSummary("SQL and BI profile.");
+        form.setDeclaredSkillsText(" SQL, Power BI, Excel ");
+        form.setLinkedinUrl(" ");
+        form.setGithubUrl(" https://github.com/data ");
+        form.setPortfolioUrl("");
+        form.setTargetRole("DATA");
+        form.setTargetSeniority("MID");
+        form.setSearchMode("BALANCED");
+
+        when(candidateProfileRepository.findById(7L)).thenReturn(Optional.of(profile));
+        when(candidateProfileRepository.save(any(CandidateProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CandidateProfile updated = service.updateVisibleMetadata(7L, form).orElseThrow();
+
+        assertEquals("Data analyst", updated.getHeadline());
+        assertEquals("SQL and BI profile.", updated.getSummary());
+        assertEquals("SQL, Power BI, Excel", updated.getDeclaredSkillsText());
+        assertNull(updated.getLinkedinUrl());
+        assertEquals("https://github.com/data", updated.getGithubUrl());
+        assertNull(updated.getPortfolioUrl());
+        assertEquals("DATA", updated.getTargetRole());
+        assertEquals("MID", updated.getTargetSeniority());
+        assertEquals("BALANCED", updated.getSearchMode());
+        verify(candidateProfileRepository).save(profile);
+        verify(embeddingPreparationService, never()).prepareCandidateProfile(any(CandidateProfile.class));
+    }
+
+    @Test
+    void declaredSkillTagsAreTrimmedAndDeduplicatedForDisplay() {
+        CandidateProfile profile = profile(7L, "Existing CV");
+        profile.setDeclaredSkillsText(" Java, Spring Boot, , Java, SQL ");
+
+        assertEquals(List.of("Java", "Spring Boot", "SQL"), profile.getDeclaredSkillTags());
+    }
 
     @Test
     void changingCvTextSavesProfileAndPreparesEmbedding() {
@@ -109,6 +181,14 @@ class CandidateProfileServiceTest {
         profile.setName("Profile");
         profile.setCvText(cvText);
         return profile;
+    }
+
+    private static CandidateProfileForm profileForm() {
+        CandidateProfileForm form = new CandidateProfileForm();
+        form.setTargetRole("BACKEND");
+        form.setTargetSeniority("JUNIOR");
+        form.setSearchMode("FOCUSED");
+        return form;
     }
 
     private static DocumentEmbedding profileEmbedding(Long profileId, DocumentEmbeddingStatus status) {

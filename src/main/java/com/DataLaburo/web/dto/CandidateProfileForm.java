@@ -6,6 +6,12 @@ public class CandidateProfileForm {
 	private String skillsText;
 	private Integer yearsExperience;
 	private String cvText;
+	private String headline;
+	private String summary;
+	private String declaredSkillsText;
+	private String linkedinUrl;
+	private String githubUrl;
+	private String portfolioUrl;
 	private String targetRole = "UNDECIDED";
 	private String targetSeniority = "ANY";
 	private String searchMode = "FOCUSED";
@@ -48,6 +54,54 @@ public class CandidateProfileForm {
 
 	public void setCvText(String cvText) {
 		this.cvText = cvText;
+	}
+
+	public String getHeadline() {
+		return headline;
+	}
+
+	public void setHeadline(String headline) {
+		this.headline = headline;
+	}
+
+	public String getSummary() {
+		return summary;
+	}
+
+	public void setSummary(String summary) {
+		this.summary = summary;
+	}
+
+	public String getDeclaredSkillsText() {
+		return declaredSkillsText;
+	}
+
+	public void setDeclaredSkillsText(String declaredSkillsText) {
+		this.declaredSkillsText = declaredSkillsText;
+	}
+
+	public String getLinkedinUrl() {
+		return linkedinUrl;
+	}
+
+	public void setLinkedinUrl(String linkedinUrl) {
+		this.linkedinUrl = linkedinUrl;
+	}
+
+	public String getGithubUrl() {
+		return githubUrl;
+	}
+
+	public void setGithubUrl(String githubUrl) {
+		this.githubUrl = githubUrl;
+	}
+
+	public String getPortfolioUrl() {
+		return portfolioUrl;
+	}
+
+	public void setPortfolioUrl(String portfolioUrl) {
+		this.portfolioUrl = portfolioUrl;
 	}
 
 	public String getTargetRole() {

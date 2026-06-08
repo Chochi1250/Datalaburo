@@ -99,6 +99,25 @@ public class ProfileController {
         return "redirect:/profiles/" + id;
     }
 
+    @PostMapping("/profiles/{id}/metadata")
+    public String updateProfileMetadata(
+            @PathVariable Long id,
+            @ModelAttribute("metadataForm") CandidateProfileForm form,
+            RedirectAttributes redirectAttributes
+    ) {
+        Optional<CandidateProfile> updated = candidateProfileService.updateVisibleMetadata(id, form);
+        if (updated.isEmpty()) {
+            redirectAttributes.addFlashAttribute("metadataError", "No se encontro el perfil seleccionado.");
+            return "redirect:/profiles";
+        }
+
+        redirectAttributes.addFlashAttribute(
+                "metadataMessage",
+                "Metadata visible guardada. Embeddings, ranking y matching no se modificaron."
+        );
+        return "redirect:/profiles/" + id;
+    }
+
     @PostMapping("/profiles/{profileId}/projects")
     public String createProject(
             @PathVariable Long profileId,
@@ -135,6 +154,7 @@ public class ProfileController {
         model.addAttribute("profile", profile);
         model.addAttribute("projects", candidateProfileProjectService.findByProfileId(profile.getId()));
         model.addAttribute("profileEmbedding", candidateProfileService.findProfileEmbedding(profile.getId()).orElse(null));
+        model.addAttribute("metadataForm", toProfileForm(profile));
         model.addAttribute("projectForm", projectForm == null ? new CandidateProfileProjectForm() : projectForm);
         model.addAttribute("evidenceTypes", ProjectEvidenceType.values());
         if (projectError != null && !projectError.isBlank()) {
@@ -157,5 +177,22 @@ public class ProfileController {
             case UNCHANGED -> "CV guardado. El texto vectorizable no cambio; el embedding no se modifico.";
             case SKIPPED -> "CV guardado, pero no se pudo preparar el embedding PROFILE: " + preparationResult.reason();
         };
+    }
+
+    private static CandidateProfileForm toProfileForm(CandidateProfile profile) {
+        CandidateProfileForm form = new CandidateProfileForm();
+        if (profile == null) {
+            return form;
+        }
+        form.setHeadline(profile.getHeadline());
+        form.setSummary(profile.getSummary());
+        form.setDeclaredSkillsText(profile.getDeclaredSkillsText());
+        form.setLinkedinUrl(profile.getLinkedinUrl());
+        form.setGithubUrl(profile.getGithubUrl());
+        form.setPortfolioUrl(profile.getPortfolioUrl());
+        form.setTargetRole(profile.getTargetRole());
+        form.setTargetSeniority(profile.getTargetSeniority());
+        form.setSearchMode(profile.getSearchMode());
+        return form;
     }
 }

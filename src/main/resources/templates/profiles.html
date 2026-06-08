@@ -27,6 +27,7 @@
 		<article class="card" th:each="profile : ${profiles}">
 			<header class="header">
 				<h2 th:text="${profile.name}">Perfil</h2>
+				<p class="muted" th:if="${profile.headline != null && !profile.headline.isBlank()}" th:text="${profile.headline}">Backend Java junior</p>
 				<p class="muted small" th:if="${profile.updatedAt != null}" th:text="${'Actualizado: ' + profile.updatedAt}"></p>
 			</header>
 			<div class="chips">
@@ -34,7 +35,8 @@
 				<span class="chip match-chip" th:text="${profile.targetSeniority != null ? profile.targetSeniority : 'ANY'}">ANY</span>
 				<span class="chip match-chip" th:text="${profile.searchMode != null ? profile.searchMode : 'FOCUSED'}">FOCUSED</span>
 			</div>
-			<p class="muted" th:text="${#strings.abbreviate(profile.cvText, 220)}"></p>
+			<p class="muted"
+			   th:text="${profile.summary != null && !profile.summary.isBlank() ? #strings.abbreviate(profile.summary, 220) : #strings.abbreviate(profile.cvText, 220)}"></p>
 			<div class="actions">
 				<a class="link" th:href="@{/profiles/{id}(id=${profile.id})}">Ver detalle</a>
 				<a class="link" th:href="@{/matching(profileId=${profile.id})}">Usar en matching</a>

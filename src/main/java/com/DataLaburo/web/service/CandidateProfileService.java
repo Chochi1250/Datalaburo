@@ -53,10 +53,20 @@ public class CandidateProfileService {
         CandidateProfile profile = new CandidateProfile();
         profile.setName(clean(form.getName()));
         profile.setCvText(clean(form.getCvText()));
-        profile.setTargetRole(defaultIfBlank(form.getTargetRole(), DEFAULT_TARGET_ROLE));
-        profile.setTargetSeniority(defaultIfBlank(form.getTargetSeniority(), DEFAULT_TARGET_SENIORITY));
-        profile.setSearchMode(defaultIfBlank(form.getSearchMode(), DEFAULT_SEARCH_MODE));
+        applyVisibleMetadata(profile, form);
         return candidateProfileRepository.save(profile);
+    }
+
+    @Transactional
+    public Optional<CandidateProfile> updateVisibleMetadata(Long profileId, CandidateProfileForm form) {
+        if (profileId == null) {
+            return Optional.empty();
+        }
+        return candidateProfileRepository.findById(profileId)
+                .map(profile -> {
+                    applyVisibleMetadata(profile, form);
+                    return candidateProfileRepository.save(profile);
+                });
     }
 
     @Transactional
@@ -100,6 +110,27 @@ public class CandidateProfileService {
         EmbeddingPreparationService.PreparationResult preparationResult =
                 embeddingPreparationService.prepareCandidateProfile(saved);
         return CvTextUpdateResult.updated(saved, preparationResult);
+    }
+
+    private void applyVisibleMetadata(CandidateProfile profile, CandidateProfileForm form) {
+        if (profile == null) {
+            return;
+        }
+        CandidateProfileForm safeForm = form == null ? new CandidateProfileForm() : form;
+        profile.setHeadline(optionalText(safeForm.getHeadline()));
+        profile.setSummary(optionalText(safeForm.getSummary()));
+        profile.setDeclaredSkillsText(optionalText(safeForm.getDeclaredSkillsText()));
+        profile.setLinkedinUrl(optionalText(safeForm.getLinkedinUrl()));
+        profile.setGithubUrl(optionalText(safeForm.getGithubUrl()));
+        profile.setPortfolioUrl(optionalText(safeForm.getPortfolioUrl()));
+        profile.setTargetRole(defaultIfBlank(safeForm.getTargetRole(), DEFAULT_TARGET_ROLE));
+        profile.setTargetSeniority(defaultIfBlank(safeForm.getTargetSeniority(), DEFAULT_TARGET_SENIORITY));
+        profile.setSearchMode(defaultIfBlank(safeForm.getSearchMode(), DEFAULT_SEARCH_MODE));
+    }
+
+    private String optionalText(String value) {
+        String cleaned = clean(value);
+        return cleaned.isBlank() ? null : cleaned;
     }
 
     private String clean(String value) {

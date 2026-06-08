@@ -1,5 +1,6 @@
 package com.DataLaburo.web.controller;
 
+import com.DataLaburo.web.dto.CandidateProfileForm;
 import com.DataLaburo.web.embedding.DocumentEmbedding;
 import com.DataLaburo.web.embedding.DocumentEmbeddingOwnerType;
 import com.DataLaburo.web.embedding.DocumentEmbeddingSectionType;
@@ -16,6 +17,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -60,6 +63,26 @@ class ProfileControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/profiles/7"))
                 .andExpect(flash().attribute("cvError", "Pega el CV del perfil como texto."));
+    }
+
+    @Test
+    void postProfileMetadataRedirectsToProfileDetailWithMessage() throws Exception {
+        CandidateProfile profile = profile(7L);
+        profile.setHeadline("Backend Java junior");
+        when(candidateProfileService.updateVisibleMetadata(eq(7L), any(CandidateProfileForm.class)))
+                .thenReturn(Optional.of(profile));
+
+        mockMvc.perform(post("/profiles/7/metadata")
+                        .param("headline", "Backend Java junior")
+                        .param("summary", "Builds APIs.")
+                        .param("declaredSkillsText", "Java, Spring Boot")
+                        .param("targetRole", "BACKEND")
+                        .param("targetSeniority", "JUNIOR")
+                        .param("searchMode", "FOCUSED")
+                        .param("linkedinUrl", "https://www.linkedin.com/in/example"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/profiles/7"))
+                .andExpect(flash().attribute("metadataMessage", containsString("Metadata visible guardada")));
     }
 
     private static CandidateProfile profile(Long id) {
