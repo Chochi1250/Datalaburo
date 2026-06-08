@@ -114,8 +114,37 @@
 	</section>
 
 	<section class="card">
-		<h2>CV guardado</h2>
-		<div class="code" th:text="${profile.cvText}"></div>
+		<h2>Estado del embedding PROFILE</h2>
+		<div th:if="${profileEmbedding != null}">
+			<div class="chips">
+				<span class="chip match-chip" th:text="${profileEmbedding.status}">PENDING</span>
+				<span class="chip match-chip" th:text="${profileEmbedding.embeddingModel}">BAAI/bge-m3</span>
+				<span class="chip match-chip" th:text="${profileEmbedding.embeddingDimensions + ' dims'}">1024 dims</span>
+			</div>
+			<p class="muted small" th:if="${profileEmbedding.updatedAt != null}" th:text="${'Metadata actualizada: ' + profileEmbedding.updatedAt}">Metadata actualizada</p>
+			<p class="muted small" th:if="${profileEmbedding.lastEmbeddedAt != null}" th:text="${'Ultimo embedding READY: ' + profileEmbedding.lastEmbeddedAt}">Ultimo embedding READY</p>
+			<p class="error" th:if="${profileEmbedding.errorMessage != null && !profileEmbedding.errorMessage.isBlank()}" th:text="${profileEmbedding.errorMessage}">Error</p>
+		</div>
+		<div th:if="${profileEmbedding == null}">
+			<span class="chip match-chip">sin embedding</span>
+		</div>
+		<p class="muted small">Guardar el CV solo prepara el embedding si cambia. El ranking vector-first no cambia hasta que el embedding sea procesado y quede READY.</p>
+	</section>
+
+	<section class="card">
+		<h2>CV textual editable</h2>
+		<p class="muted" th:if="${cvMessage != null}" th:text="${cvMessage}">CV guardado.</p>
+		<p class="error" th:if="${cvError != null}" th:text="${cvError}">Error</p>
+		<form method="post" th:action="@{/profiles/{id}/cv(id=${profile.id})}">
+			<div class="field">
+				<label for="cvText">CV (texto)</label>
+				<textarea id="cvText" name="cvText" rows="16" th:text="${profile.cvText}" placeholder="Pega aca el CV en texto plano"></textarea>
+				<p class="hint muted">Este texto es la fuente del embedding PROFILE. Los proyectos manuales siguen fuera de embeddings.</p>
+			</div>
+			<div class="actions">
+				<button type="submit">Guardar CV</button>
+			</div>
+		</form>
 	</section>
 </main>
 </body>

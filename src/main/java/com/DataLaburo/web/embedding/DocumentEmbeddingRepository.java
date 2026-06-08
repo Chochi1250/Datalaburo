@@ -16,6 +16,15 @@ public interface DocumentEmbeddingRepository extends JpaRepository<DocumentEmbed
             String normalizerVersion
     );
 
+    Optional<DocumentEmbedding> findByOwnerTypeAndOwnerIdAndSectionTypeAndEmbeddingModelAndEmbeddingDimensionsAndNormalizerVersion(
+            DocumentEmbeddingOwnerType ownerType,
+            Long ownerId,
+            DocumentEmbeddingSectionType sectionType,
+            String embeddingModel,
+            Integer embeddingDimensions,
+            String normalizerVersion
+    );
+
     @Query("select d.status as status, count(d) as total from DocumentEmbedding d group by d.status")
     List<StatusCount> countByStatus();
 
