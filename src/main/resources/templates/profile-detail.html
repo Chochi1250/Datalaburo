@@ -35,11 +35,14 @@
 
 	<section class="card">
 		<h2>Evidencia por proyectos</h2>
-		<p class="muted small">Proyectos cargados manualmente como evidencia estructurada. Todavia no alteran ranking ni embeddings.</p>
+		<p class="muted small">Proyectos cargados manualmente como evidencia estructurada. Todavia no alteran ranking, matching, recuperacion vectorial ni embeddings.</p>
 
 		<p class="error" th:if="${projectError != null}" th:text="${projectError}">Error</p>
 
-		<p class="muted" th:if="${#lists.isEmpty(projects)}">Todavia no hay proyectos cargados para este perfil.</p>
+		<div class="project-empty" th:if="${#lists.isEmpty(projects)}">
+			<p><strong>Sin proyectos cargados.</strong></p>
+			<p class="muted small">Agrega proyectos academicos, personales o laborales para registrar evidencia visible del perfil. En esta fase quedan fuera de embeddings y ranking.</p>
+		</div>
 
 		<div class="project-list" th:if="${!#lists.isEmpty(projects)}">
 			<article class="project-evidence" th:each="project : ${projects}">
@@ -48,18 +51,18 @@
 						<h3 class="project-title" th:text="${project.title}">API REST de ofertas laborales</h3>
 						<p class="muted small" th:if="${project.createdAt != null}" th:text="${'Cargado: ' + project.createdAt}">Cargado</p>
 					</div>
-					<span class="chip match-chip profile-chip" th:text="${project.evidenceType}">PERSONAL_PROJECT</span>
+					<span class="chip match-chip profile-chip project-type-chip" th:text="${project.evidenceTypeLabel}">Proyecto personal</span>
 				</div>
 
 				<p th:text="${project.description}">Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests.</p>
 
 				<div class="chips" th:if="${!#lists.isEmpty(project.skillTags)}">
-					<span class="chip match-chip" th:each="skill : ${project.skillTags}" th:text="${skill}">Java</span>
+					<span class="chip match-chip project-skill-chip" th:each="skill : ${project.skillTags}" th:text="${skill}">Java</span>
 				</div>
 
 				<div class="links">
-					<a class="link" th:if="${project.repositoryUrl != null}" th:href="${project.repositoryUrl}" target="_blank" rel="noopener">Repositorio</a>
-					<a class="link" th:if="${project.demoUrl != null}" th:href="${project.demoUrl}" target="_blank" rel="noopener">Demo</a>
+					<a class="project-link" th:if="${project.repositoryUrl != null}" th:href="${project.repositoryUrl}" target="_blank" rel="noopener">Repositorio</a>
+					<a class="project-link" th:if="${project.demoUrl != null}" th:href="${project.demoUrl}" target="_blank" rel="noopener">Demo</a>
 					<form class="inline-form" method="post" th:action="@{/profiles/{profileId}/projects/{projectId}/delete(profileId=${profile.id},projectId=${project.id})}">
 						<button class="btn btn-ghost btn-sm danger-button" type="submit">Eliminar</button>
 					</form>
@@ -77,7 +80,7 @@
 				<div class="field">
 					<label for="projectEvidenceType">Tipo de evidencia</label>
 					<select id="projectEvidenceType" th:field="*{evidenceType}">
-						<option th:each="type : ${evidenceTypes}" th:value="${type}" th:text="${type}">PERSONAL_PROJECT</option>
+						<option th:each="type : ${evidenceTypes}" th:value="${type}" th:text="${type.label()}">Proyecto personal</option>
 					</select>
 				</div>
 			</div>
@@ -90,7 +93,7 @@
 			<div class="field">
 				<label for="projectSkills">Skills evidenciadas</label>
 				<input id="projectSkills" type="text" th:field="*{skillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, SQL, Git"/>
-				<p class="hint muted">Texto simple separado por comas. En esta fase no se normaliza contra el catalogo de skills.</p>
+				<p class="hint muted">Campo requerido. Texto simple separado por comas. En esta fase no se normaliza contra el catalogo de skills.</p>
 			</div>
 
 			<div class="grid-2">

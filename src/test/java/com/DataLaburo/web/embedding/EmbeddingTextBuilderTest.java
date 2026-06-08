@@ -68,12 +68,14 @@ class EmbeddingTextBuilderTest {
         CandidateProfileProject project = new CandidateProfileProject();
         project.setCandidateProfile(profile);
         project.setTitle("GraphQL portfolio API");
+        project.setDescription("Backend for project evidence.");
         project.setSkillsText("GraphQL, Docker");
 
         String text = builder.buildForCandidateProfile(profile);
 
         assertTrue(text.contains("CV:\nJava developer with PostgreSQL experience."));
         assertFalse(text.contains("GraphQL portfolio API"));
+        assertFalse(text.contains("Backend for project evidence."));
         assertFalse(text.contains("GraphQL"));
         assertFalse(text.contains("Docker"));
     }

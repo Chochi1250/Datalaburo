@@ -66,6 +66,7 @@ class CandidateProfileProjectServiceTest {
         CandidateProfileProjectForm form = new CandidateProfileProjectForm();
         form.setTitle("Portfolio API");
         form.setDescription("API backend.");
+        form.setSkillsText("Java, Spring Boot");
 
         when(candidateProfileRepository.findById(404L)).thenReturn(Optional.empty());
 
@@ -74,17 +75,25 @@ class CandidateProfileProjectServiceTest {
     }
 
     @Test
-    void requiresTitleAndDescription() {
+    void requiresTitleDescriptionAndSkills() {
         CandidateProfile profile = new CandidateProfile();
         profile.setId(7L);
         CandidateProfileProjectForm form = new CandidateProfileProjectForm();
         form.setTitle("Portfolio API");
+        form.setSkillsText("Java");
 
         when(candidateProfileRepository.findById(7L)).thenReturn(Optional.of(profile));
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> service.create(7L, form));
 
         assertEquals("Ingresa una descripcion breve del proyecto.", error.getMessage());
+
+        form.setDescription("API backend.");
+        form.setSkillsText(" ");
+
+        error = assertThrows(IllegalArgumentException.class, () -> service.create(7L, form));
+
+        assertEquals("Ingresa al menos una skill o tecnologia evidenciada.", error.getMessage());
     }
 
     @Test
@@ -104,5 +113,20 @@ class CandidateProfileProjectServiceTest {
         verify(projectRepository).delete(project);
 
         assertFalse(service.delete(7L, 99L));
+        verify(projectRepository, never()).findById(99L);
+    }
+
+    @Test
+    void exposesHumanEvidenceTypeLabels() {
+        assertEquals("Proyecto academico", ProjectEvidenceType.ACADEMIC_PROJECT.label());
+        assertEquals("Proyecto personal", ProjectEvidenceType.PERSONAL_PROJECT.label());
+        assertEquals("Proyecto laboral", ProjectEvidenceType.WORK_PROJECT.label());
+        assertEquals("Proyecto de curso", ProjectEvidenceType.COURSE_PROJECT.label());
+        assertEquals("Otro", ProjectEvidenceType.OTHER.label());
+
+        CandidateProfileProject project = new CandidateProfileProject();
+        project.setEvidenceType(ProjectEvidenceType.WORK_PROJECT);
+
+        assertEquals("Proyecto laboral", project.getEvidenceTypeLabel());
     }
 }

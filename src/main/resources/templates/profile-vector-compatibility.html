@@ -6,26 +6,27 @@
 	<title>DataLaburo - Compatibilidad vectorial</title>
 	<link rel="stylesheet" th:href="@{/app.css}"/>
 </head>
-<body>
+<body class="page-vector-match">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<main class="container">
-	<header class="header">
+<main class="container vector-container">
+	<header class="header vector-page-header">
 		<p class="muted small">Vector-first</p>
 		<h1>Compatibilidad vectorial</h1>
-		<p class="muted" th:if="${profile != null}" th:text="${'Perfil: ' + profile.name}">Perfil</p>
+		<p class="muted" th:if="${profile != null}" th:text="${'Ranking semantico para el perfil: ' + profile.name}">Perfil</p>
 		<p class="muted" th:if="${profile == null && profileId != null}" th:text="${'Perfil id: ' + profileId}">Perfil id</p>
 	</header>
 
-	<section class="actions">
+	<section class="actions vector-page-actions">
 		<a class="btn btn-secondary" th:href="@{/profiles}">Volver a perfiles</a>
-		<a class="btn btn-ghost" th:if="${profile != null}" th:href="@{/matching(profileId=${profile.id})}">Usar en matching</a>
+		<a class="btn btn-ghost" th:if="${profile != null}" th:href="@{/matching(profileId=${profile.id})}">Usar en matching clasico</a>
 	</section>
 
-	<section class="card" th:if="${profile != null}">
-		<header class="header">
-			<h2>Objetivo del perfil</h2>
-			<p class="muted">Preferencias guardadas para diagnostico visual. No filtran, no reordenan y no cambian embeddings.</p>
-		</header>
+	<section class="card vector-profile-card" th:if="${profile != null}">
+		<div>
+			<p class="muted small">Perfil analizado</p>
+			<h2 th:text="${profile.name}">Nombre del perfil</h2>
+			<p class="muted">Preferencias guardadas para interpretar el resultado. No filtran, no reordenan y no cambian embeddings.</p>
+		</div>
 		<div class="match-top">
 			<span class="match-badge is-na" th:text="${profile.targetRole != null ? profile.targetRole : 'UNDECIDED'}">UNDECIDED</span>
 			<span class="chip match-chip profile-chip" th:text="${'Seniority: ' + (profile.targetSeniority != null ? profile.targetSeniority : 'ANY')}">Seniority</span>
@@ -43,32 +44,53 @@
 		<p class="muted">No se ejecuta backfill ni procesamiento de embeddings desde esta pantalla.</p>
 	</section>
 
-	<section class="card" th:if="${response != null}">
-		<h2>Configuracion de analisis</h2>
-		<div class="grid-2">
-			<div>
-				<p class="muted small">Estrategia</p>
-				<p><code th:text="${response.retrieval.strategy}">VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC</code></p>
+	<section class="card vector-summary" th:if="${response != null}">
+		<header class="header">
+			<h2>Resumen del analisis</h2>
+			<p class="muted">Resultados recuperados con embeddings y ordenados por ranking vectorial activo.</p>
+		</header>
+		<div class="vector-metrics">
+			<div class="vector-metric">
+				<p class="muted small">Ofertas recuperadas</p>
+				<strong th:text="${#lists.size(results)}">0</strong>
 			</div>
-			<div>
-				<p class="muted small">Embeddings</p>
-				<p>
-					<code th:text="${response.embeddingModel}">BAAI/bge-m3</code>
-					<span class="muted" th:text="${' - ' + response.embeddingDimensions + ' dims'}"> - 1024 dims</span>
-				</p>
+			<div class="vector-metric">
+				<p class="muted small">Limite comparado</p>
+				<strong th:text="${response.retrieval.limit}">20</strong>
 			</div>
-			<div>
-				<p class="muted small">Limite aplicado</p>
-				<p th:text="${response.retrieval.limit}">20</p>
+			<div class="vector-metric">
+				<p class="muted small">Modelo</p>
+				<strong th:text="${response.embeddingModel}">BAAI/bge-m3</strong>
 			</div>
-			<div>
+			<div class="vector-metric">
 				<p class="muted small">Ranking activo</p>
-				<p><code>analysisRank</code> <span class="muted">actualmente igual a</span> <code>vectorRank</code></p>
+				<strong>Vectorial</strong>
 			</div>
 		</div>
-		<p class="muted">
-			El orden mostrado no usa reranking real ni score hibrido productivo. <code>analysisRank == vectorRank</code> y <code>suggestedRerankRank</code> es solo diagnostico interno.
-		</p>
+		<details class="vector-technical-note">
+			<summary>Ver detalle tecnico</summary>
+			<div class="grid-2">
+				<div>
+					<p class="muted small">Estrategia</p>
+					<p><code th:text="${response.retrieval.strategy}">VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC</code></p>
+				</div>
+				<div>
+					<p class="muted small">Embeddings</p>
+					<p>
+						<code th:text="${response.embeddingModel}">BAAI/bge-m3</code>
+						<span class="muted" th:text="${' - ' + response.embeddingDimensions + ' dims'}"> - 1024 dims</span>
+					</p>
+				</div>
+				<div>
+					<p class="muted small">Orden mostrado</p>
+					<p><code>analysisRank</code> <span class="muted">igual a</span> <code>vectorRank</code></p>
+				</div>
+				<div>
+					<p class="muted small">Reranking</p>
+					<p class="muted">Las senales sugeridas son diagnosticas y no alteran el ranking.</p>
+				</div>
+			</div>
+		</details>
 	</section>
 
 	<section class="card" th:if="${response != null && #lists.isEmpty(results)}">
@@ -76,149 +98,132 @@
 		<p class="muted">No hay ofertas con embeddings disponibles para este perfil y limite.</p>
 	</section>
 
-	<section th:if="${response != null && !#lists.isEmpty(results)}">
+	<section class="vector-results" th:if="${response != null && !#lists.isEmpty(results)}">
 		<header class="header">
 			<h2>Ranking de ofertas</h2>
-			<p class="muted">Resultados ordenados por <code>analysisRank</code>. En esta fase, <code>analysisRank == vectorRank</code>.</p>
+			<p class="muted">Lectura principal del matching semantico. Las senales internas quedan separadas para evitar ruido visual.</p>
 		</header>
 
-		<div class="grid match-grid">
-			<article class="card" th:each="row : ${results}">
-				<header class="header">
-					<h3 th:text="${row.title}">Titulo</h3>
-					<p class="muted" th:text="${row.company}">Empresa</p>
-					<div class="match-top">
-						<span class="match-badge is-na" th:text="${'#' + row.analysisRank}">#1</span>
-						<span class="muted small">analysisRank igual a vectorRank</span>
-						<span class="chip match-chip" th:text="${'vectorRank #' + row.vectorRank}">vectorRank</span>
-						<span class="chip match-chip" th:text="${row.categoryLabel}">Categoria</span>
-						<span class="chip match-chip" th:text="${'Evidencia: ' + row.evidenceLabel}">Evidencia</span>
+		<div class="grid match-grid vector-match-grid">
+			<article class="card vector-result-card" th:each="row : ${results}">
+				<header class="header vector-result-header">
+					<div class="vector-result-title">
+						<div class="match-top">
+							<span class="match-badge vector-rank-badge" th:text="${'#' + row.analysisRank}">#1</span>
+							<span class="chip match-chip vector-rank-chip" th:text="${'Ranking vectorial #' + row.vectorRank}">Ranking vectorial</span>
+						</div>
+						<h3 th:text="${row.title}">Titulo</h3>
+						<p class="muted" th:text="${row.company}">Empresa</p>
 					</div>
-					<div class="chips" th:if="${!#lists.isEmpty(row.targetDiagnostics)}">
-						<span class="chip match-chip target-diag-chip"
-							  th:each="diagnostic : ${row.targetDiagnostics}"
-							  th:classappend="${diagnostic.category == 'positive' ? ' is-positive' : (diagnostic.category == 'warning' ? ' is-warning' : (diagnostic.category == 'adjacent' ? ' is-adjacent' : (diagnostic.category == 'mode' ? ' is-mode' : ' is-neutral')))}"
-							  th:title="${diagnostic.detail}"
-							  th:text="${diagnostic.label}">Diagnostico</span>
-					</div>
-					<div class="actions">
-						<a class="btn btn-secondary btn-sm" th:href="@{/jobs/{id}(id=${row.jobId})}">Ver oferta</a>
+					<div class="vector-score-card">
+						<p class="muted small">Similaridad</p>
+						<strong th:text="${#numbers.formatDecimal(row.vectorSimilarity * 100, 1, 1) + '%'}">82.4%</strong>
 					</div>
 				</header>
 
-				<div class="grid-2">
-					<div>
-						<p class="muted small">Similaridad vectorial</p>
-						<p th:text="${#numbers.formatDecimal(row.vectorSimilarity, 1, 4)}">0.0000</p>
-					</div>
-					<div>
-						<p class="muted small">Rol / seniority detectado</p>
-						<p>
-							<span th:text="${row.detectedRoleLabel}">Rol</span>
-							<span class="muted" th:text="${' - ' + row.detectedSeniorityLabel}"></span>
-						</p>
-					</div>
-					<div>
-						<p class="muted small">Categoria</p>
-						<p>
-							<span th:text="${row.categoryLabel}">Categoria</span>
-							<code class="muted" th:if="${row.categoryCode != null}" th:text="${row.categoryCode}">CATEGORY</code>
-						</p>
-					</div>
-					<div>
-						<p class="muted small">Evidencia / confianza</p>
-						<p>
-							<span th:text="${row.evidenceLabel}">Evidencia</span>
-							<span class="muted" th:text="${' - confianza ' + row.confidenceLabel}"></span>
-						</p>
-					</div>
+				<div class="match-top vector-signal-row">
+					<span class="match-badge compat-badge"
+						  th:attr="data-category=${row.categoryCode}"
+						  th:text="${row.categoryLabel}">Categoria</span>
+					<span class="chip match-chip evidence-chip" th:text="${'Evidencia: ' + row.evidenceLabel}">Evidencia</span>
+					<span class="chip match-chip confidence-chip" th:text="${'Confianza: ' + row.confidenceLabel}">Confianza</span>
+					<span class="chip match-chip domain-chip">
+						<span th:text="${row.detectedRoleLabel}">Rol</span>
+						<span th:text="${' - ' + row.detectedSeniorityLabel}"> - Seniority</span>
+					</span>
 				</div>
 
-				<div th:if="${row.explanation != null && !row.explanation.isBlank()}">
-					<p class="muted small">Explicacion</p>
+				<div class="chips" th:if="${!#lists.isEmpty(row.targetDiagnostics)}">
+					<span class="chip match-chip target-diag-chip"
+						  th:each="diagnostic : ${row.targetDiagnostics}"
+						  th:classappend="${diagnostic.category == 'positive' ? ' is-positive' : (diagnostic.category == 'warning' ? ' is-warning' : (diagnostic.category == 'adjacent' ? ' is-adjacent' : (diagnostic.category == 'mode' ? ' is-mode' : ' is-neutral')))}"
+						  th:title="${diagnostic.detail}"
+						  th:text="${diagnostic.label}">Diagnostico</span>
+				</div>
+
+				<div class="vector-explanation" th:if="${row.explanation != null && !row.explanation.isBlank()}">
+					<p class="muted small">Explicacion breve</p>
 					<p th:text="${row.explanation}"></p>
 				</div>
 
-				<div th:if="${!#lists.isEmpty(row.targetDiagnostics)}">
-					<p class="muted small">Diagnostico contra objetivo del perfil</p>
-					<ul class="small">
-						<li th:each="diagnostic : ${row.targetDiagnostics}" th:text="${diagnostic.detail}">Detalle</li>
-					</ul>
-				</div>
-
 				<div th:if="${!#lists.isEmpty(row.matchedSkills)}">
-					<p class="muted small">Skills detectadas en comun</p>
+					<p class="muted small">Skills coincidentes</p>
 					<div class="chips">
-						<span class="chip match-chip" th:each="skill, it : ${row.matchedSkills}" th:if="${it.index < 8}">
-							<span th:text="${skill}">Skill</span>
-						</span>
+						<span class="chip match-chip skill-chip" th:each="skill, it : ${row.matchedSkills}" th:if="${it.index < 8}"
+							  th:attr="data-skill=${#strings.toLowerCase(skill)}"
+							  th:text="${skill}">Skill</span>
 						<span class="chip match-chip chip-muted" th:if="${#lists.size(row.matchedSkills) > 8}" th:text="${'+' + (#lists.size(row.matchedSkills) - 8) + ' mas'}">+N</span>
 					</div>
 				</div>
 
-				<div class="grid-2">
+				<div class="grid-2 vector-gap-grid">
 					<div th:if="${!#lists.isEmpty(row.missingCriticalSkills)}">
-						<p class="muted small">Gaps criticos</p>
+						<p class="muted small">Brechas criticas</p>
 						<div class="chips">
-							<span class="chip match-chip" th:each="skill, it : ${row.missingCriticalSkills}" th:if="${it.index < 6}">
-								<span th:text="${skill}">Skill</span>
-							</span>
-							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.missingCriticalSkills) > 6}" th:text="${'+' + (#lists.size(row.missingCriticalSkills) - 6) + ' mas'}">+N</span>
+							<span class="chip match-chip skill-chip gap-chip is-critical" th:each="skill, it : ${row.missingCriticalSkills}" th:if="${it.index < 4}"
+								  th:attr="data-skill=${#strings.toLowerCase(skill)}"
+								  th:text="${skill}">Skill</span>
+							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.missingCriticalSkills) > 4}" th:text="${'+' + (#lists.size(row.missingCriticalSkills) - 4) + ' mas'}">+N</span>
 						</div>
 					</div>
 					<div th:if="${!#lists.isEmpty(row.missingSecondarySkills)}">
-						<p class="muted small">Gaps secundarios</p>
+						<p class="muted small">Brechas secundarias</p>
 						<div class="chips">
-							<span class="chip match-chip" th:each="skill, it : ${row.missingSecondarySkills}" th:if="${it.index < 6}">
-								<span th:text="${skill}">Skill</span>
-							</span>
-							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.missingSecondarySkills) > 6}" th:text="${'+' + (#lists.size(row.missingSecondarySkills) - 6) + ' mas'}">+N</span>
+							<span class="chip match-chip skill-chip gap-chip" th:each="skill, it : ${row.missingSecondarySkills}" th:if="${it.index < 4}"
+								  th:attr="data-skill=${#strings.toLowerCase(skill)}"
+								  th:text="${skill}">Skill</span>
+							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.missingSecondarySkills) > 4}" th:text="${'+' + (#lists.size(row.missingSecondarySkills) - 4) + ' mas'}">+N</span>
 						</div>
 					</div>
 				</div>
 
-				<div th:if="${!#lists.isEmpty(row.skillEquivalenceSignals)}">
+				<div th:if="${!#lists.isEmpty(row.skillEquivalenceSignals)}" class="vector-secondary-block">
 					<p class="muted small">Relaciones parciales entre skills</p>
-					<div th:each="signal, it : ${row.skillEquivalenceSignals}" th:if="${it.index < 4}">
+					<div th:each="signal, it : ${row.skillEquivalenceSignals}" th:if="${it.index < 3}" class="vector-mini-relation">
 						<div class="chips">
-							<span class="chip match-chip" th:text="${signal.candidateSkill}">candidate</span>
+							<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(signal.candidateSkill)}" th:text="${signal.candidateSkill}">candidate</span>
 							<span class="chip chip-muted">-&gt;</span>
-							<span class="chip match-chip" th:text="${signal.targetSkill}">target</span>
-							<span class="chip match-chip" th:text="${signal.relationLabel}">relation</span>
+							<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(signal.targetSkill)}" th:text="${signal.targetSkill}">target</span>
+							<span class="chip match-chip evidence-chip" th:text="${signal.relationLabel}">relation</span>
 						</div>
 						<p class="muted small" th:if="${signal.reason != null && !signal.reason.isBlank()}" th:text="${signal.reason}">Reason</p>
 					</div>
-					<p class="muted small">Diagnostico solamente: no convierte gaps en matches y no cambia el ranking.</p>
 				</div>
 
-				<div th:if="${!#lists.isEmpty(row.transferableSkills)}">
+				<div th:if="${!#lists.isEmpty(row.transferableSkills)}" class="vector-secondary-block">
 					<p class="muted small">Skills transferibles</p>
-					<div th:each="skill, it : ${row.transferableSkills}" th:if="${it.index < 4}">
+					<div th:each="skill, it : ${row.transferableSkills}" th:if="${it.index < 3}" class="vector-mini-relation">
 						<div class="chips">
-							<span class="chip match-chip" th:text="${skill.from}">from</span>
+							<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(skill.from)}" th:text="${skill.from}">from</span>
 							<span class="chip chip-muted">-&gt;</span>
-							<span class="chip match-chip" th:text="${skill.to}">to</span>
-							<span class="chip match-chip" th:if="${skill.strengthLabel != null}" th:text="${skill.strengthLabel}">strength</span>
+							<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(skill.to)}" th:text="${skill.to}">to</span>
+							<span class="chip match-chip evidence-chip" th:if="${skill.strengthLabel != null}" th:text="${skill.strengthLabel}">strength</span>
 						</div>
 						<p class="muted small" th:if="${skill.reason != null && !skill.reason.isBlank()}" th:text="${skill.reason}">Reason</p>
 					</div>
 				</div>
 
-				<div th:if="${!#lists.isEmpty(row.roadmapSuggestions)}">
+				<div th:if="${!#lists.isEmpty(row.roadmapSuggestions)}" class="vector-secondary-block">
 					<p class="muted small">Sugerencias de roadmap</p>
 					<div class="chips">
-						<span class="chip match-chip" th:each="item, it : ${row.roadmapSuggestions}" th:if="${it.index < 4}">
-							<span th:text="${item}">Sugerencia</span>
-						</span>
-						<span class="chip match-chip chip-muted" th:if="${#lists.size(row.roadmapSuggestions) > 4}" th:text="${'+' + (#lists.size(row.roadmapSuggestions) - 4) + ' mas'}">+N</span>
+						<span class="chip match-chip roadmap-chip" th:each="item, it : ${row.roadmapSuggestions}" th:if="${it.index < 3}"
+							  th:text="${item}">Sugerencia</span>
+						<span class="chip match-chip chip-muted" th:if="${#lists.size(row.roadmapSuggestions) > 3}" th:text="${'+' + (#lists.size(row.roadmapSuggestions) - 3) + ' mas'}">+N</span>
 					</div>
 				</div>
 
-				<details th:if="${row.hasDiagnostic}">
+				<details class="vector-diagnostic-details" th:if="${row.hasDiagnostic || !#lists.isEmpty(row.targetDiagnostics)}">
 					<summary>Diagnostico interno</summary>
 					<p class="muted">
 						Estos campos no cambian el orden mostrado, no son ranking real, no activan reranking y no representan un score hibrido productivo.
 					</p>
+
+					<div th:if="${!#lists.isEmpty(row.targetDiagnostics)}">
+						<p class="muted small">Diagnostico contra objetivo del perfil</p>
+						<ul class="small">
+							<li th:each="diagnostic : ${row.targetDiagnostics}" th:text="${diagnostic.detail}">Detalle</li>
+						</ul>
+					</div>
 
 					<div class="grid-2">
 						<div>
@@ -240,9 +245,7 @@
 					<div th:if="${!#lists.isEmpty(row.rerankWarnings)}">
 						<p class="muted small">Advertencias</p>
 						<div class="chips">
-							<span class="chip match-chip" th:each="warning : ${row.rerankWarnings}">
-								<span th:text="${warning}">Warning</span>
-							</span>
+							<span class="chip match-chip warning-chip" th:each="warning : ${row.rerankWarnings}" th:text="${warning}">Warning</span>
 						</div>
 					</div>
 					<p class="muted small" th:if="${#lists.isEmpty(row.rerankWarnings)}">Sin advertencias diagnosticas relevantes.</p>
@@ -250,28 +253,26 @@
 					<div th:if="${!#lists.isEmpty(row.rerankReasons)}">
 						<p class="muted small">Razones diagnosticas</p>
 						<div class="chips">
-							<span class="chip match-chip" th:each="reason, it : ${row.rerankReasons}" th:if="${it.index < 5}">
-								<span th:text="${reason}">Reason</span>
-							</span>
+							<span class="chip match-chip signal-chip" th:each="reason, it : ${row.rerankReasons}" th:if="${it.index < 5}" th:text="${reason}">Reason</span>
 							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.rerankReasons) > 5}" th:text="${'+' + (#lists.size(row.rerankReasons) - 5) + ' mas'}">+N</span>
 						</div>
 					</div>
 
 					<div th:if="${!#lists.isEmpty(row.rerankSignals)}">
 						<p class="muted small">Senales diagnosticas</p>
-						<div th:each="signal, it : ${row.rerankSignals}" th:if="${it.index < 5}">
+						<div th:each="signal, it : ${row.rerankSignals}" th:if="${it.index < 5}" class="vector-mini-relation">
 							<div class="chips">
-								<span class="chip match-chip" th:text="${signal.name}">SIGNAL</span>
-								<span class="chip match-chip" th:if="${signal.polarityLabel != null}" th:text="${signal.polarityLabel}">POLARITY</span>
+								<span class="chip match-chip signal-chip" th:text="${signal.name}">SIGNAL</span>
+								<span class="chip match-chip evidence-chip" th:if="${signal.polarityLabel != null}" th:text="${signal.polarityLabel}">POLARITY</span>
 							</div>
 							<p class="muted small" th:if="${signal.detail != null && !signal.detail.isBlank()}" th:text="${signal.detail}">Detail</p>
 						</div>
 					</div>
 				</details>
-				<p class="muted small"
-				   th:if="${!row.hasDiagnostic}">
-					Sin advertencias diagnosticas relevantes.
-				</p>
+
+				<div class="actions">
+					<a class="btn btn-secondary btn-sm" th:href="@{/jobs/{id}(id=${row.jobId})}">Ver oferta</a>
+				</div>
 			</article>
 		</div>
 	</section>

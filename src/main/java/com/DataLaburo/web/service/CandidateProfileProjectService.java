@@ -48,7 +48,7 @@ public class CandidateProfileProjectService {
         project.setCandidateProfile(profile);
         project.setTitle(required(form.getTitle(), "Ingresa un titulo para el proyecto."));
         project.setDescription(required(form.getDescription(), "Ingresa una descripcion breve del proyecto."));
-        project.setSkillsText(clean(form.getSkillsText()));
+        project.setSkillsText(required(form.getSkillsText(), "Ingresa al menos una skill o tecnologia evidenciada."));
         project.setEvidenceType(form.getEvidenceType() == null ? ProjectEvidenceType.OTHER : form.getEvidenceType());
         project.setRepositoryUrl(optionalText(form.getRepositoryUrl()));
         project.setDemoUrl(optionalText(form.getDemoUrl()));

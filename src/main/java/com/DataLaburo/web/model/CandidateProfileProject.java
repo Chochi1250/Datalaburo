@@ -145,6 +145,11 @@ public class CandidateProfileProject {
     }
 
     @Transient
+    public String getEvidenceTypeLabel() {
+        return evidenceType == null ? ProjectEvidenceType.OTHER.label() : evidenceType.label();
+    }
+
+    @Transient
     public List<String> getSkillTags() {
         if (skillsText == null || skillsText.isBlank()) {
             return List.of();
