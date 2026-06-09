@@ -13,7 +13,9 @@ import com.DataLaburo.web.analysis.VectorFirstCompatibilityResult;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResponse;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityService;
 import com.DataLaburo.web.model.CandidateProfile;
+import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
+import com.DataLaburo.web.service.ProfileImprovementSuggestionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.ui.ConcurrentModel;
@@ -29,11 +31,16 @@ import static org.mockito.Mockito.when;
 
 class ProfileVectorCompatibilityControllerTest {
     private final CandidateProfileService candidateProfileService = mock(CandidateProfileService.class);
+    private final CandidateProfileProjectService candidateProfileProjectService = mock(CandidateProfileProjectService.class);
+    private final ProfileImprovementSuggestionService profileImprovementSuggestionService =
+            new ProfileImprovementSuggestionService();
     private final VectorFirstCompatibilityService compatibilityService = mock(VectorFirstCompatibilityService.class);
     @SuppressWarnings("unchecked")
     private final ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider = mock(ObjectProvider.class);
     private final ProfileVectorCompatibilityController controller = new ProfileVectorCompatibilityController(
             candidateProfileService,
+            candidateProfileProjectService,
+            profileImprovementSuggestionService,
             compatibilityServiceProvider
     );
 
@@ -90,6 +97,7 @@ class ProfileVectorCompatibilityControllerTest {
         )));
 
         when(candidateProfileService.findById(1L)).thenReturn(Optional.of(profile));
+        when(candidateProfileProjectService.findByProfileId(1L)).thenReturn(List.of());
         when(compatibilityServiceProvider.getIfAvailable()).thenReturn(compatibilityService);
         when(compatibilityService.analyze(1L, 20)).thenReturn(new VectorFirstCompatibilityResponse(
                 1L,
@@ -125,7 +133,12 @@ class ProfileVectorCompatibilityControllerTest {
                 "Practicar despliegues",
                 "Documentar evidencia"
         ), invoke(checklist, "suggestions"));
+
+        List<?> suggestions = (List<?>) invoke(rows.get(0), "improvementSuggestions");
+        assertEquals(3, suggestions.size());
+        assertEquals("LEARNING_GAP", invoke(suggestions.get(0), "category"));
         verify(compatibilityService).analyze(1L, 20);
+        verify(candidateProfileProjectService).findByProfileId(1L);
     }
 
     private static Object invoke(Object target, String methodName) throws Exception {

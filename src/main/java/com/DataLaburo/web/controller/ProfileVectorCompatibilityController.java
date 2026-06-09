@@ -8,7 +8,10 @@ import com.DataLaburo.web.analysis.VectorFirstCompatibilityResult;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResponse;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityService;
 import com.DataLaburo.web.model.CandidateProfile;
+import com.DataLaburo.web.model.CandidateProfileProject;
+import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
+import com.DataLaburo.web.service.ProfileImprovementSuggestionService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,13 +28,19 @@ public class ProfileVectorCompatibilityController {
     private static final int DEFAULT_LIMIT = 20;
 
     private final CandidateProfileService candidateProfileService;
+    private final CandidateProfileProjectService candidateProfileProjectService;
+    private final ProfileImprovementSuggestionService profileImprovementSuggestionService;
     private final ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider;
 
     public ProfileVectorCompatibilityController(
             CandidateProfileService candidateProfileService,
+            CandidateProfileProjectService candidateProfileProjectService,
+            ProfileImprovementSuggestionService profileImprovementSuggestionService,
             ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider
     ) {
         this.candidateProfileService = candidateProfileService;
+        this.candidateProfileProjectService = candidateProfileProjectService;
+        this.profileImprovementSuggestionService = profileImprovementSuggestionService;
         this.compatibilityServiceProvider = compatibilityServiceProvider;
     }
 
@@ -61,10 +70,23 @@ public class ProfileVectorCompatibilityController {
 
         try {
             VectorFirstCompatibilityResponse response = compatibilityService.analyze(profileId, limit);
+            List<CandidateProfileProject> projects = candidateProfileProjectService.findByProfileId(profileId);
             model.addAttribute("response", response);
+            model.addAttribute("profileImprovementSuggestions", profileImprovementSuggestionService
+                    .suggestProfile(profile.get())
+                    .stream()
+                    .map(ProfileImprovementSuggestionView::from)
+                    .toList());
             model.addAttribute("results", response.results() == null
                     ? List.of()
-                    : response.results().stream().map(result -> ResultView.from(result, profile.get())).toList());
+                    : response.results().stream()
+                            .map(result -> ResultView.from(
+                                    result,
+                                    profile.get(),
+                                    projects,
+                                    profileImprovementSuggestionService
+                            ))
+                            .toList());
             model.addAttribute("limit", response.retrieval() == null ? limit : response.retrieval().limit());
         } catch (CompatibilityAnalysisException e) {
             model.addAttribute("error", friendlyMessage(e.getMessage()));
@@ -151,10 +173,16 @@ public class ProfileVectorCompatibilityController {
             List<SignalView> rerankSignals,
             List<SkillEquivalenceView> skillEquivalenceSignals,
             RequirementChecklistView requirementChecklist,
+            List<ProfileImprovementSuggestionView> improvementSuggestions,
             List<TargetDiagnosticView> targetDiagnostics,
             boolean hasDiagnostic
     ) {
-        static ResultView from(VectorFirstCompatibilityResult result, CandidateProfile profile) {
+        static ResultView from(
+                VectorFirstCompatibilityResult result,
+                CandidateProfile profile,
+                List<CandidateProfileProject> projects,
+                ProfileImprovementSuggestionService profileImprovementSuggestionService
+        ) {
             String bucketCode = result.compatibilityBucket() == null ? null : result.compatibilityBucket().name();
             Integer suggestedRank = result.suggestedRerankRank();
             Integer suggestedDelta = result.suggestedRankDelta();
@@ -219,10 +247,46 @@ public class ProfileVectorCompatibilityController {
                     signals,
                     skillEquivalenceSignals,
                     requirementChecklist,
+                    profileImprovementSuggestionService.suggest(profile, projects, result).stream()
+                            .map(ProfileImprovementSuggestionView::from)
+                            .toList(),
                     buildTargetDiagnostics(profile, result),
                     hasDiagnostic
             );
         }
+    }
+
+    private record ProfileImprovementSuggestionView(
+            String category,
+            String categoryLabel,
+            String message,
+            String reason,
+            int priority
+    ) {
+        static ProfileImprovementSuggestionView from(
+                ProfileImprovementSuggestionService.ProfileImprovementSuggestion suggestion
+        ) {
+            return new ProfileImprovementSuggestionView(
+                    suggestion.category(),
+                    labelSuggestionCategory(suggestion.category()),
+                    suggestion.message(),
+                    suggestion.reason(),
+                    suggestion.priority()
+            );
+        }
+    }
+
+    private static String labelSuggestionCategory(String category) {
+        return switch (codeOrUnknown(category)) {
+            case "EVIDENCE" -> "Evidencia";
+            case "LEARNING_GAP" -> "Aprendizaje";
+            case "LIGHT_REINFORCEMENT" -> "Refuerzo";
+            case "TRANSFER" -> "Transferencia";
+            case "PARTIAL_RELATION" -> "Contexto";
+            case "PROFILE_METADATA" -> "Perfil";
+            case "PROFILE_FOCUS" -> "Foco";
+            default -> "Sugerencia";
+        };
     }
 
     private record TransferView(

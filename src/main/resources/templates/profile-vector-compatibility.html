@@ -12,13 +12,13 @@
 	<header class="header vector-page-header">
 		<p class="muted small">Vector-first</p>
 		<h1>Compatibilidad vectorial</h1>
-		<p class="muted" th:if="${profile != null}" th:text="${'Ranking semantico para el perfil: ' + profile.name}">Perfil</p>
+		<p class="muted" th:if="${profile != null}" th:text="${'Ranking semántico para el perfil: ' + profile.name}">Perfil</p>
 		<p class="muted" th:if="${profile == null && profileId != null}" th:text="${'Perfil id: ' + profileId}">Perfil id</p>
 	</header>
 
 	<section class="actions vector-page-actions">
 		<a class="btn btn-secondary" th:href="@{/profiles}">Volver a perfiles</a>
-		<a class="btn btn-ghost" th:if="${profile != null}" th:href="@{/matching(profileId=${profile.id})}">Usar en matching clasico</a>
+		<a class="btn btn-ghost" th:if="${profile != null}" th:href="@{/matching(profileId=${profile.id})}">Usar en matching clásico</a>
 	</section>
 
 	<section class="card vector-profile-card" th:if="${profile != null}">
@@ -46,7 +46,7 @@
 
 	<section class="card vector-summary" th:if="${response != null}">
 		<header class="header">
-			<h2>Resumen del analisis</h2>
+			<h2>Resumen del análisis</h2>
 			<p class="muted">Resultados recuperados con embeddings y ordenados por ranking vectorial activo.</p>
 		</header>
 		<div class="vector-metrics">
@@ -68,7 +68,7 @@
 			</div>
 		</div>
 		<details class="vector-technical-note">
-			<summary>Ver detalle tecnico</summary>
+			<summary>Ver detalle técnico</summary>
 			<div class="grid-2">
 				<div>
 					<p class="muted small">Estrategia</p>
@@ -87,7 +87,7 @@
 				</div>
 				<div>
 					<p class="muted small">Reranking</p>
-					<p class="muted">Las senales sugeridas son diagnosticas y no alteran el ranking.</p>
+					<p class="muted">Las señales sugeridas son diagnósticas y no alteran el ranking.</p>
 				</div>
 			</div>
 		</details>
@@ -95,13 +95,25 @@
 
 	<section class="card" th:if="${response != null && #lists.isEmpty(results)}">
 		<h2>Sin resultados vectoriales</h2>
-		<p class="muted">No hay ofertas con embeddings disponibles para este perfil y limite.</p>
+		<p class="muted">No hay ofertas con embeddings disponibles para este perfil y límite.</p>
+	</section>
+
+	<section class="card vector-secondary-block" th:if="${response != null && !#lists.isEmpty(profileImprovementSuggestions)}">
+		<h2>Sugerencias generales del perfil</h2>
+		<p class="muted small">Recomendaciones orientativas sobre la presentación visible del perfil. No modifican embeddings, ranking ni matching.</p>
+		<div th:each="suggestion : ${profileImprovementSuggestions}" class="vector-mini-relation">
+			<div class="chips">
+				<span class="chip match-chip signal-chip" th:text="${suggestion.categoryLabel}">Sugerencia</span>
+			</div>
+			<p th:text="${suggestion.message}">Mensaje</p>
+			<p class="muted small" th:if="${suggestion.reason != null && !suggestion.reason.isBlank()}" th:text="${suggestion.reason}">Motivo</p>
+		</div>
 	</section>
 
 	<section class="vector-results" th:if="${response != null && !#lists.isEmpty(results)}">
 		<header class="header">
 			<h2>Ranking de ofertas</h2>
-			<p class="muted">Lectura principal del matching semantico. Las senales internas quedan separadas para evitar ruido visual.</p>
+			<p class="muted">Lectura principal del matching semántico. Las señales internas quedan separadas para evitar ruido visual.</p>
 		</header>
 
 		<div class="grid match-grid vector-match-grid">
@@ -138,7 +150,7 @@
 						  th:each="diagnostic : ${row.targetDiagnostics}"
 						  th:classappend="${diagnostic.category == 'positive' ? ' is-positive' : (diagnostic.category == 'warning' ? ' is-warning' : (diagnostic.category == 'adjacent' ? ' is-adjacent' : (diagnostic.category == 'mode' ? ' is-mode' : ' is-neutral')))}"
 						  th:title="${diagnostic.detail}"
-						  th:text="${diagnostic.label}">Diagnostico</span>
+						  th:text="${diagnostic.label}">Diagnóstico</span>
 				</div>
 
 				<div class="vector-explanation" th:if="${row.explanation != null && !row.explanation.isBlank()}">
@@ -217,39 +229,15 @@
 					</div>
 				</div>
 
-				<div th:if="${!#lists.isEmpty(row.matchedSkills)}">
-					<p class="muted small">Skills coincidentes</p>
-					<div class="chips">
-						<span class="chip match-chip skill-chip" th:each="skill, it : ${row.matchedSkills}" th:if="${it.index < 8}"
-							  th:attr="data-skill=${#strings.toLowerCase(skill)}"
-							  th:text="${skill}">Skill</span>
-						<span class="chip match-chip chip-muted" th:if="${#lists.size(row.matchedSkills) > 8}" th:text="${'+' + (#lists.size(row.matchedSkills) - 8) + ' mas'}">+N</span>
-					</div>
-				</div>
-
-				<div th:if="${!#lists.isEmpty(row.skillEquivalenceSignals)}" class="vector-secondary-block">
-					<p class="muted small">Relaciones parciales entre skills</p>
-					<div th:each="signal, it : ${row.skillEquivalenceSignals}" th:if="${it.index < 3}" class="vector-mini-relation">
+				<div class="vector-secondary-block" th:if="${!#lists.isEmpty(row.improvementSuggestions)}">
+					<p class="muted small">Sugerencias para mejorar CV/perfil</p>
+					<p class="muted small">Recomendaciones orientativas basadas en la evidencia disponible. No modifican el ranking ni implican aptitud.</p>
+					<div th:each="suggestion, it : ${row.improvementSuggestions}" th:if="${it.index < 3}" class="vector-mini-relation">
 						<div class="chips">
-							<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(signal.candidateSkill)}" th:text="${signal.candidateSkill}">candidate</span>
-							<span class="chip chip-muted">-&gt;</span>
-							<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(signal.targetSkill)}" th:text="${signal.targetSkill}">target</span>
-							<span class="chip match-chip evidence-chip" th:text="${signal.relationLabel}">relation</span>
+							<span class="chip match-chip signal-chip" th:text="${suggestion.categoryLabel}">Sugerencia</span>
 						</div>
-						<p class="muted small" th:if="${signal.reason != null && !signal.reason.isBlank()}" th:text="${signal.reason}">Reason</p>
-					</div>
-				</div>
-
-				<div th:if="${!#lists.isEmpty(row.transferableSkills)}" class="vector-secondary-block">
-					<p class="muted small">Skills transferibles</p>
-					<div th:each="skill, it : ${row.transferableSkills}" th:if="${it.index < 3}" class="vector-mini-relation">
-						<div class="chips">
-							<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(skill.from)}" th:text="${skill.from}">from</span>
-							<span class="chip chip-muted">-&gt;</span>
-							<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(skill.to)}" th:text="${skill.to}">to</span>
-							<span class="chip match-chip evidence-chip" th:if="${skill.strengthLabel != null}" th:text="${skill.strengthLabel}">strength</span>
-						</div>
-						<p class="muted small" th:if="${skill.reason != null && !skill.reason.isBlank()}" th:text="${skill.reason}">Reason</p>
+						<p th:text="${suggestion.message}">Mensaje</p>
+						<p class="muted small" th:if="${suggestion.reason != null && !suggestion.reason.isBlank()}" th:text="${suggestion.reason}">Motivo</p>
 					</div>
 				</div>
 
@@ -289,10 +277,10 @@
 							<span class="chip match-chip warning-chip" th:each="warning : ${row.rerankWarnings}" th:text="${warning}">Warning</span>
 						</div>
 					</div>
-					<p class="muted small" th:if="${#lists.isEmpty(row.rerankWarnings)}">Sin advertencias diagnosticas relevantes.</p>
+					<p class="muted small" th:if="${#lists.isEmpty(row.rerankWarnings)}">Sin advertencias diagnósticas relevantes.</p>
 
 					<div th:if="${!#lists.isEmpty(row.rerankReasons)}">
-						<p class="muted small">Razones diagnosticas</p>
+						<p class="muted small">Razones diagnósticas</p>
 						<div class="chips">
 							<span class="chip match-chip signal-chip" th:each="reason, it : ${row.rerankReasons}" th:if="${it.index < 5}" th:text="${reason}">Reason</span>
 							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.rerankReasons) > 5}" th:text="${'+' + (#lists.size(row.rerankReasons) - 5) + ' mas'}">+N</span>
@@ -300,7 +288,7 @@
 					</div>
 
 					<div th:if="${!#lists.isEmpty(row.rerankSignals)}">
-						<p class="muted small">Senales diagnosticas</p>
+						<p class="muted small">Señales diagnósticas</p>
 						<div th:each="signal, it : ${row.rerankSignals}" th:if="${it.index < 5}" class="vector-mini-relation">
 							<div class="chips">
 								<span class="chip match-chip signal-chip" th:text="${signal.name}">SIGNAL</span>
