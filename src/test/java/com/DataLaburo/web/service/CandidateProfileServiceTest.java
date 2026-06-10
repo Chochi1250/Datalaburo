@@ -175,6 +175,28 @@ class CandidateProfileServiceTest {
         assertEquals(DocumentEmbeddingStatus.READY, result.orElseThrow().getStatus());
     }
 
+    @Test
+    void preparesCurrentProfileEmbeddingByProfileId() {
+        CandidateProfile profile = profile(7L, "Java backend CV");
+        DocumentEmbedding embedding = profileEmbedding(7L, DocumentEmbeddingStatus.PENDING);
+        EmbeddingPreparationService.PreparationResult preparationResult =
+                new EmbeddingPreparationService.PreparationResult(
+                        EmbeddingPreparationService.PreparationAction.CREATED,
+                        embedding,
+                        "source-hash",
+                        null
+                );
+
+        when(candidateProfileRepository.findById(7L)).thenReturn(Optional.of(profile));
+        when(embeddingPreparationService.prepareCandidateProfile(profile)).thenReturn(preparationResult);
+
+        Optional<EmbeddingPreparationService.PreparationResult> result = service.prepareProfileEmbedding(7L);
+
+        assertTrue(result.isPresent());
+        assertSame(preparationResult, result.orElseThrow());
+        verify(embeddingPreparationService).prepareCandidateProfile(profile);
+    }
+
     private static CandidateProfile profile(Long id, String cvText) {
         CandidateProfile profile = new CandidateProfile();
         profile.setId(id);

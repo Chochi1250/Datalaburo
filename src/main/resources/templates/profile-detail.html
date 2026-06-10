@@ -214,6 +214,8 @@
 
 	<section class="card">
 		<h2>Estado del embedding PROFILE</h2>
+		<p class="muted" th:if="${embeddingProcessMessage != null}" th:text="${embeddingProcessMessage}">Embedding procesado.</p>
+		<p class="error" th:if="${embeddingProcessError != null}" th:text="${embeddingProcessError}">Error de embedding</p>
 		<div th:if="${profileEmbedding != null}">
 			<div class="chips">
 				<span class="chip match-chip" th:text="${profileEmbedding.status}">PENDING</span>
@@ -228,13 +230,49 @@
 			<span class="chip match-chip">sin embedding</span>
 		</div>
 		<p class="muted small">Guardar el CV solo prepara el embedding si cambia. El ranking vector-first no cambia hasta que el embedding sea procesado y quede READY.</p>
+		<form method="post"
+			  th:if="${profileEmbedding == null || profileEmbedding.status.name() == 'PENDING' || profileEmbedding.status.name() == 'FAILED'}"
+			  th:action="@{/profiles/{id}/embedding/process(id=${profile.id})}">
+			<div class="actions">
+				<button type="submit">Procesar embedding del perfil</button>
+			</div>
+			<p class="hint muted">Procesa solo el embedding PROFILE de este perfil con BAAI/bge-m3. No procesa ofertas ni otros pendientes.</p>
+		</form>
 	</section>
 
 	<section class="card">
 		<h2>CV textual editable</h2>
 		<p class="muted" th:if="${cvMessage != null}" th:text="${cvMessage}">CV guardado.</p>
 		<p class="error" th:if="${cvError != null}" th:text="${cvError}">Error</p>
-		<form method="post" th:action="@{/profiles/{id}/cv(id=${profile.id})}">
+		<p class="muted" th:if="${cvUploadMessage != null}" th:text="${cvUploadMessage}">Texto extraido.</p>
+		<p class="error" th:if="${cvUploadError != null}" th:text="${cvUploadError}">Error de upload</p>
+
+		<form method="post" enctype="multipart/form-data" th:if="${cvUploadPreviewText == null}" th:action="@{/profiles/{id}/cv/upload(id=${profile.id})}">
+			<div class="field">
+				<label for="cvFile">Subir CV desde PDF/DOCX</label>
+				<input id="cvFile" name="cvFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"/>
+				<p class="hint muted">El archivo no se guarda. Se extrae texto para revisar antes de reemplazar el CV textual.</p>
+			</div>
+			<div class="actions">
+				<button type="submit">Extraer texto</button>
+			</div>
+		</form>
+
+		<div th:if="${cvUploadPreviewText != null}">
+			<form method="post" th:action="@{/profiles/{id}/cv(id=${profile.id})}">
+				<div class="field">
+					<label for="cvUploadPreviewText">Vista previa editable</label>
+					<textarea id="cvUploadPreviewText" name="cvText" rows="16" th:text="${cvUploadPreviewText}"></textarea>
+					<p class="hint muted">Este texto todavia no esta guardado. Confirmar lo guarda como CV del perfil y prepara el embedding PROFILE solo si cambio.</p>
+				</div>
+				<div class="actions">
+					<button type="submit">Confirmar y guardar CV</button>
+					<a class="btn btn-secondary" th:href="@{/profiles/{id}(id=${profile.id})}">Cancelar</a>
+				</div>
+			</form>
+		</div>
+
+		<form method="post" th:if="${cvUploadPreviewText == null}" th:action="@{/profiles/{id}/cv(id=${profile.id})}">
 			<div class="field">
 				<label for="cvText">CV (texto)</label>
 				<textarea id="cvText" name="cvText" rows="16" th:text="${profile.cvText}" placeholder="Pega aca el CV en texto plano"></textarea>

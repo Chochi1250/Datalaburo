@@ -100,6 +100,15 @@ public class CandidateProfileService {
                 );
     }
 
+    @Transactional
+    public Optional<EmbeddingPreparationService.PreparationResult> prepareProfileEmbedding(Long profileId) {
+        if (profileId == null) {
+            return Optional.empty();
+        }
+        return candidateProfileRepository.findById(profileId)
+                .map(embeddingPreparationService::prepareCandidateProfile);
+    }
+
     private CvTextUpdateResult updateCvText(CandidateProfile profile, String cleanedCvText) {
         if (clean(profile.getCvText()).equals(cleanedCvText)) {
             return CvTextUpdateResult.unchanged(profile);
