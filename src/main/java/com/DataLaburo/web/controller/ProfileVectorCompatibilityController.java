@@ -12,6 +12,7 @@ import com.DataLaburo.web.model.CandidateProfileProject;
 import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
 import com.DataLaburo.web.service.ProfileImprovementSuggestionService;
+import com.DataLaburo.web.service.ProfileRoadmapSuggestionService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,17 +31,20 @@ public class ProfileVectorCompatibilityController {
     private final CandidateProfileService candidateProfileService;
     private final CandidateProfileProjectService candidateProfileProjectService;
     private final ProfileImprovementSuggestionService profileImprovementSuggestionService;
+    private final ProfileRoadmapSuggestionService profileRoadmapSuggestionService;
     private final ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider;
 
     public ProfileVectorCompatibilityController(
             CandidateProfileService candidateProfileService,
             CandidateProfileProjectService candidateProfileProjectService,
             ProfileImprovementSuggestionService profileImprovementSuggestionService,
+            ProfileRoadmapSuggestionService profileRoadmapSuggestionService,
             ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider
     ) {
         this.candidateProfileService = candidateProfileService;
         this.candidateProfileProjectService = candidateProfileProjectService;
         this.profileImprovementSuggestionService = profileImprovementSuggestionService;
+        this.profileRoadmapSuggestionService = profileRoadmapSuggestionService;
         this.compatibilityServiceProvider = compatibilityServiceProvider;
     }
 
@@ -71,22 +75,28 @@ public class ProfileVectorCompatibilityController {
         try {
             VectorFirstCompatibilityResponse response = compatibilityService.analyze(profileId, limit);
             List<CandidateProfileProject> projects = candidateProfileProjectService.findByProfileId(profileId);
+            List<VectorFirstCompatibilityResult> responseResults = response.results() == null
+                    ? List.of()
+                    : response.results();
             model.addAttribute("response", response);
             model.addAttribute("profileImprovementSuggestions", profileImprovementSuggestionService
                     .suggestProfile(profile.get())
                     .stream()
                     .map(ProfileImprovementSuggestionView::from)
                     .toList());
-            model.addAttribute("results", response.results() == null
-                    ? List.of()
-                    : response.results().stream()
-                            .map(result -> ResultView.from(
-                                    result,
-                                    profile.get(),
-                                    projects,
-                                    profileImprovementSuggestionService
-                            ))
-                            .toList());
+            model.addAttribute("profileRoadmaps", profileRoadmapSuggestionService
+                    .suggest(profile.get(), projects, responseResults)
+                    .stream()
+                    .map(ProfileRoadmapView::from)
+                    .toList());
+            model.addAttribute("results", responseResults.stream()
+                    .map(result -> ResultView.from(
+                            result,
+                            profile.get(),
+                            projects,
+                            profileImprovementSuggestionService
+                    ))
+                    .toList());
             model.addAttribute("limit", response.retrieval() == null ? limit : response.retrieval().limit());
         } catch (CompatibilityAnalysisException e) {
             model.addAttribute("error", friendlyMessage(e.getMessage()));
@@ -287,6 +297,28 @@ public class ProfileVectorCompatibilityController {
             case "PROFILE_FOCUS" -> "Foco";
             default -> "Sugerencia";
         };
+    }
+
+    private record ProfileRoadmapView(
+            String skillOrFamily,
+            String title,
+            String whyItMatters,
+            List<String> initialSteps,
+            List<String> evidenceIdeas,
+            List<String> relatedSignals,
+            String toneLabel
+    ) {
+        static ProfileRoadmapView from(ProfileRoadmapSuggestionService.ProfileRoadmapSuggestion roadmap) {
+            return new ProfileRoadmapView(
+                    roadmap.skillOrFamily(),
+                    roadmap.title(),
+                    roadmap.whyItMatters(),
+                    roadmap.initialSteps(),
+                    roadmap.evidenceIdeas(),
+                    roadmap.relatedSignals(),
+                    roadmap.toneLabel()
+            );
+        }
     }
 
     private record TransferView(

@@ -16,6 +16,7 @@ import com.DataLaburo.web.model.CandidateProfile;
 import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
 import com.DataLaburo.web.service.ProfileImprovementSuggestionService;
+import com.DataLaburo.web.service.ProfileRoadmapSuggestionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.ui.ConcurrentModel;
@@ -34,6 +35,8 @@ class ProfileVectorCompatibilityControllerTest {
     private final CandidateProfileProjectService candidateProfileProjectService = mock(CandidateProfileProjectService.class);
     private final ProfileImprovementSuggestionService profileImprovementSuggestionService =
             new ProfileImprovementSuggestionService();
+    private final ProfileRoadmapSuggestionService profileRoadmapSuggestionService =
+            new ProfileRoadmapSuggestionService();
     private final VectorFirstCompatibilityService compatibilityService = mock(VectorFirstCompatibilityService.class);
     @SuppressWarnings("unchecked")
     private final ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider = mock(ObjectProvider.class);
@@ -41,6 +44,7 @@ class ProfileVectorCompatibilityControllerTest {
             candidateProfileService,
             candidateProfileProjectService,
             profileImprovementSuggestionService,
+            profileRoadmapSuggestionService,
             compatibilityServiceProvider
     );
 
@@ -95,6 +99,31 @@ class ProfileVectorCompatibilityControllerTest {
                 "PARTIAL_EQUIVALENCE",
                 "Base relacional relacionada"
         )));
+        VectorFirstCompatibilityResult secondResult = new VectorFirstCompatibilityResult(
+                15L,
+                "Platform Engineer",
+                "Example",
+                2,
+                0.64d,
+                2,
+                "DEVOPS",
+                "MID",
+                CompatibilityCategory.GOOD_MATCH_WITH_MINOR_GAPS,
+                EvidenceLevel.PROJECT,
+                List.of("Java"),
+                List.of("Kubernetes"),
+                List.of(),
+                List.of(),
+                List.of(),
+                "Otra oferta cercana.",
+                CompatibilityConfidence.MEDIUM,
+                CompatibilityBucket.GOOD_WITH_MINOR_GAPS,
+                2,
+                0,
+                List.of(),
+                List.of(),
+                List.of()
+        );
 
         when(candidateProfileService.findById(1L)).thenReturn(Optional.of(profile));
         when(candidateProfileProjectService.findByProfileId(1L)).thenReturn(List.of());
@@ -104,7 +133,7 @@ class ProfileVectorCompatibilityControllerTest {
                 "BAAI/bge-m3",
                 1024,
                 new VectorFirstCompatibilityResponse.Retrieval(20, "VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC"),
-                List.of(result)
+                List.of(result, secondResult)
         ));
 
         ConcurrentModel model = new ConcurrentModel();
@@ -137,6 +166,9 @@ class ProfileVectorCompatibilityControllerTest {
         List<?> suggestions = (List<?>) invoke(rows.get(0), "improvementSuggestions");
         assertEquals(3, suggestions.size());
         assertEquals("LEARNING_GAP", invoke(suggestions.get(0), "category"));
+        List<?> roadmaps = (List<?>) model.getAttribute("profileRoadmaps");
+        assertEquals(1, roadmaps.size());
+        assertEquals("Kubernetes", invoke(roadmaps.get(0), "skillOrFamily"));
         verify(compatibilityService).analyze(1L, 20);
         verify(candidateProfileProjectService).findByProfileId(1L);
     }

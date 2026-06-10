@@ -110,6 +110,44 @@
 		</div>
 	</section>
 
+	<section class="card vector-secondary-block" th:if="${response != null && !#lists.isEmpty(profileRoadmaps)}">
+		<h2>Roadmaps orientativos por brechas repetidas</h2>
+		<p class="muted small">Orientación basada en brechas observadas en ofertas cercanas. No modifica el ranking ni representa una promesa de resultado.</p>
+		<div class="grid-2">
+			<article class="vector-mini-relation" th:each="roadmap : ${profileRoadmaps}">
+				<div class="chips">
+					<span class="chip match-chip signal-chip" th:text="${roadmap.toneLabel}">Orientativo</span>
+					<span class="chip match-chip skill-chip" th:text="${roadmap.skillOrFamily}">Skill</span>
+				</div>
+				<h3 th:text="${roadmap.title}">Roadmap</h3>
+				<p class="muted small" th:text="${roadmap.whyItMatters}">Motivo</p>
+
+				<div th:if="${!#lists.isEmpty(roadmap.initialSteps)}">
+					<p class="muted small">Pasos iniciales</p>
+					<ul class="small">
+						<li th:each="step : ${roadmap.initialSteps}" th:text="${step}">Paso</li>
+					</ul>
+				</div>
+
+				<div th:if="${!#lists.isEmpty(roadmap.evidenceIdeas)}">
+					<p class="muted small">Evidencia posible</p>
+					<ul class="small">
+						<li th:each="idea : ${roadmap.evidenceIdeas}" th:text="${idea}">Evidencia</li>
+					</ul>
+				</div>
+
+				<div th:if="${!#lists.isEmpty(roadmap.relatedSignals)}">
+					<p class="muted small">Señales relacionadas</p>
+					<div class="chips">
+						<span class="chip match-chip chip-muted"
+							  th:each="signal : ${roadmap.relatedSignals}"
+							  th:text="${signal}">Señal</span>
+					</div>
+				</div>
+			</article>
+		</div>
+	</section>
+
 	<section class="vector-results" th:if="${response != null && !#lists.isEmpty(results)}">
 		<header class="header">
 			<h2>Ranking de ofertas</h2>
