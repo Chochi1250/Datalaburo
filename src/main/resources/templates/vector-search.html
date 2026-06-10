@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Busqueda vectorial</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+	<header class="header">
+		<h1>Busqueda vectorial por perfil</h1>
+		<p class="muted">Usa el embedding del perfil para ordenar ofertas por similitud semantica. Mantiene el ranking vectorial activo.</p>
+	</header>
+
+	<section class="card" th:if="${vectorSearchError != null}">
+		<p class="error" th:text="${vectorSearchError}">Error</p>
+	</section>
+
+	<section class="card">
+		<h2>Matching clasico y busqueda vectorial son flujos separados</h2>
+		<p class="muted">El matching clasico compara un CV o perfil contra ofertas usando reglas del flujo clasico. No usa embeddings.</p>
+		<p class="muted">Esta pantalla solo abre el flujo vector-first existente cuando el perfil tiene embedding PROFILE en estado READY.</p>
+		<div class="actions">
+			<a class="btn btn-secondary" th:href="@{/matching}">Volver a matching clasico</a>
+			<a class="btn btn-secondary" th:href="@{/profiles/new}">Crear perfil</a>
+		</div>
+	</section>
+
+	<section class="card" th:if="${profileOptions == null || #lists.isEmpty(profileOptions)}">
+		<p class="muted">Todavia no hay perfiles guardados para iniciar busqueda vectorial.</p>
+		<div class="actions">
+			<a class="btn btn-primary" th:href="@{/profiles/new}">Crear perfil</a>
+		</div>
+	</section>
+
+	<section th:if="${profileOptions != null && !#lists.isEmpty(profileOptions)}" class="grid">
+		<article class="card" th:each="option : ${profileOptions}">
+			<header class="header">
+				<h2 th:text="${option.name}">Perfil</h2>
+				<p class="muted" th:if="${option.headline != null && !option.headline.isBlank()}" th:text="${option.headline}">Headline</p>
+				<p class="muted" th:if="${(option.headline == null || option.headline.isBlank()) && option.summary != null && !option.summary.isBlank()}"
+				   th:text="${#strings.abbreviate(option.summary, 220)}">Resumen</p>
+			</header>
+
+			<div class="chips">
+				<span class="chip match-chip"
+					  th:classappend="${option.ready ? ' profile-chip' : ' chip-muted'}"
+					  th:text="${option.statusLabel}">READY</span>
+			</div>
+			<p class="muted small" th:text="${option.statusMessage}">Estado</p>
+			<p class="error small" th:if="${option.errorMessage != null && !option.errorMessage.isBlank()}"
+			   th:text="${option.errorMessage}">Error</p>
+
+			<form method="post" th:action="@{/vector-search}">
+				<input type="hidden" name="profileId" th:value="${option.id}"/>
+				<div class="actions">
+					<button type="submit" th:text="${option.ready ? 'Iniciar busqueda vectorial' : 'Revisar perfil'}">Elegir perfil</button>
+					<a class="link" th:href="@{/profiles/{id}(id=${option.id})}">Ver detalle</a>
+				</div>
+			</form>
+		</article>
+	</section>
+</main>
+</body>
+</html>

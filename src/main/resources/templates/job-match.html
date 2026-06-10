@@ -11,7 +11,7 @@
 <main class="container">
 	<header class="header">
 		<h1>Evaluar una oferta</h1>
-		<p class="muted">Esta evaluacion compara el perfil/CV del candidato unicamente contra esta oferta.</p>
+		<p class="muted">Esta evaluacion usa el matching clasico y compara el perfil/CV del candidato unicamente contra esta oferta.</p>
 	</header>
 
 	<section class="card">
@@ -39,9 +39,20 @@
 	</section>
 
 	<section class="card">
+		<header class="header">
+			<h2>Busqueda vectorial por perfil</h2>
+			<p class="muted">Usa el embedding del perfil para ordenar ofertas por similitud semantica. Mantiene el ranking vectorial activo.</p>
+		</header>
+		<div class="actions">
+			<a class="btn btn-secondary" th:href="@{/vector-search}">Elegir perfil para busqueda vectorial</a>
+		</div>
+		<p class="hint muted">La busqueda vectorial abre un ranking general de ofertas por perfil; no crea todavia un analisis vectorial puntual para esta oferta.</p>
+	</section>
+
+	<section class="card">
 		<form method="post" th:action="@{/jobs/{id}/match(id=${job.id})}" th:object="${form}">
 			<header class="header">
-				<h2>Fuente del candidato</h2>
+				<h2>Fuente del candidato para matching clasico</h2>
 				<p class="muted">Elegis una fuente para comparar contra esta oferta: un perfil guardado o un CV pegado manualmente.</p>
 			</header>
 
@@ -64,7 +75,7 @@
 			</div>
 
 			<div class="actions">
-				<button type="submit">Calcular compatibilidad</button>
+				<button type="submit">Calcular compatibilidad clasica</button>
 			</div>
 		</form>
 	</section>

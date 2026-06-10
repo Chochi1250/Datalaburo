@@ -10,8 +10,8 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <main class="container">
 	<header class="header">
-		<h1>Matching general</h1>
-		<p class="muted">Esta evaluacion compara el perfil/CV del candidato contra todas las ofertas guardadas en <code>JOBS</code>.</p>
+		<h1>Matching clasico</h1>
+		<p class="muted">Compara un CV o perfil contra ofertas usando reglas del flujo clasico. No usa embeddings.</p>
 	</header>
 
 	<section class="card" th:if="${error}">
@@ -19,9 +19,20 @@
 	</section>
 
 	<section class="card">
+		<header class="header">
+			<h2>Busqueda vectorial por perfil</h2>
+			<p class="muted">Usa el embedding del perfil para ordenar ofertas por similitud semantica. Mantiene el ranking vectorial activo.</p>
+		</header>
+		<div class="actions">
+			<a class="btn btn-secondary" th:href="@{/vector-search}">Elegir perfil para busqueda vectorial</a>
+		</div>
+		<p class="hint muted">Este acceso abre el flujo vector-first existente. No reemplaza el matching clasico de esta pantalla.</p>
+	</section>
+
+	<section class="card">
 		<form method="post" th:action="@{/matching}" th:object="${form}">
 			<header class="header">
-				<h2>Fuente del candidato</h2>
+				<h2>Fuente del candidato para matching clasico</h2>
 				<p class="muted">Elegis una fuente para calcular compatibilidad: un perfil guardado o un CV pegado manualmente.</p>
 			</header>
 
@@ -47,7 +58,7 @@
 			</div>
 
 			<div class="actions">
-				<button type="submit">Calcular compatibilidad</button>
+				<button type="submit">Calcular compatibilidad clasica</button>
 			</div>
 		</form>
 	</section>
