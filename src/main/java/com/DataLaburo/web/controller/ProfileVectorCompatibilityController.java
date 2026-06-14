@@ -64,7 +64,10 @@ public class ProfileVectorCompatibilityController {
 
         int limit = parseLimit(rawLimit, model);
         model.addAttribute("profile", profile.get());
+        model.addAttribute("profileEmbedding", candidateProfileService.findProfileEmbedding(profileId).orElse(null));
         model.addAttribute("limit", limit);
+        List<CandidateProfileProject> projects = candidateProfileProjectService.findByProfileId(profileId);
+        model.addAttribute("profileProjects", projects);
 
         VectorFirstCompatibilityService compatibilityService = compatibilityServiceProvider.getIfAvailable();
         if (compatibilityService == null) {
@@ -74,7 +77,6 @@ public class ProfileVectorCompatibilityController {
 
         try {
             VectorFirstCompatibilityResponse response = compatibilityService.analyze(profileId, limit);
-            List<CandidateProfileProject> projects = candidateProfileProjectService.findByProfileId(profileId);
             List<VectorFirstCompatibilityResult> responseResults = response.results() == null
                     ? List.of()
                     : response.results();
@@ -178,8 +180,8 @@ public class ProfileVectorCompatibilityController {
             String bucketCode,
             Integer suggestedRerankRank,
             Integer suggestedRankDelta,
-            List<String> rerankReasons,
-            List<String> rerankWarnings,
+            List<DiagnosticChipView> rerankReasons,
+            List<DiagnosticChipView> rerankWarnings,
             List<SignalView> rerankSignals,
             List<SkillEquivalenceView> skillEquivalenceSignals,
             RequirementChecklistView requirementChecklist,
@@ -196,8 +198,8 @@ public class ProfileVectorCompatibilityController {
             String bucketCode = result.compatibilityBucket() == null ? null : result.compatibilityBucket().name();
             Integer suggestedRank = result.suggestedRerankRank();
             Integer suggestedDelta = result.suggestedRankDelta();
-            List<String> warnings = safeList(result.rerankWarnings());
-            List<String> reasons = safeList(result.rerankReasons());
+            List<DiagnosticChipView> warnings = toDiagnosticChips(result.rerankWarnings());
+            List<DiagnosticChipView> reasons = toDiagnosticChips(result.rerankReasons());
             List<SignalView> signals = safeList(result.rerankSignals()).stream()
                     .map(SignalView::from)
                     .toList();
@@ -342,6 +344,7 @@ public class ProfileVectorCompatibilityController {
 
     private record SignalView(
             String name,
+            String label,
             String polarityLabel,
             String polarityCode,
             String detail
@@ -350,11 +353,18 @@ public class ProfileVectorCompatibilityController {
             String polarityCode = signal.polarity() == null ? null : signal.polarity().name();
             return new SignalView(
                     signal.name(),
+                    labelSignal(signal.name()),
                     labelPolarity(polarityCode),
                     polarityCode,
                     signal.detail()
             );
         }
+    }
+
+    private record DiagnosticChipView(
+            String label,
+            String detail
+    ) {
     }
 
     private record SkillEquivalenceView(
@@ -522,6 +532,13 @@ public class ProfileVectorCompatibilityController {
 
     private static <T> List<T> safeList(List<T> values) {
         return values == null ? List.of() : values;
+    }
+
+    private static List<DiagnosticChipView> toDiagnosticChips(List<String> values) {
+        return nonBlankStrings(values).stream()
+                .map(value -> new DiagnosticChipView(labelDiagnosticText(value), value))
+                .distinct()
+                .toList();
     }
 
     private static List<String> nonBlankStrings(List<String> values) {
@@ -693,6 +710,78 @@ public class ProfileVectorCompatibilityController {
             case "NEUTRAL" -> "Neutral";
             default -> "No detectado";
         };
+    }
+
+    private static String labelDiagnosticText(String value) {
+        String normalized = normalizeDiagnosticText(value);
+        if (normalized.contains("rol periferico")) {
+            return "Rol periferico";
+        }
+        if (normalized.contains("seniority superior")) {
+            return "Seniority superior al objetivo";
+        }
+        if (normalized.contains("falta de skills matcheadas")
+                || normalized.contains("matches genericos")
+                || normalized.contains("pocas coincidencias")) {
+            return "Pocas coincidencias directas";
+        }
+        if (normalized.contains("gaps criticos") || normalized.contains("brechas criticas")) {
+            return "Brechas criticas";
+        }
+        if (normalized.contains("transferible") || normalized.contains("transferibilidad")) {
+            return "Se mantiene por transferibilidad";
+        }
+        if (normalized.contains("evidencia debil") || normalized.contains("no_evidence") || normalized.contains("mentioned_only")) {
+            return "Evidencia debil";
+        }
+        if (normalized.contains("deteccion dudosa")
+                || normalized.contains("baja confianza")
+                || normalized.contains("rol no determinado")) {
+            return "Deteccion con baja confianza";
+        }
+        return compactDiagnosticText(value);
+    }
+
+    private static String labelSignal(String value) {
+        return switch (codeOrUnknown(value)) {
+            case "ROLE_ALIGNED" -> "Rol alineado";
+            case "ROLE_PERIPHERAL" -> "Rol periferico";
+            case "SENIORITY_ABOVE_TARGET" -> "Seniority superior al objetivo";
+            case "LOW_DIRECT_MATCHES" -> "Pocas coincidencias directas";
+            case "CRITICAL_GAPS" -> "Brechas criticas";
+            case "TRANSFERABLE_MATCH" -> "Se mantiene por transferibilidad";
+            case "WEAK_EVIDENCE" -> "Evidencia debil";
+            case "LOW_CONFIDENCE_DETECTION" -> "Deteccion con baja confianza";
+            default -> compactDiagnosticText(value);
+        };
+    }
+
+    private static String compactDiagnosticText(String value) {
+        if (value == null || value.isBlank()) {
+            return "Diagnostico";
+        }
+        String cleaned = value.trim();
+        int colon = cleaned.indexOf(':');
+        if (colon > 0) {
+            cleaned = cleaned.substring(0, colon).trim();
+        }
+        if (cleaned.endsWith(".")) {
+            cleaned = cleaned.substring(0, cleaned.length() - 1).trim();
+        }
+        cleaned = cleaned.replace('_', ' ');
+        if (cleaned.length() <= 44) {
+            return cleaned;
+        }
+        return cleaned.substring(0, 41).trim() + "...";
+    }
+
+    private static String normalizeDiagnosticText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(java.util.Locale.ROOT);
     }
 
     private static String labelSkillRelation(String code) {

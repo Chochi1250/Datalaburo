@@ -11,15 +11,15 @@
 <main class="landing">
     <section class="hero">
         <div class="hero-inner">
-            <h1 class="hero-title">Descubrí qué trabajos se ajustan a tu perfil</h1>
+            <h1 class="hero-title">Descubri que trabajos se ajustan a tu perfil</h1>
             <p class="hero-subtitle">
-                Cargá ofertas reales con la extensión, explorá el catálogo y hacé matching en segundos.
+                Carga ofertas reales, explora el catalogo y elegi entre matching clasico o busqueda vectorial por perfil.
             </p>
 
             <div class="hero-actions">
-                <a class="btn btn-primary" th:href="@{/profile}">Subir CV</a>
+                <a class="btn btn-primary" th:href="@{/vector-search}">Busqueda vectorial</a>
+                <a class="btn btn-secondary" th:href="@{/matching}">Matching clasico</a>
                 <a class="btn btn-secondary" th:href="@{/jobs}">Explorar trabajos</a>
-                <a class="btn btn-ghost" th:href="@{/profile}">Iniciar sesión</a>
             </div>
 
             <div class="hero-meta">
@@ -29,7 +29,7 @@
                 </div>
                 <div class="stat-pill">
                     <div class="stat-number" th:text="${stats.jobsLast7Days}">0</div>
-                    <div class="stat-label muted">últimos 7 días</div>
+                    <div class="stat-label muted">ultimos 7 dias</div>
                 </div>
                 <div class="stat-pill">
                     <div class="stat-number" th:text="${stats.percentWithRequirementsText + '%'}">0%</div>
@@ -42,24 +42,25 @@
     <section class="container landing-below">
         <div class="grid-3">
             <div class="card">
-                <h2>1) Capturá</h2>
-                <p class="muted">Usá la extensión en LinkedIn y guardá la oferta en PostgreSQL, dentro de la tabla principal <code>JOBS</code>.</p>
+                <h2>1) Captura</h2>
+                <p class="muted">Usa la extension en LinkedIn y guarda la oferta en PostgreSQL, dentro de la tabla principal <code>JOBS</code>.</p>
                 <div class="actions">
-                    <a class="link" th:href="@{/settings}">Ver configuración</a>
+                    <a class="link" th:href="@{/settings}">Ver configuracion</a>
                 </div>
             </div>
             <div class="card">
-                <h2>2) Explorá</h2>
-                <p class="muted">Revisá título, empresa, ubicación y detalle del job capturado.</p>
+                <h2>2) Explora</h2>
+                <p class="muted">Revisa titulo, empresa, ubicacion y detalle del job capturado.</p>
                 <div class="actions">
                     <a class="link" th:href="@{/jobs}">Ir a Jobs</a>
                 </div>
             </div>
             <div class="card">
                 <h2>3) Match</h2>
-                <p class="muted">Compará tus skills con la descripción/requisitos y obtené feedback.</p>
+                <p class="muted">Usa matching clasico por reglas o un perfil con embedding READY para ordenar ofertas por similitud semantica.</p>
                 <div class="actions">
-                    <a class="link" th:href="@{/matching}">Iniciar matching</a>
+                    <a class="link" th:href="@{/matching}">Matching clasico</a>
+                    <a class="link" th:href="@{/vector-search}">Busqueda vectorial</a>
                 </div>
             </div>
         </div>
@@ -80,12 +81,12 @@
                     </span>
                     <span class="recent-title" th:text="${job.title != null ? job.title : 'Untitled'}"></span>
                     <span class="muted" th:text="${' @ ' + (job.company != null ? job.company : 'Unknown')}"></span>
-                    <span class="muted" th:if="${job.location != null && !job.location.isBlank()}" th:text="${' — ' + job.location}"></span>
+                    <span class="muted" th:if="${job.location != null && !job.location.isBlank()}" th:text="${' - ' + job.location}"></span>
                 </li>
             </ul>
             <div class="actions">
                 <a class="link" th:href="@{/jobs}">Ver todos</a>
-                <a class="link" th:href="@{/stats}">Ver estadísticas</a>
+                <a class="link" th:href="@{/stats}">Ver estadisticas</a>
             </div>
         </div>
     </section>

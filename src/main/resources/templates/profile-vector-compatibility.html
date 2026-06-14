@@ -25,12 +25,40 @@
 		<div>
 			<p class="muted small">Perfil analizado</p>
 			<h2 th:text="${profile.name}">Nombre del perfil</h2>
-			<p class="muted">Preferencias guardadas para interpretar el resultado. No filtran, no reordenan y no cambian embeddings.</p>
+			<p th:if="${profile.headline != null && !profile.headline.isBlank()}" th:text="${profile.headline}">Headline</p>
+			<p class="muted" th:if="${profile.summary != null && !profile.summary.isBlank()}"
+			   th:text="${#strings.abbreviate(profile.summary, 260)}">Resumen</p>
+			<p class="muted small">Solo el CV textual entra en el embedding PROFILE. Metadata visible y proyectos ayudan como evidencia, pero no modifican el ranking.</p>
 		</div>
-		<div class="match-top">
-			<span class="match-badge is-na" th:text="${profile.targetRole != null ? profile.targetRole : 'UNDECIDED'}">UNDECIDED</span>
-			<span class="chip match-chip profile-chip" th:text="${'Seniority: ' + (profile.targetSeniority != null ? profile.targetSeniority : 'ANY')}">Seniority</span>
-			<span class="chip match-chip domain-chip" th:text="${'Modo: ' + (profile.searchMode != null ? profile.searchMode : 'FOCUSED')}">Modo</span>
+		<div>
+			<div class="match-top">
+				<span class="match-badge is-na" th:text="${profile.targetRole != null ? profile.targetRole : 'UNDECIDED'}">UNDECIDED</span>
+				<span class="chip match-chip profile-chip" th:text="${'Seniority: ' + (profile.targetSeniority != null ? profile.targetSeniority : 'ANY')}">Seniority</span>
+				<span class="chip match-chip domain-chip" th:text="${'Modo: ' + (profile.searchMode != null ? profile.searchMode : 'FOCUSED')}">Modo</span>
+				<span class="chip match-chip"
+					  th:classappend="${profileEmbedding != null && profileEmbedding.status.name() == 'READY' ? ' profile-chip' : ' chip-muted'}"
+					  th:text="${profileEmbedding != null ? 'Embedding: ' + profileEmbedding.status : 'Embedding: sin embedding'}">Embedding</span>
+			</div>
+
+			<div class="chips" th:if="${!#lists.isEmpty(profile.declaredSkillTags)}">
+				<span class="chip match-chip skill-chip"
+					  th:each="skill : ${profile.declaredSkillTags}"
+					  th:attr="data-skill=${#strings.toLowerCase(skill)}"
+					  th:text="${skill}">Skill</span>
+			</div>
+
+			<div th:if="${profileProjects != null}">
+				<p class="muted small" th:text="${#lists.isEmpty(profileProjects) ? 'Sin proyectos visibles cargados.' : 'Proyectos visibles: ' + #lists.size(profileProjects)}">Proyectos</p>
+				<div class="chips" th:if="${!#lists.isEmpty(profileProjects)}">
+					<span class="chip match-chip project-skill-chip"
+						  th:each="project, it : ${profileProjects}"
+						  th:if="${it.index < 3}"
+						  th:text="${project.title}">Proyecto</span>
+					<span class="chip match-chip chip-muted"
+						  th:if="${#lists.size(profileProjects) > 3}"
+						  th:text="${'+' + (#lists.size(profileProjects) - 3) + ' mas'}">+N</span>
+				</div>
+			</div>
 		</div>
 	</section>
 
@@ -48,6 +76,7 @@
 		<header class="header">
 			<h2>Resumen del análisis</h2>
 			<p class="muted">Resultados recuperados con embeddings y ordenados por ranking vectorial activo.</p>
+			<p class="muted small">El ranking activo se ordena por similitud semantica mediante embeddings. Los diagnosticos interpretan rol, seniority, brechas y evidencia, pero no reordenan resultados.</p>
 		</header>
 		<div class="vector-metrics">
 			<div class="vector-metric">
@@ -312,7 +341,10 @@
 					<div th:if="${!#lists.isEmpty(row.rerankWarnings)}">
 						<p class="muted small">Advertencias</p>
 						<div class="chips">
-							<span class="chip match-chip warning-chip" th:each="warning : ${row.rerankWarnings}" th:text="${warning}">Warning</span>
+							<span class="chip match-chip warning-chip"
+								  th:each="warning : ${row.rerankWarnings}"
+								  th:title="${warning.detail}"
+								  th:text="${warning.label}">Warning</span>
 						</div>
 					</div>
 					<p class="muted small" th:if="${#lists.isEmpty(row.rerankWarnings)}">Sin advertencias diagnósticas relevantes.</p>
@@ -320,7 +352,11 @@
 					<div th:if="${!#lists.isEmpty(row.rerankReasons)}">
 						<p class="muted small">Razones diagnósticas</p>
 						<div class="chips">
-							<span class="chip match-chip signal-chip" th:each="reason, it : ${row.rerankReasons}" th:if="${it.index < 5}" th:text="${reason}">Reason</span>
+							<span class="chip match-chip signal-chip"
+								  th:each="reason, it : ${row.rerankReasons}"
+								  th:if="${it.index < 5}"
+								  th:title="${reason.detail}"
+								  th:text="${reason.label}">Reason</span>
 							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.rerankReasons) > 5}" th:text="${'+' + (#lists.size(row.rerankReasons) - 5) + ' mas'}">+N</span>
 						</div>
 					</div>
@@ -329,7 +365,7 @@
 						<p class="muted small">Señales diagnósticas</p>
 						<div th:each="signal, it : ${row.rerankSignals}" th:if="${it.index < 5}" class="vector-mini-relation">
 							<div class="chips">
-								<span class="chip match-chip signal-chip" th:text="${signal.name}">SIGNAL</span>
+								<span class="chip match-chip signal-chip" th:title="${signal.name}" th:text="${signal.label}">SIGNAL</span>
 								<span class="chip match-chip evidence-chip" th:if="${signal.polarityLabel != null}" th:text="${signal.polarityLabel}">POLARITY</span>
 							</div>
 							<p class="muted small" th:if="${signal.detail != null && !signal.detail.isBlank()}" th:text="${signal.detail}">Detail</p>

@@ -12,7 +12,14 @@ import com.DataLaburo.web.analysis.TransferableSkill;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResult;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResponse;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityService;
+import com.DataLaburo.web.embedding.DocumentEmbedding;
+import com.DataLaburo.web.embedding.DocumentEmbeddingOwnerType;
+import com.DataLaburo.web.embedding.DocumentEmbeddingSectionType;
+import com.DataLaburo.web.embedding.DocumentEmbeddingStatus;
+import com.DataLaburo.web.embedding.EmbeddingTextNormalizer;
 import com.DataLaburo.web.model.CandidateProfile;
+import com.DataLaburo.web.model.CandidateProfileProject;
+import com.DataLaburo.web.model.ProjectEvidenceType;
 import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
 import com.DataLaburo.web.service.ProfileImprovementSuggestionService;
@@ -54,6 +61,11 @@ class ProfileVectorCompatibilityControllerTest {
         profile.setId(1L);
         profile.setName("Candidate");
         profile.setCvText("Java backend profile");
+        profile.setHeadline("Backend Java junior");
+        profile.setSummary("Builds APIs and documents project evidence.");
+        profile.setDeclaredSkillsText("Java, Spring Boot");
+        CandidateProfileProject project = project(profile, "Portfolio API");
+        DocumentEmbedding embedding = profileEmbedding(1L, DocumentEmbeddingStatus.READY);
 
         VectorFirstCompatibilityResult result = new VectorFirstCompatibilityResult(
                 14L,
@@ -86,8 +98,12 @@ class ProfileVectorCompatibilityControllerTest {
                 CompatibilityBucket.GOOD_WITH_MINOR_GAPS,
                 1,
                 0,
-                List.of(),
-                List.of(),
+                List.of(
+                        "Bajaria por rol periferico: QA.",
+                        "Bajaria por seniority superior: oferta SENIOR vs objetivo JUNIOR.",
+                        "Bajaria porque los matches genericos no son suficientes: Java."
+                ),
+                List.of("Posible deteccion dudosa de rol: titulo Android clasificado como QA."),
                 List.of(new RerankSignal(
                         "ROLE_ALIGNED",
                         RerankSignalPolarity.POSITIVE,
@@ -126,7 +142,8 @@ class ProfileVectorCompatibilityControllerTest {
         );
 
         when(candidateProfileService.findById(1L)).thenReturn(Optional.of(profile));
-        when(candidateProfileProjectService.findByProfileId(1L)).thenReturn(List.of());
+        when(candidateProfileService.findProfileEmbedding(1L)).thenReturn(Optional.of(embedding));
+        when(candidateProfileProjectService.findByProfileId(1L)).thenReturn(List.of(project));
         when(compatibilityServiceProvider.getIfAvailable()).thenReturn(compatibilityService);
         when(compatibilityService.analyze(1L, 20)).thenReturn(new VectorFirstCompatibilityResponse(
                 1L,
@@ -140,6 +157,8 @@ class ProfileVectorCompatibilityControllerTest {
         String viewName = controller.vectorFirstCompatibility(1L, "20", model);
 
         assertEquals("profile-vector-compatibility", viewName);
+        assertEquals(embedding, model.getAttribute("profileEmbedding"));
+        assertEquals(List.of(project), model.getAttribute("profileProjects"));
         List<?> rows = (List<?>) model.getAttribute("results");
         Object checklist = invoke(rows.get(0), "requirementChecklist");
 
@@ -166,11 +185,44 @@ class ProfileVectorCompatibilityControllerTest {
         List<?> suggestions = (List<?>) invoke(rows.get(0), "improvementSuggestions");
         assertEquals(3, suggestions.size());
         assertEquals("LEARNING_GAP", invoke(suggestions.get(0), "category"));
+        List<?> reasons = (List<?>) invoke(rows.get(0), "rerankReasons");
+        assertEquals("Rol periferico", invoke(reasons.get(0), "label"));
+        assertEquals("Seniority superior al objetivo", invoke(reasons.get(1), "label"));
+        assertEquals("Pocas coincidencias directas", invoke(reasons.get(2), "label"));
+        assertEquals("Bajaria por rol periferico: QA.", invoke(reasons.get(0), "detail"));
+        List<?> warnings = (List<?>) invoke(rows.get(0), "rerankWarnings");
+        assertEquals("Deteccion con baja confianza", invoke(warnings.get(0), "label"));
+        List<?> signals = (List<?>) invoke(rows.get(0), "rerankSignals");
+        assertEquals("Rol alineado", invoke(signals.get(0), "label"));
         List<?> roadmaps = (List<?>) model.getAttribute("profileRoadmaps");
         assertEquals(1, roadmaps.size());
         assertEquals("Kubernetes", invoke(roadmaps.get(0), "skillOrFamily"));
         verify(compatibilityService).analyze(1L, 20);
         verify(candidateProfileProjectService).findByProfileId(1L);
+    }
+
+    private static CandidateProfileProject project(CandidateProfile profile, String title) {
+        CandidateProfileProject project = new CandidateProfileProject();
+        project.setCandidateProfile(profile);
+        project.setTitle(title);
+        project.setDescription("Project evidence");
+        project.setSkillsText("Java, Spring Boot");
+        project.setEvidenceType(ProjectEvidenceType.PERSONAL_PROJECT);
+        return project;
+    }
+
+    private static DocumentEmbedding profileEmbedding(Long profileId, DocumentEmbeddingStatus status) {
+        DocumentEmbedding embedding = new DocumentEmbedding();
+        embedding.setId(100L);
+        embedding.setOwnerType(DocumentEmbeddingOwnerType.PROFILE);
+        embedding.setOwnerId(profileId);
+        embedding.setSectionType(DocumentEmbeddingSectionType.FULL_TEXT);
+        embedding.setEmbeddingModel(DocumentEmbedding.DEFAULT_EMBEDDING_MODEL);
+        embedding.setEmbeddingDimensions(DocumentEmbedding.DEFAULT_EMBEDDING_DIMENSIONS);
+        embedding.setNormalizerVersion(EmbeddingTextNormalizer.VERSION);
+        embedding.setSourceTextHash("source-hash");
+        embedding.setStatus(status);
+        return embedding;
     }
 
     private static Object invoke(Object target, String methodName) throws Exception {
