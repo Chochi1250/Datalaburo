@@ -12,6 +12,7 @@ public record KnowledgeCatalog(
         List<TechnologyDefinition> technologies,
         List<TransferRule> transfers,
         List<SeniorityRule> seniorityRules,
+        List<String> explicitOutOfScopeRoleAliases,
         FallbackCopy fallbacks
 ) {
     public KnowledgeCatalog {
@@ -19,6 +20,7 @@ public record KnowledgeCatalog(
         technologies = safe(technologies);
         transfers = safe(transfers);
         seniorityRules = safe(seniorityRules);
+        explicitOutOfScopeRoleAliases = safe(explicitOutOfScopeRoleAliases);
     }
 
     public record RoleFamilyDefinition(
@@ -27,13 +29,34 @@ public record KnowledgeCatalog(
             List<String> aliases,
             List<ProfessionalDomain> evidenceDomains,
             List<String> coreTechnologyRefs,
+            List<String> seniorityEvidenceTechnologyRefs,
             String alignedCopy,
-            String transitionCopy
+            String transitionCopy,
+            String limitedContextCopy,
+            List<String> favorableSignals,
+            List<String> strongEvidenceSignals,
+            List<String> supportingEvidenceSignals,
+            List<String> insufficientEvidenceSignals,
+            List<String> frequentGapExplanations,
+            List<String> concreteActions,
+            List<String> projectEvidenceIdeas,
+            List<String> cvIdeas,
+            List<String> shortRoadmap
     ) {
         public RoleFamilyDefinition {
             aliases = safe(aliases);
             evidenceDomains = safe(evidenceDomains);
             coreTechnologyRefs = safe(coreTechnologyRefs);
+            seniorityEvidenceTechnologyRefs = safe(seniorityEvidenceTechnologyRefs);
+            favorableSignals = safe(favorableSignals);
+            strongEvidenceSignals = safe(strongEvidenceSignals);
+            supportingEvidenceSignals = safe(supportingEvidenceSignals);
+            insufficientEvidenceSignals = safe(insufficientEvidenceSignals);
+            frequentGapExplanations = safe(frequentGapExplanations);
+            concreteActions = safe(concreteActions);
+            projectEvidenceIdeas = safe(projectEvidenceIdeas);
+            cvIdeas = safe(cvIdeas);
+            shortRoadmap = safe(shortRoadmap);
         }
     }
 
@@ -94,6 +117,8 @@ public record KnowledgeCatalog(
             String id,
             String fromRoleRef,
             String toRoleRef,
+            List<String> requiredSourceTechnologyRefs,
+            Boolean requiresAllSourceTechnologies,
             List<String> targetTechnologyRefs,
             TransferStrength strength,
             List<ProfessionalEvidenceType> requiredEvidenceTypes,
@@ -101,6 +126,8 @@ public record KnowledgeCatalog(
             String warning
     ) {
         public TransferRule {
+            requiredSourceTechnologyRefs = safe(requiredSourceTechnologyRefs);
+            requiresAllSourceTechnologies = Boolean.TRUE.equals(requiresAllSourceTechnologies);
             targetTechnologyRefs = safe(targetTechnologyRefs);
             requiredEvidenceTypes = safe(requiredEvidenceTypes);
             transferableConcepts = safe(transferableConcepts);
@@ -118,7 +145,12 @@ public record KnowledgeCatalog(
         }
     }
 
-    public record FallbackCopy(String unknownRole, String declaredOnly, String weakJobMetadata) {
+    public record FallbackCopy(
+            String unknownRole,
+            String declaredOnly,
+            String weakJobMetadata,
+            String outOfScope
+    ) {
     }
 
     private static <T> List<T> safe(List<T> values) {

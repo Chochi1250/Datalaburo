@@ -7,6 +7,7 @@ import java.util.List;
 
 public record OpportunityKnowledgeEnrichment(
         ContextLevel contextLevel,
+        CoverageLevel coverageLevel,
         RoleFamily roleFamily,
         String roleExplanation,
         List<Strength> strengths,
@@ -29,6 +30,13 @@ public record OpportunityKnowledgeEnrichment(
     public enum ContextLevel {
         SUPPORTED,
         LIMITED
+    }
+
+    public enum CoverageLevel {
+        DIRECT_COVERAGE,
+        PARTIAL_COVERAGE,
+        LOW_CONTEXT,
+        OUT_OF_SCOPE
     }
 
     public enum EvidenceAssessment {
@@ -78,11 +86,13 @@ public record OpportunityKnowledgeEnrichment(
             String fromRoleId,
             String toRoleId,
             TransferStrength strength,
+            List<String> sourceTechnologies,
             List<String> targetTechnologies,
             List<String> transferableConcepts,
             String warning
     ) {
         public Transfer {
+            sourceTechnologies = safe(sourceTechnologies);
             targetTechnologies = safe(targetTechnologies);
             transferableConcepts = safe(transferableConcepts);
         }

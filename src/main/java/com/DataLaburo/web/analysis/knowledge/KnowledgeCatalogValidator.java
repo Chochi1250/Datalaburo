@@ -36,6 +36,7 @@ public class KnowledgeCatalogValidator {
         Map<String, KnowledgeCatalog.RoleFamilyDefinition> roles = indexRoles(catalog.roleFamilies());
         Map<String, KnowledgeCatalog.TechnologyDefinition> technologies = indexTechnologies(catalog.technologies());
         validateRoleAliases(roles.values());
+        validateExplicitOutOfScopeAliases(catalog.explicitOutOfScopeRoleAliases(), roles.values());
         validateRoleReferences(roles.values(), technologies.keySet());
         validateTechnologyDefinitions(technologies);
         validateTransfers(catalog.transfers(), roles.keySet(), technologies.keySet());
@@ -58,12 +59,22 @@ public class KnowledgeCatalogValidator {
             requireText(definition.label(), "role family " + id + " label");
             requireText(definition.alignedCopy(), "role family " + id + " alignedCopy");
             requireText(definition.transitionCopy(), "role family " + id + " transitionCopy");
+            requireText(definition.limitedContextCopy(), "role family " + id + " limitedContextCopy");
             if (definition.evidenceDomains().isEmpty()) {
                 fail("role family " + id + " must declare evidenceDomains");
             }
             if (definition.coreTechnologyRefs().isEmpty()) {
                 fail("role family " + id + " must declare coreTechnologyRefs");
             }
+            validateTextList(definition.favorableSignals(), "role family " + id + " favorableSignals");
+            validateTextList(definition.strongEvidenceSignals(), "role family " + id + " strongEvidenceSignals");
+            validateTextList(definition.supportingEvidenceSignals(), "role family " + id + " supportingEvidenceSignals");
+            validateTextList(definition.insufficientEvidenceSignals(), "role family " + id + " insufficientEvidenceSignals");
+            validateTextList(definition.frequentGapExplanations(), "role family " + id + " frequentGapExplanations");
+            validateTextList(definition.concreteActions(), "role family " + id + " concreteActions");
+            validateTextList(definition.projectEvidenceIdeas(), "role family " + id + " projectEvidenceIdeas");
+            validateTextList(definition.cvIdeas(), "role family " + id + " cvIdeas");
+            validateTextList(definition.shortRoadmap(), "role family " + id + " shortRoadmap");
         }
         return out;
     }
@@ -118,6 +129,35 @@ public class KnowledgeCatalogValidator {
         for (KnowledgeCatalog.RoleFamilyDefinition role : roles) {
             for (String ref : role.coreTechnologyRefs()) {
                 requireExistingRef(ref, technologyIds, "role family " + role.id() + " coreTechnologyRefs");
+            }
+            for (String ref : role.seniorityEvidenceTechnologyRefs()) {
+                requireExistingRef(ref, technologyIds, "role family " + role.id() + " seniorityEvidenceTechnologyRefs");
+            }
+        }
+    }
+
+    private static void validateExplicitOutOfScopeAliases(
+            List<String> aliases,
+            Iterable<KnowledgeCatalog.RoleFamilyDefinition> roles
+    ) {
+        if (aliases.isEmpty()) {
+            fail("explicitOutOfScopeRoleAliases must not be empty");
+        }
+        Set<String> roleAliases = new LinkedHashSet<>();
+        for (KnowledgeCatalog.RoleFamilyDefinition role : roles) {
+            roleAliases.add(normalize(role.id()));
+            roleAliases.add(normalize(role.label()));
+            role.aliases().stream().map(KnowledgeCatalogValidator::normalize).forEach(roleAliases::add);
+        }
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String alias : aliases) {
+            requireText(alias, "explicitOutOfScopeRoleAliases");
+            String key = normalize(alias);
+            if (!normalized.add(key)) {
+                fail("explicitOutOfScopeRoleAliases contains duplicate alias '" + alias + "'");
+            }
+            if (roleAliases.contains(key)) {
+                fail("explicit out-of-scope alias '" + alias + "' overlaps a supported role family");
             }
         }
     }
@@ -228,6 +268,9 @@ public class KnowledgeCatalogValidator {
             if (transfer.targetTechnologyRefs().isEmpty()) {
                 fail("transfer " + id + " must declare targetTechnologyRefs");
             }
+            for (String ref : transfer.requiredSourceTechnologyRefs()) {
+                requireExistingRef(ref, technologyIds, "transfer " + id + " requiredSourceTechnologyRefs");
+            }
             for (String ref : transfer.targetTechnologyRefs()) {
                 requireExistingRef(ref, technologyIds, "transfer " + id + " targetTechnologyRefs");
             }
@@ -271,6 +314,7 @@ public class KnowledgeCatalogValidator {
         requireText(fallbacks.unknownRole(), "fallbacks.unknownRole");
         requireText(fallbacks.declaredOnly(), "fallbacks.declaredOnly");
         requireText(fallbacks.weakJobMetadata(), "fallbacks.weakJobMetadata");
+        requireText(fallbacks.outOfScope(), "fallbacks.outOfScope");
     }
 
     private static void validateExactReferences(List<String> values, String field) {

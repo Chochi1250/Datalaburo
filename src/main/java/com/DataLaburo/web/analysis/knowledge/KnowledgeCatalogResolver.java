@@ -22,7 +22,9 @@ public class KnowledgeCatalogResolver {
     private final Map<String, KnowledgeCatalog.RoleFamilyDefinition> roleByAlias;
     private final Map<String, KnowledgeCatalog.TechnologyDefinition> technologyById;
     private final Map<String, KnowledgeCatalog.TechnologyDefinition> technologyByMatchingSkill;
+    private final Map<String, KnowledgeCatalog.TechnologyDefinition> technologyByEvidenceSkill;
     private final Map<String, KnowledgeCatalog.SeniorityRule> seniorityById;
+    private final Set<String> explicitOutOfScopeRoles;
 
     @Autowired
     public KnowledgeCatalogResolver(KnowledgeCatalogLoader loader) {
@@ -34,7 +36,11 @@ public class KnowledgeCatalogResolver {
         this.roleByAlias = indexRoles(catalog.roleFamilies());
         this.technologyById = indexTechnologies(catalog.technologies());
         this.technologyByMatchingSkill = indexMatchingSkills(catalog.technologies());
+        this.technologyByEvidenceSkill = indexEvidenceSkills(catalog.technologies());
         this.seniorityById = indexSeniority(catalog.seniorityRules());
+        this.explicitOutOfScopeRoles = catalog.explicitOutOfScopeRoleAliases().stream()
+                .map(KnowledgeCatalogValidator::normalize)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
     public OpportunityKnowledgeEnrichment resolve(KnowledgeResolutionInput input) {
@@ -42,7 +48,15 @@ public class KnowledgeCatalogResolver {
 
         KnowledgeCatalog.RoleFamilyDefinition profileRole = resolveRole(input.profileRole());
         KnowledgeCatalog.RoleFamilyDefinition opportunityRole = resolveRole(input.opportunityRole());
-        boolean limitedContext = input.insufficientOpportunityMetadata() || opportunityRole == null;
+        if (input.insufficientOpportunityMetadata()) {
+            return limitedContextResult(input, opportunityRole);
+        }
+        if (explicitOutOfScopeRoles.contains(KnowledgeCatalogValidator.normalize(input.opportunityRole()))) {
+            return explicitOutOfScopeResult();
+        }
+        if (opportunityRole == null) {
+            return limitedContextResult(input, null);
+        }
 
         List<String> unresolvedSignals = new ArrayList<>();
         Map<String, TechnologySignals> matched = resolveTechnologySignals(input.matchedSkills(), unresolvedSignals);
@@ -51,38 +65,41 @@ public class KnowledgeCatalogResolver {
         critical.keySet().forEach(secondary::remove);
 
         Map<String, ProfessionalSkillEvidence> evidenceBySkill = indexEvidence(input.skillEvidence());
-        List<OpportunityKnowledgeEnrichment.Strength> strengths = buildStrengths(matched, evidenceBySkill);
-        List<OpportunityKnowledgeEnrichment.Gap> gaps = buildGaps(critical, secondary);
-        List<OpportunityKnowledgeEnrichment.Transfer> transfers = limitedContext
-                ? List.of()
-                : buildTransfers(profileRole, opportunityRole, input.skillEvidence());
-        OpportunityKnowledgeEnrichment.SeniorityGuidance seniority = buildSeniorityGuidance(
-                input.opportunitySeniority(),
+        List<OpportunityKnowledgeEnrichment.Strength> resolvedStrengths = buildStrengths(matched, evidenceBySkill);
+        List<OpportunityKnowledgeEnrichment.Transfer> transfers = buildTransfers(
+                profileRole,
                 opportunityRole,
                 input.skillEvidence()
         );
-        List<OpportunityKnowledgeEnrichment.Action> actions = buildActions(
-                critical,
-                secondary,
-                strengths
+        OpportunityKnowledgeEnrichment.CoverageLevel coverage = coverageLevel(
+                profileRole,
+                opportunityRole,
+                transfers
         );
+        boolean outOfScope = coverage == OpportunityKnowledgeEnrichment.CoverageLevel.OUT_OF_SCOPE;
+        List<OpportunityKnowledgeEnrichment.Strength> strengths = outOfScope
+                ? List.of()
+                : resolvedStrengths;
+        List<OpportunityKnowledgeEnrichment.Gap> gaps = outOfScope
+                ? List.of()
+                : buildGaps(critical, secondary);
+        OpportunityKnowledgeEnrichment.SeniorityGuidance seniority = outOfScope
+                ? null
+                : buildSeniorityGuidance(input.opportunitySeniority(), opportunityRole, input.skillEvidence());
+        List<OpportunityKnowledgeEnrichment.Action> actions = outOfScope
+                ? List.of()
+                : buildActions(critical, secondary, strengths);
 
         List<String> warnings = new ArrayList<>();
-        if (input.insufficientOpportunityMetadata()) {
-            warnings.add(catalog.fallbacks().weakJobMetadata());
-        }
-        if (opportunityRole == null) {
-            warnings.add(catalog.fallbacks().unknownRole());
+        if (outOfScope) {
+            warnings.add(catalog.fallbacks().outOfScope());
         }
 
         return new OpportunityKnowledgeEnrichment(
-                limitedContext
-                        ? OpportunityKnowledgeEnrichment.ContextLevel.LIMITED
-                        : OpportunityKnowledgeEnrichment.ContextLevel.SUPPORTED,
-                opportunityRole == null
-                        ? null
-                        : new OpportunityKnowledgeEnrichment.RoleFamily(opportunityRole.id(), opportunityRole.label()),
-                roleExplanation(profileRole, opportunityRole, input.insufficientOpportunityMetadata()),
+                OpportunityKnowledgeEnrichment.ContextLevel.SUPPORTED,
+                coverage,
+                new OpportunityKnowledgeEnrichment.RoleFamily(opportunityRole.id(), opportunityRole.label()),
+                roleExplanation(profileRole, opportunityRole, coverage),
                 strengths,
                 gaps,
                 transfers,
@@ -93,16 +110,74 @@ public class KnowledgeCatalogResolver {
         );
     }
 
+    private OpportunityKnowledgeEnrichment explicitOutOfScopeResult() {
+        return new OpportunityKnowledgeEnrichment(
+                OpportunityKnowledgeEnrichment.ContextLevel.SUPPORTED,
+                OpportunityKnowledgeEnrichment.CoverageLevel.OUT_OF_SCOPE,
+                null,
+                catalog.fallbacks().outOfScope(),
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                List.of(),
+                List.of(),
+                List.of(catalog.fallbacks().outOfScope())
+        );
+    }
+
+    private OpportunityKnowledgeEnrichment limitedContextResult(
+            KnowledgeResolutionInput input,
+            KnowledgeCatalog.RoleFamilyDefinition opportunityRole
+    ) {
+        List<String> warnings = new ArrayList<>();
+        if (input.insufficientOpportunityMetadata()) {
+            warnings.add(catalog.fallbacks().weakJobMetadata());
+        }
+        if (opportunityRole == null) {
+            warnings.add(catalog.fallbacks().unknownRole());
+        }
+        String explanation = opportunityRole == null
+                ? catalog.fallbacks().weakJobMetadata()
+                : opportunityRole.limitedContextCopy();
+        return new OpportunityKnowledgeEnrichment(
+                OpportunityKnowledgeEnrichment.ContextLevel.LIMITED,
+                OpportunityKnowledgeEnrichment.CoverageLevel.LOW_CONTEXT,
+                opportunityRole == null
+                        ? null
+                        : new OpportunityKnowledgeEnrichment.RoleFamily(opportunityRole.id(), opportunityRole.label()),
+                explanation,
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                List.of(),
+                List.of(),
+                distinct(warnings)
+        );
+    }
+
+    private static OpportunityKnowledgeEnrichment.CoverageLevel coverageLevel(
+            KnowledgeCatalog.RoleFamilyDefinition profileRole,
+            KnowledgeCatalog.RoleFamilyDefinition opportunityRole,
+            List<OpportunityKnowledgeEnrichment.Transfer> transfers
+    ) {
+        if (profileRole != null && profileRole.id().equals(opportunityRole.id())) {
+            return OpportunityKnowledgeEnrichment.CoverageLevel.DIRECT_COVERAGE;
+        }
+        if (!transfers.isEmpty()) {
+            return OpportunityKnowledgeEnrichment.CoverageLevel.PARTIAL_COVERAGE;
+        }
+        return OpportunityKnowledgeEnrichment.CoverageLevel.OUT_OF_SCOPE;
+    }
+
     private String roleExplanation(
             KnowledgeCatalog.RoleFamilyDefinition profileRole,
             KnowledgeCatalog.RoleFamilyDefinition opportunityRole,
-            boolean insufficientMetadata
+            OpportunityKnowledgeEnrichment.CoverageLevel coverage
     ) {
-        if (insufficientMetadata) {
-            return catalog.fallbacks().weakJobMetadata();
-        }
-        if (opportunityRole == null) {
-            return catalog.fallbacks().unknownRole();
+        if (coverage == OpportunityKnowledgeEnrichment.CoverageLevel.OUT_OF_SCOPE) {
+            return catalog.fallbacks().outOfScope();
         }
         return profileRole != null && profileRole.id().equals(opportunityRole.id())
                 ? opportunityRole.alignedCopy()
@@ -177,9 +252,20 @@ public class KnowledgeCatalogResolver {
             if (!rule.fromRoleRef().equals(profileRole.id()) || !rule.toRoleRef().equals(opportunityRole.id())) {
                 continue;
             }
-            if (!hasRequiredSourceEvidence(profileRole, evidence, rule.requiredEvidenceTypes())) {
+            if (!hasRequiredSourceEvidence(
+                    profileRole,
+                    evidence,
+                    rule.requiredEvidenceTypes(),
+                    rule.requiredSourceTechnologyRefs(),
+                    Boolean.TRUE.equals(rule.requiresAllSourceTechnologies())
+            )) {
                 continue;
             }
+            List<String> sourceTechnologies = evidencedTechnologyLabels(
+                    evidence,
+                    rule.requiredEvidenceTypes(),
+                    rule.requiredSourceTechnologyRefs()
+            );
             List<String> targetTechnologies = rule.targetTechnologyRefs().stream()
                     .map(technologyById::get)
                     .filter(Objects::nonNull)
@@ -190,6 +276,7 @@ public class KnowledgeCatalogResolver {
                     rule.fromRoleRef(),
                     rule.toRoleRef(),
                     rule.strength(),
+                    sourceTechnologies,
                     targetTechnologies,
                     rule.transferableConcepts(),
                     rule.warning()
@@ -211,7 +298,11 @@ public class KnowledgeCatalogResolver {
         boolean domainWorkEvidence = opportunityRole != null && evidence.stream()
                 .filter(Objects::nonNull)
                 .anyMatch(item -> item.evidenceType() == ProfessionalEvidenceType.WORK_EXPERIENCE
-                        && opportunityRole.evidenceDomains().contains(item.domain()));
+                        && opportunityRole.evidenceDomains().contains(item.domain())
+                        && matchesTechnologyRefs(
+                        item,
+                        opportunityRole.seniorityEvidenceTechnologyRefs()
+                ));
         return new OpportunityKnowledgeEnrichment.SeniorityGuidance(
                 rule.id(),
                 rule.copy(),
@@ -262,15 +353,74 @@ public class KnowledgeCatalogResolver {
         }
     }
 
-    private static boolean hasRequiredSourceEvidence(
+    private boolean hasRequiredSourceEvidence(
             KnowledgeCatalog.RoleFamilyDefinition sourceRole,
             List<ProfessionalSkillEvidence> evidence,
-            List<ProfessionalEvidenceType> requiredTypes
+            List<ProfessionalEvidenceType> requiredTypes,
+            List<String> requiredSourceTechnologyRefs,
+            boolean requiresAllSourceTechnologies
     ) {
-        return evidence.stream()
+        boolean sourceDomainEvidence = evidence.stream()
                 .filter(Objects::nonNull)
                 .anyMatch(item -> sourceRole.evidenceDomains().contains(item.domain())
                         && requiredTypes.contains(item.evidenceType()));
+        if (!sourceDomainEvidence || requiredSourceTechnologyRefs.isEmpty()) {
+            return sourceDomainEvidence;
+        }
+        Set<String> evidencedTechnologyIds = evidence.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> requiredTypes.contains(item.evidenceType()))
+                .map(this::technologyIdForEvidence)
+                .filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        return requiresAllSourceTechnologies
+                ? evidencedTechnologyIds.containsAll(requiredSourceTechnologyRefs)
+                : requiredSourceTechnologyRefs.stream().anyMatch(evidencedTechnologyIds::contains);
+    }
+
+    private List<String> evidencedTechnologyLabels(
+            List<ProfessionalSkillEvidence> evidence,
+            List<ProfessionalEvidenceType> requiredTypes,
+            List<String> requiredSourceTechnologyRefs
+    ) {
+        Set<String> allowed = Set.copyOf(requiredSourceTechnologyRefs);
+        return evidence.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> requiredTypes.contains(item.evidenceType()))
+                .map(this::technologyIdForEvidence)
+                .filter(Objects::nonNull)
+                .filter(allowed::contains)
+                .distinct()
+                .map(technologyById::get)
+                .filter(Objects::nonNull)
+                .map(KnowledgeCatalog.TechnologyDefinition::label)
+                .toList();
+    }
+
+    private String technologyIdForEvidence(ProfessionalSkillEvidence evidence) {
+        if (evidence == null || evidence.skillName() == null) {
+            return null;
+        }
+        KnowledgeCatalog.TechnologyDefinition technology = technologyByEvidenceSkill.get(
+                KnowledgeCatalogValidator.normalize(evidence.skillName())
+        );
+        return technology == null ? null : technology.id();
+    }
+
+    private boolean matchesTechnologyRefs(
+            ProfessionalSkillEvidence evidence,
+            List<String> technologyRefs
+    ) {
+        if (technologyRefs.isEmpty()) {
+            return true;
+        }
+        if (evidence == null || evidence.skillName() == null) {
+            return false;
+        }
+        KnowledgeCatalog.TechnologyDefinition technology = technologyByEvidenceSkill.get(
+                KnowledgeCatalogValidator.normalize(evidence.skillName())
+        );
+        return technology != null && technologyRefs.contains(technology.id());
     }
 
     private static ProfessionalSkillEvidence strongestEvidence(
@@ -390,6 +540,18 @@ public class KnowledgeCatalogResolver {
                     KnowledgeCatalogValidator.normalize(ref),
                     definition
             ));
+        }
+        return Map.copyOf(out);
+    }
+
+    private static Map<String, KnowledgeCatalog.TechnologyDefinition> indexEvidenceSkills(
+            List<KnowledgeCatalog.TechnologyDefinition> definitions
+    ) {
+        Map<String, KnowledgeCatalog.TechnologyDefinition> out = new LinkedHashMap<>();
+        for (KnowledgeCatalog.TechnologyDefinition definition : definitions) {
+            LinkedHashSet<String> refs = new LinkedHashSet<>(definition.matchingSkillRefs());
+            refs.addAll(definition.evidenceSkillRefs());
+            refs.forEach(ref -> out.put(KnowledgeCatalogValidator.normalize(ref), definition));
         }
         return Map.copyOf(out);
     }
