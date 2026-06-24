@@ -1,0 +1,262 @@
+version: 1
+
+roleFamilies:
+  - id: BACKEND
+    label: Backend
+    aliases: [backend, backend developer, java backend]
+    evidenceDomains: [BACKEND_JAVA, BACKEND_DOTNET]
+    coreTechnologyRefs: [JAVA, SPRING_BOOT, REST_APIS, SQL_POSTGRESQL]
+    alignedCopy: "La oportunidad comparte un nucleo backend con senales tecnicas visibles en el perfil."
+    transitionCopy: "La transicion hacia backend debe sostenerse con practica y evidencia especifica del stack objetivo."
+
+  - id: DATA
+    label: Data / BI
+    aliases: [data, data analyst, bi, business intelligence]
+    evidenceDomains: [DATA]
+    coreTechnologyRefs: [SQL_POSTGRESQL, PYTHON, POWER_BI, GIT]
+    alignedCopy: "La oportunidad comparte herramientas de consulta, analisis o visualizacion con el perfil."
+    transitionCopy: "La transicion hacia Data / BI requiere mostrar consultas, transformaciones y resultados reproducibles."
+
+  - id: IT_SUPPORT
+    label: IT Support
+    aliases: [it support, technical support, help desk, service desk]
+    evidenceDomains: [SUPPORT, APP_SUPPORT, INFRA]
+    coreTechnologyRefs: [SQL_POSTGRESQL, GIT]
+    alignedCopy: "La oportunidad comparte senales de soporte, diagnostico y operacion con el perfil."
+    transitionCopy: "La experiencia de soporte puede aportar diagnostico y operacion, sin reemplazar evidencia del rol destino."
+
+technologies:
+  - id: JAVA
+    label: Java
+    matchingSkillRefs: [Java]
+    evidenceSkillRefs: [Java]
+    relatedTechnologyRefs: [SPRING_BOOT, REST_APIS, SQL_POSTGRESQL, GIT]
+    evidence:
+      strongTypes: [WORK_EXPERIENCE]
+      supportingTypes: [PROJECT, ACADEMIC]
+      weakTypes: [DECLARED_ONLY, TRANSFERABLE]
+      strongCopy: "Hay evidencia laboral directa de Java."
+      supportingCopy: "La evidencia de proyecto o academica sostiene practica con Java, no experiencia laboral."
+      weakCopy: "Java esta declarado o aparece como transferencia; falta evidencia directa de uso."
+      declaredOnlyAction: "Si ya usaste Java, documenta donde, para que y con que resultado; si no, mantenelo como aprendizaje."
+    gaps:
+      criticalExplanation: "Java es una base central cuando la oportunidad pide implementacion backend en el ecosistema JVM."
+      secondaryExplanation: "Java aparece como conocimiento complementario que conviene contextualizar."
+      evidenceIdeas: ["Codigo ejecutable con README", "Tests y decisiones tecnicas explicadas"]
+    actions:
+      - id: BUILD_JAVA_EXAMPLE
+        text: "Crear o completar un ejemplo pequeno en Java con una responsabilidad tecnica clara."
+      - id: DOCUMENT_JAVA_EVIDENCE
+        text: "Documentar el uso real de Java en un proyecto existente, si corresponde."
+    projectIdeas: ["API pequena con persistencia y tests"]
+    cvIdeas: ["Describir funcionalidad, decisiones y validacion sin presentarlo como experiencia laboral"]
+    shortRoadmap: ["Fundamentos de Java", "Diseno orientado a objetos", "Tests", "Integracion backend"]
+
+  - id: SPRING_BOOT
+    label: Spring Boot
+    matchingSkillRefs: [Spring Boot]
+    evidenceSkillRefs: [Spring Boot]
+    relatedTechnologyRefs: [JAVA, REST_APIS, SQL_POSTGRESQL, DOCKER]
+    evidence:
+      strongTypes: [WORK_EXPERIENCE]
+      supportingTypes: [PROJECT, ACADEMIC]
+      weakTypes: [DECLARED_ONLY, TRANSFERABLE]
+      strongCopy: "Hay evidencia laboral directa de Spring Boot."
+      supportingCopy: "El proyecto demuestra practica con Spring Boot, sin convertirla en experiencia laboral."
+      weakCopy: "Spring Boot esta mencionado, pero no tiene evidencia tecnica suficiente."
+      declaredOnlyAction: "Acompanhar Spring Boot con un ejemplo de endpoints, validaciones, persistencia o tests, si existe."
+    gaps:
+      criticalExplanation: "La brecha importa cuando la oferta espera construir y mantener servicios Java con Spring Boot."
+      secondaryExplanation: "Conviene reforzar el contexto de uso de Spring Boot antes de tratarlo como fortaleza."
+      evidenceIdeas: ["Endpoints documentados", "Validaciones y manejo de errores", "Tests de integracion"]
+    actions:
+      - id: BUILD_SPRING_API
+        text: "Construir una API breve con validacion, persistencia y tests."
+      - id: DOCUMENT_SPRING_API
+        text: "Documentar endpoints y decisiones de un proyecto Spring Boot existente."
+    projectIdeas: ["API de incidencias con Spring Boot y PostgreSQL"]
+    cvIdeas: ["Explicar que se implemento y como se valido"]
+    shortRoadmap: ["REST", "Spring MVC", "Persistencia", "Errores", "Tests"]
+
+  - id: REST_APIS
+    label: REST APIs
+    matchingSkillRefs: [REST]
+    evidenceSkillRefs: [REST APIs]
+    relatedTechnologyRefs: [JAVA, SPRING_BOOT, SQL_POSTGRESQL]
+    evidence:
+      strongTypes: [WORK_EXPERIENCE]
+      supportingTypes: [PROJECT, ACADEMIC]
+      weakTypes: [DECLARED_ONLY, TRANSFERABLE]
+      strongCopy: "Hay evidencia laboral de construccion o mantenimiento de APIs REST."
+      supportingCopy: "La evidencia muestra practica con APIs REST en proyecto o contexto academico."
+      weakCopy: "REST esta mencionado sin contexto suficiente sobre contratos, errores o validacion."
+      declaredOnlyAction: "Agregar contexto verificable sobre endpoints, contratos HTTP y pruebas, si ya existe."
+    gaps:
+      criticalExplanation: "El diseno de APIs es central cuando la oportunidad requiere exponer o integrar servicios."
+      secondaryExplanation: "REST aparece como complemento y conviene mostrar como se aplico."
+      evidenceIdeas: ["README con endpoints", "Ejemplos de requests", "Manejo de errores"]
+    actions:
+      - id: PRACTICE_REST_CONTRACTS
+        text: "Practicar recursos, metodos HTTP, validaciones y respuestas de error consistentes."
+    projectIdeas: ["API CRUD documentada con casos de error"]
+    cvIdeas: ["Nombrar el problema resuelto, no solo la tecnologia"]
+    shortRoadmap: ["Recursos HTTP", "Validacion", "Errores", "Documentacion", "Tests"]
+
+  - id: SQL_POSTGRESQL
+    label: SQL / PostgreSQL
+    matchingSkillRefs: [SQL, PostgreSQL]
+    evidenceSkillRefs: [SQL, PostgreSQL]
+    relatedTechnologyRefs: [JAVA, SPRING_BOOT, PYTHON, POWER_BI]
+    evidence:
+      strongTypes: [WORK_EXPERIENCE]
+      supportingTypes: [PROJECT, ACADEMIC]
+      weakTypes: [DECLARED_ONLY, TRANSFERABLE]
+      strongCopy: "Hay evidencia laboral directa de SQL o PostgreSQL."
+      supportingCopy: "La evidencia sostiene practica con consultas o persistencia, no experiencia laboral."
+      weakCopy: "SQL o PostgreSQL estan declarados sin evidencia visible suficiente."
+      declaredOnlyAction: "Mostrar consultas, modelo de datos o integracion concreta si ya fueron utilizados."
+    gaps:
+      criticalExplanation: "La brecha es relevante cuando la oferta depende de consultas, modelado o persistencia."
+      secondaryExplanation: "SQL o PostgreSQL aparecen como base complementaria para la oportunidad."
+      evidenceIdeas: ["Consultas con joins y agregaciones", "Modelo de datos", "Decisiones de persistencia"]
+    actions:
+      - id: PRACTICE_SQL_MODEL
+        text: "Practicar consultas y modelado sobre un caso pequeno y reproducible."
+      - id: DOCUMENT_SQL_DECISIONS
+        text: "Documentar consultas o decisiones de persistencia de un proyecto existente."
+    projectIdeas: ["Dataset o API con esquema relacional y consultas explicadas"]
+    cvIdeas: ["Describir consultas o decisiones realizadas, no solo listar SQL"]
+    shortRoadmap: ["SELECT y filtros", "Joins", "Agregaciones", "Modelado", "Indices basicos"]
+
+  - id: PYTHON
+    label: Python
+    matchingSkillRefs: [Python]
+    evidenceSkillRefs: [Python]
+    relatedTechnologyRefs: [SQL_POSTGRESQL, POWER_BI, GIT]
+    evidence:
+      strongTypes: [WORK_EXPERIENCE]
+      supportingTypes: [PROJECT, ACADEMIC]
+      weakTypes: [DECLARED_ONLY, TRANSFERABLE]
+      strongCopy: "Hay evidencia laboral directa de Python."
+      supportingCopy: "La evidencia demuestra practica con Python en proyecto o estudio."
+      weakCopy: "Python esta declarado sin evidencia visible de aplicacion."
+      declaredOnlyAction: "Agregar un ejemplo reproducible de Python si ya existe."
+    gaps:
+      criticalExplanation: "Python es relevante cuando la oportunidad requiere automatizar, transformar o analizar datos."
+      secondaryExplanation: "Python aparece como herramienta complementaria para el flujo de trabajo."
+      evidenceIdeas: ["Script reproducible", "Notebook con decisiones explicadas", "Tests cuando corresponda"]
+    actions:
+      - id: BUILD_PYTHON_DATA_FLOW
+        text: "Construir un flujo pequeno de lectura, transformacion y salida de datos."
+    projectIdeas: ["Analisis reproducible de un dataset con README"]
+    cvIdeas: ["Explicar datos de entrada, transformaciones y resultado"]
+    shortRoadmap: ["Estructuras basicas", "Lectura de datos", "Transformacion", "Validacion"]
+
+  - id: POWER_BI
+    label: Power BI
+    matchingSkillRefs: [Power BI]
+    evidenceSkillRefs: [Power BI]
+    relatedTechnologyRefs: [SQL_POSTGRESQL, PYTHON]
+    evidence:
+      strongTypes: [WORK_EXPERIENCE]
+      supportingTypes: [PROJECT, ACADEMIC]
+      weakTypes: [DECLARED_ONLY, TRANSFERABLE]
+      strongCopy: "Hay evidencia laboral directa de Power BI."
+      supportingCopy: "El dashboard o proyecto aporta evidencia de practica con Power BI."
+      weakCopy: "Power BI esta declarado sin un dashboard o caso visible que lo sostenga."
+      declaredOnlyAction: "Mostrar un dashboard y explicar sus fuentes, medidas y decisiones, si ya existe."
+    gaps:
+      criticalExplanation: "Power BI es central cuando la oportunidad requiere comunicar metricas y construir tableros."
+      secondaryExplanation: "Power BI aparece como herramienta complementaria de visualizacion."
+      evidenceIdeas: ["Dashboard con objetivo claro", "Modelo y medidas explicadas", "Capturas sin datos sensibles"]
+    actions:
+      - id: BUILD_POWER_BI_CASE
+        text: "Construir un dashboard breve con preguntas, metricas y fuentes documentadas."
+    projectIdeas: ["Tablero de indicadores sobre un dataset publico"]
+    cvIdeas: ["Describir decisiones y hallazgos sin afirmar impacto no medido"]
+    shortRoadmap: ["Preparacion de datos", "Modelo", "Medidas", "Visualizacion", "Narrativa"]
+
+  - id: DOCKER
+    label: Docker
+    matchingSkillRefs: [Docker]
+    evidenceSkillRefs: [Docker]
+    relatedTechnologyRefs: [JAVA, SPRING_BOOT, GIT]
+    evidence:
+      strongTypes: [WORK_EXPERIENCE]
+      supportingTypes: [PROJECT, ACADEMIC]
+      weakTypes: [DECLARED_ONLY, TRANSFERABLE]
+      strongCopy: "Hay evidencia laboral directa de Docker."
+      supportingCopy: "La evidencia demuestra practica de contenerizacion en proyecto."
+      weakCopy: "Docker esta declarado sin Dockerfile, compose o contexto visible."
+      declaredOnlyAction: "Agregar Dockerfile, compose o instrucciones reproducibles si ya existen."
+    gaps:
+      criticalExplanation: "Docker importa cuando la oportunidad espera ejecucion reproducible o despliegue de servicios."
+      secondaryExplanation: "Docker aparece como practica complementaria de entrega."
+      evidenceIdeas: ["Dockerfile", "Docker Compose", "README de ejecucion"]
+    actions:
+      - id: CONTAINERIZE_PROJECT
+        text: "Contenerizar un proyecto existente y documentar como ejecutarlo."
+    projectIdeas: ["App y base de datos levantadas con Docker Compose"]
+    cvIdeas: ["Indicar que se contenerizo y como se valido"]
+    shortRoadmap: ["Imagenes", "Contenedores", "Puertos", "Volumenes", "Compose"]
+
+  - id: GIT
+    label: Git
+    matchingSkillRefs: [Git]
+    evidenceSkillRefs: [Git]
+    relatedTechnologyRefs: [JAVA, PYTHON, DOCKER]
+    evidence:
+      strongTypes: [WORK_EXPERIENCE]
+      supportingTypes: [PROJECT, ACADEMIC]
+      weakTypes: [DECLARED_ONLY, TRANSFERABLE]
+      strongCopy: "Hay evidencia laboral directa de uso de Git."
+      supportingCopy: "El repositorio aporta evidencia de practica con control de versiones."
+      weakCopy: "Git esta declarado sin repositorio o flujo de trabajo visible."
+      declaredOnlyAction: "Vincular un repositorio o describir el flujo usado, si corresponde."
+    gaps:
+      criticalExplanation: "Git es una base operativa cuando la oportunidad requiere trabajo colaborativo y trazabilidad."
+      secondaryExplanation: "Git aparece como herramienta complementaria para organizar cambios."
+      evidenceIdeas: ["Historial legible", "README", "Branches o pull requests cuando corresponda"]
+    actions:
+      - id: ORGANIZE_GIT_EVIDENCE
+        text: "Ordenar un repositorio con commits claros y README reproducible."
+    projectIdeas: ["Repositorio pequeno con historial y documentacion claros"]
+    cvIdeas: ["No presentar cantidad de commits como impacto profesional"]
+    shortRoadmap: ["Commits", "Branches", "Merges", "Resolucion de conflictos"]
+
+transfers:
+  - id: IT_SUPPORT_TO_BACKEND_JAVA
+    fromRoleRef: IT_SUPPORT
+    toRoleRef: BACKEND
+    targetTechnologyRefs: [JAVA, SPRING_BOOT, REST_APIS]
+    strength: PARTIAL
+    requiredEvidenceTypes: [WORK_EXPERIENCE, PROJECT]
+    transferableConcepts: ["diagnostico sistematico", "lectura de logs", "gestion de incidentes", "comunicacion tecnica"]
+    warning: "La experiencia de IT Support es transferible parcialmente, pero no equivale a experiencia laboral con Java o Spring Boot."
+
+seniorityRules:
+  - id: TRAINEE
+    favorableEvidenceTypes: [PROJECT, ACADEMIC, DECLARED_ONLY]
+    requiresDomainWorkEvidence: false
+    copy: "La practica inicial y academica puede orientar un perfil trainee si se presenta con alcance realista."
+  - id: JUNIOR
+    favorableEvidenceTypes: [WORK_EXPERIENCE, PROJECT, ACADEMIC]
+    requiresDomainWorkEvidence: false
+    copy: "Los proyectos pueden sostener un perfil junior, sin presentarlos como experiencia laboral."
+  - id: MID
+    favorableEvidenceTypes: [WORK_EXPERIENCE]
+    requiresDomainWorkEvidence: true
+    copy: "Un nivel mid requiere evidencia laboral relevante dentro del dominio; proyectos aislados no alcanzan por si solos."
+  - id: SENIOR
+    favorableEvidenceTypes: [WORK_EXPERIENCE]
+    requiresDomainWorkEvidence: true
+    copy: "El seniority debe sostenerse con evidencia laboral del mismo dominio y no transferirse automaticamente."
+  - id: LEAD
+    favorableEvidenceTypes: [WORK_EXPERIENCE]
+    requiresDomainWorkEvidence: true
+    copy: "Un nivel lead requiere evidencia laboral y de responsabilidad dentro del dominio especifico."
+
+fallbacks:
+  unknownRole: "La metadata disponible no permite identificar una familia de rol con confianza."
+  declaredOnly: "La habilidad esta declarada, pero todavia no tiene evidencia visible."
+  weakJobMetadata: "La oferta tiene poco detalle; no se infieren requisitos ni brechas adicionales."
