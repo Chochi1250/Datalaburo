@@ -18,10 +18,30 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.text.Normalizer;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Locale;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 @Controller
 public class MatchController {
+    private static final int JOBS_PAGE_SIZE = 15;
+    private static final Pattern SPANISH_RELATIVE_TIME = Pattern.compile(
+            "hace\\s+(\\d+)\\s+(minuto|minutos|hora|horas|dia|dias|semana|semanas|mes|meses)"
+    );
+    private static final Pattern ENGLISH_RELATIVE_TIME = Pattern.compile(
+            "(\\d+)\\s+(minute|minutes|hour|hours|day|days|week|weeks|month|months)\\s+ago"
+    );
+    private static final Set<String> DATE_FILTERS = Set.of("any", "24h", "7d", "30d");
+    private static final Set<String> EXPERIENCE_FILTERS = Set.of("any", "trainee", "junior", "mid", "senior");
+    private static final Set<String> MODALITY_FILTERS = Set.of("any", "remote", "hybrid", "onsite");
+    private static final Set<String> JORNADA_FILTERS = Set.of("any", "fulltime", "parttime", "contract", "freelance");
+
     private final JobRepository jobRepository;
     private final DashboardService dashboardService;
     private final CvMatchingService cvMatchingService;
@@ -148,9 +168,59 @@ public class MatchController {
     }
 
     @GetMapping("/jobs")
-    public String jobs(Model model) {
-        List<Job> jobs = jobRepository.findAllByOrderByCreatedAtDescIdDesc();
-        model.addAttribute("jobs", jobs);
+    public String jobs(
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "date", required = false) String date,
+            @RequestParam(value = "experience", required = false) String experience,
+            @RequestParam(value = "modality", required = false) String modality,
+            @RequestParam(value = "jornada", required = false) String jornada,
+            @RequestParam(value = "page", required = false) String page,
+            @RequestParam(value = "selectedJobId", required = false) Long selectedJobId,
+            Model model
+    ) {
+        JobsFilter filter = new JobsFilter(
+                firstNonBlank(q, search),
+                allowedOrAny(date, DATE_FILTERS),
+                allowedOrAny(experience, EXPERIENCE_FILTERS),
+                allowedOrAny(modality, MODALITY_FILTERS),
+                allowedOrAny(jornada, JORNADA_FILTERS)
+        );
+
+        List<Job> allJobs = jobRepository.findAllByOrderByCreatedAtDescIdDesc();
+        List<Job> filteredJobs = allJobs.stream()
+                .filter(job -> matchesJobsFilter(job, filter))
+                .toList();
+
+        int totalJobs = filteredJobs.size();
+        int totalPages = totalJobs == 0 ? 1 : (int) Math.ceil((double) totalJobs / JOBS_PAGE_SIZE);
+        int currentPage = pageForSelectedJob(filteredJobs, selectedJobId)
+                .orElseGet(() -> clampPage(page, totalPages));
+        int fromIndex = totalJobs == 0 ? 0 : (currentPage - 1) * JOBS_PAGE_SIZE;
+        int toIndex = Math.min(fromIndex + JOBS_PAGE_SIZE, totalJobs);
+        List<Job> pageJobs = totalJobs == 0 ? List.of() : filteredJobs.subList(fromIndex, toIndex);
+        Long effectiveSelectedJobId = resolveSelectedJobId(pageJobs, selectedJobId);
+
+        model.addAttribute("jobs", pageJobs);
+        model.addAttribute("hasJobs", !allJobs.isEmpty());
+        model.addAttribute("totalJobs", totalJobs);
+        model.addAttribute("pageSize", JOBS_PAGE_SIZE);
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("pageStart", totalJobs == 0 ? 0 : fromIndex + 1);
+        model.addAttribute("pageEnd", toIndex);
+        model.addAttribute("pageNumbers", totalJobs == 0 ? List.of() : IntStream.rangeClosed(1, totalPages).boxed().toList());
+        model.addAttribute("hasPreviousPage", totalJobs > 0 && currentPage > 1);
+        model.addAttribute("hasNextPage", totalJobs > 0 && currentPage < totalPages);
+        model.addAttribute("previousPage", Math.max(1, currentPage - 1));
+        model.addAttribute("nextPage", Math.min(totalPages, currentPage + 1));
+        model.addAttribute("selectedJobId", effectiveSelectedJobId);
+        model.addAttribute("q", filter.q());
+        model.addAttribute("date", filter.date());
+        model.addAttribute("experience", filter.experience());
+        model.addAttribute("modality", filter.modality());
+        model.addAttribute("jornada", filter.jornada());
+        model.addAttribute("hasSecondaryFilters", !"any".equals(filter.modality()) || !"any".equals(filter.jornada()));
         return "jobs";
     }
 
@@ -185,5 +255,206 @@ public class MatchController {
     public String match(@ModelAttribute("form") CandidateProfileForm form, Model model) {
         // Backwards-compat route (older demo form). Keep it as a redirect so we can evolve matching around CVs.
         return "redirect:/matching";
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first.trim();
+        }
+        if (second != null && !second.isBlank()) {
+            return second.trim();
+        }
+        return "";
+    }
+
+    private static String allowedOrAny(String value, Set<String> allowedValues) {
+        if (value == null || value.isBlank()) {
+            return "any";
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        return allowedValues.contains(normalized) ? normalized : "any";
+    }
+
+    private static int clampPage(String rawPage, int totalPages) {
+        int parsed;
+        try {
+            parsed = Integer.parseInt(rawPage == null ? "" : rawPage.trim());
+        } catch (NumberFormatException ex) {
+            parsed = 1;
+        }
+        if (parsed < 1) {
+            return 1;
+        }
+        return Math.min(parsed, Math.max(totalPages, 1));
+    }
+
+    private static Long resolveSelectedJobId(List<Job> pageJobs, Long selectedJobId) {
+        if (pageJobs.isEmpty()) {
+            return null;
+        }
+        if (selectedJobId != null && pageJobs.stream().anyMatch(job -> selectedJobId.equals(job.getId()))) {
+            return selectedJobId;
+        }
+        return pageJobs.getFirst().getId();
+    }
+
+    private static java.util.Optional<Integer> pageForSelectedJob(List<Job> jobs, Long selectedJobId) {
+        if (selectedJobId == null || jobs.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        for (int index = 0; index < jobs.size(); index++) {
+            if (selectedJobId.equals(jobs.get(index).getId())) {
+                return java.util.Optional.of((index / JOBS_PAGE_SIZE) + 1);
+            }
+        }
+        return java.util.Optional.empty();
+    }
+
+    private static boolean matchesJobsFilter(Job job, JobsFilter filter) {
+        if (!filter.q().isBlank() && !searchText(job).contains(normalizeForSearch(filter.q()))) {
+            return false;
+        }
+        if (!"any".equals(filter.date()) && !matchesDateFilter(job, filter.date())) {
+            return false;
+        }
+        if (!"any".equals(filter.experience()) && !filter.experience().equals(experienceFromJob(job))) {
+            return false;
+        }
+        if (!"any".equals(filter.modality()) && !filter.modality().equals(modalityFromJob(job))) {
+            return false;
+        }
+        return "any".equals(filter.jornada()) || filter.jornada().equals(jornadaFromJob(job));
+    }
+
+    private static String searchText(Job job) {
+        return normalizeForSearch(String.join(" ",
+                safe(job.getTitle()),
+                safe(job.getCompany()),
+                safe(job.getLocation()),
+                safe(job.getDescription()),
+                safe(job.getVisibleText()),
+                safe(job.getRequirementsText())
+        ));
+    }
+
+    private static boolean matchesDateFilter(Job job, String date) {
+        Instant postedAt = parsePostedAt(job.getPostedAtText());
+        if (postedAt == null) {
+            return true;
+        }
+        Duration maxAge = switch (date) {
+            case "24h" -> Duration.ofHours(24);
+            case "7d" -> Duration.ofDays(7);
+            case "30d" -> Duration.ofDays(30);
+            default -> null;
+        };
+        return maxAge == null || !postedAt.isBefore(Instant.now().minus(maxAge));
+    }
+
+    private static Instant parsePostedAt(String text) {
+        String raw = normalizeForSearch(text);
+        if (raw.isBlank()) {
+            return null;
+        }
+        Instant now = Instant.now();
+        if ("hoy".equals(raw) || "today".equals(raw)) {
+            return now;
+        }
+        if ("ayer".equals(raw) || "yesterday".equals(raw)) {
+            return now.minus(Duration.ofDays(1));
+        }
+
+        Matcher spanish = SPANISH_RELATIVE_TIME.matcher(raw);
+        if (spanish.find()) {
+            return now.minus(relativeDuration(Integer.parseInt(spanish.group(1)), spanish.group(2)));
+        }
+
+        Matcher english = ENGLISH_RELATIVE_TIME.matcher(raw);
+        if (english.find()) {
+            return now.minus(relativeDuration(Integer.parseInt(english.group(1)), english.group(2)));
+        }
+        return null;
+    }
+
+    private static Duration relativeDuration(int count, String unit) {
+        if (unit.startsWith("minuto") || unit.startsWith("minute")) {
+            return Duration.ofMinutes(count);
+        }
+        if (unit.startsWith("hora") || unit.startsWith("hour")) {
+            return Duration.ofHours(count);
+        }
+        if (unit.startsWith("dia") || unit.startsWith("day")) {
+            return Duration.ofDays(count);
+        }
+        if (unit.startsWith("semana") || unit.startsWith("week")) {
+            return Duration.ofDays(count * 7L);
+        }
+        if (unit.startsWith("mes") || unit.startsWith("month")) {
+            return Duration.ofDays(count * 30L);
+        }
+        return Duration.ZERO;
+    }
+
+    private static String modalityFromJob(Job job) {
+        String text = normalizeForSearch(safe(job.getLocation()) + " " + descriptiveText(job));
+        if (containsAny(text, "remoto", "remote")) return "remote";
+        if (containsAny(text, "hibrido", "hybrid")) return "hybrid";
+        if (containsAny(text, "presencial", "onsite", "on site", "oficina")) return "onsite";
+        return null;
+    }
+
+    private static String jornadaFromJob(Job job) {
+        String text = normalizeForSearch(safe(job.getTitle()) + " " + descriptiveText(job));
+        if (containsAny(text, "full time", "fulltime", "jornada completa", "tiempo completo")) return "fulltime";
+        if (containsAny(text, "part time", "parttime", "medio tiempo", "tiempo parcial")) return "parttime";
+        if (containsAny(text, "contrato", "contract", "contractor", "temporary", "temp")) return "contract";
+        if (containsAny(text, "freelance", "autonomo", "independiente")) return "freelance";
+        return null;
+    }
+
+    private static String experienceFromJob(Job job) {
+        String text = normalizeForSearch(safe(job.getTitle()) + " " + descriptiveText(job));
+        if (containsAny(text, "trainee", "sin experiencia", "pasantia", "internship", "intern")) return "trainee";
+        if (containsAny(text, "jr", "junior")) return "junior";
+        if (containsAny(text, "semi senior", "semisenior", "ssr")) return "mid";
+        if (containsAny(text, "sr", "senior", "lead", "principal", "staff")) return "senior";
+        return null;
+    }
+
+    private static String descriptiveText(Job job) {
+        return String.join(" ",
+                safe(job.getDescription()),
+                safe(job.getVisibleText()),
+                safe(job.getRequirementsText())
+        );
+    }
+
+    private static boolean containsAny(String text, String... terms) {
+        for (String term : terms) {
+            String normalizedTerm = normalizeForSearch(term);
+            if (text.matches(".*\\b" + Pattern.quote(normalizedTerm) + "\\b.*")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String normalizeForSearch(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        return Normalizer.normalize(text, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9\\s]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private static String safe(String text) {
+        return text == null ? "" : text;
+    }
+
+    private record JobsFilter(String q, String date, String experience, String modality, String jornada) {
     }
 }

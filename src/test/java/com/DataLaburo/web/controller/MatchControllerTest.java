@@ -11,11 +11,16 @@ import com.DataLaburo.web.service.DashboardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,6 +93,118 @@ class MatchControllerTest {
         verify(cvMatchingService).matchAgainstJob(profile.getCvText(), job);
     }
 
+    @Test
+    void jobsUsesFifteenItemsPerPageAndSelectsFirstVisibleJob() {
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(numberedJobs(22));
+        ConcurrentModel model = new ConcurrentModel();
+
+        String viewName = controller.jobs(null, null, null, null, null, null, "1", null, model);
+
+        assertEquals("jobs", viewName);
+        List<Job> jobs = jobsFrom(model);
+        assertEquals(15, jobs.size());
+        assertEquals(1L, jobs.get(0).getId());
+        assertEquals(15L, jobs.get(14).getId());
+        assertEquals(22, model.getAttribute("totalJobs"));
+        assertEquals(15, model.getAttribute("pageSize"));
+        assertEquals(1, model.getAttribute("currentPage"));
+        assertEquals(2, model.getAttribute("totalPages"));
+        assertEquals(1, model.getAttribute("pageStart"));
+        assertEquals(15, model.getAttribute("pageEnd"));
+        assertEquals(1L, model.getAttribute("selectedJobId"));
+    }
+
+    @Test
+    void jobsSecondPageShowsRemainingItems() {
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(numberedJobs(22));
+        ConcurrentModel model = new ConcurrentModel();
+
+        controller.jobs(null, null, null, null, null, null, "2", null, model);
+
+        List<Job> jobs = jobsFrom(model);
+        assertEquals(7, jobs.size());
+        assertEquals(16L, jobs.get(0).getId());
+        assertEquals(22L, jobs.get(6).getId());
+        assertEquals(2, model.getAttribute("currentPage"));
+        assertEquals(16, model.getAttribute("pageStart"));
+        assertEquals(22, model.getAttribute("pageEnd"));
+        assertEquals(16L, model.getAttribute("selectedJobId"));
+    }
+
+    @Test
+    void jobsOutOfRangePageUsesLastAvailablePage() {
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(numberedJobs(22));
+        ConcurrentModel model = new ConcurrentModel();
+
+        controller.jobs(null, null, null, null, null, null, "99", null, model);
+
+        List<Job> jobs = jobsFrom(model);
+        assertEquals(7, jobs.size());
+        assertEquals(2, model.getAttribute("currentPage"));
+        assertEquals(16L, jobs.get(0).getId());
+        assertEquals(16L, model.getAttribute("selectedJobId"));
+    }
+
+    @Test
+    void jobsFiltersBeforePaginatingAndKeepsQueryInModel() {
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(jobsWithLocations(22, 16));
+        ConcurrentModel model = new ConcurrentModel();
+
+        controller.jobs("Buenos", null, null, null, null, null, "2", null, model);
+
+        List<Job> jobs = jobsFrom(model);
+        assertEquals(1, jobs.size());
+        assertEquals(16L, jobs.get(0).getId());
+        assertEquals(16, model.getAttribute("totalJobs"));
+        assertEquals(2, model.getAttribute("currentPage"));
+        assertEquals(16, model.getAttribute("pageStart"));
+        assertEquals(16, model.getAttribute("pageEnd"));
+        assertEquals("Buenos", model.getAttribute("q"));
+    }
+
+    @Test
+    void jobsUnknownSelectedJobFallsBackToFirstVisibleOnCurrentPage() {
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(numberedJobs(22));
+        ConcurrentModel model = new ConcurrentModel();
+
+        controller.jobs(null, null, null, null, null, null, "2", 999L, model);
+
+        assertEquals(2, model.getAttribute("currentPage"));
+        assertEquals(16L, model.getAttribute("selectedJobId"));
+    }
+
+    @Test
+    void jobsSelectedJobIsKeptWhenItBelongsToCurrentPage() {
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(numberedJobs(22));
+        ConcurrentModel model = new ConcurrentModel();
+
+        controller.jobs(null, null, null, null, null, null, "2", 18L, model);
+
+        assertEquals(18L, model.getAttribute("selectedJobId"));
+    }
+
+    @Test
+    void jobsMovesToPageContainingSelectedJobWhenNeeded() {
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(numberedJobs(22));
+        ConcurrentModel model = new ConcurrentModel();
+
+        controller.jobs(null, null, null, null, null, null, "1", 18L, model);
+
+        List<Job> jobs = jobsFrom(model);
+        assertEquals(2, model.getAttribute("currentPage"));
+        assertEquals(16L, jobs.get(0).getId());
+        assertEquals(18L, model.getAttribute("selectedJobId"));
+    }
+
+    @Test
+    void jobsTemplateKeepsPublicOfferActionAndNoRankingMode() throws IOException {
+        String template = Files.readString(Path.of("src/main/resources/templates/jobs.html"));
+
+        assertTrue(template.contains("Ver oferta"));
+        assertFalse(template.contains("Ver JSON"));
+        assertFalse(template.contains("rankingMode"));
+    }
+
     private static CvMatchingService.CvMatchResult emptyResult() {
         return new CvMatchingService.CvMatchResult(
                 List.of(),
@@ -128,6 +245,25 @@ class MatchControllerTest {
         job.setCompany("Example");
         job.setSourceUrl("https://example.com/jobs/42");
         return job;
+    }
+
+    private static List<Job> numberedJobs(int count) {
+        return java.util.stream.LongStream.rangeClosed(1, count)
+                .mapToObj(MatchControllerTest::job)
+                .toList();
+    }
+
+    private static List<Job> jobsWithLocations(int count, int buenosAiresCount) {
+        List<Job> jobs = numberedJobs(count);
+        for (int i = 0; i < jobs.size(); i++) {
+            jobs.get(i).setLocation(i < buenosAiresCount ? "Buenos Aires" : "Cordoba");
+        }
+        return jobs;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Job> jobsFrom(ConcurrentModel model) {
+        return (List<Job>) model.getAttribute("jobs");
     }
 
     private static String longCvText() {

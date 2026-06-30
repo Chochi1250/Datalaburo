@@ -51,6 +51,9 @@ public class CandidateProfile {
     @Column(name = "portfolio_url", length = 2048)
     private String portfolioUrl;
 
+    @Column(name = "avatar_preset", length = 64)
+    private String avatarPreset;
+
     @Column(name = "target_role", nullable = false, length = 64)
     private String targetRole = "UNDECIDED";
 
@@ -138,6 +141,14 @@ public class CandidateProfile {
 
     public void setPortfolioUrl(String portfolioUrl) {
         this.portfolioUrl = portfolioUrl;
+    }
+
+    public String getAvatarPreset() {
+        return avatarPreset;
+    }
+
+    public void setAvatarPreset(String avatarPreset) {
+        this.avatarPreset = avatarPreset;
     }
 
     public String getTargetRole() {

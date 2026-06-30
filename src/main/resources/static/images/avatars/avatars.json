@@ -1,0 +1,44 @@
+[
+  {
+    "id": "docker",
+    "label": "Docker",
+    "file": "/images/tech/docker.png",
+    "tags": ["docker", "contenedores", "devops", "backend", "infra"]
+  },
+  {
+    "id": "java",
+    "label": "Java",
+    "file": "/images/tech/java.png",
+    "tags": ["java", "backend", "jvm", "api", "server"]
+  },
+  {
+    "id": "kubernetes",
+    "label": "Kubernetes",
+    "file": "/images/tech/kubernetes.png",
+    "tags": ["kubernetes", "k8s", "devops", "containers", "infra"]
+  },
+  {
+    "id": "oracle",
+    "label": "Oracle",
+    "file": "/images/tech/oracle.svg",
+    "tags": ["oracle", "database", "sql", "datos", "db"]
+  },
+  {
+    "id": "spring",
+    "label": "Spring",
+    "file": "/images/tech/spring-icon.svg",
+    "tags": ["spring", "backend", "microservicios", "apis", "servicios"]
+  },
+  {
+    "id": "postgresql",
+    "label": "PostgreSQL",
+    "file": "/images/tech/postgresql.png",
+    "tags": ["postgres", "postgresql", "db", "sql", "datos"]
+  },
+  {
+    "id": "python",
+    "label": "Python",
+    "file": "/images/tech/Python.png",
+    "tags": ["python", "automatizacion", "scripts", "data", "backend"]
+  }
+]

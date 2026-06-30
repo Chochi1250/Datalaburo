@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -9,22 +9,33 @@
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <main class="container">
-	<header class="header">
-		<h1 th:text="${profile.name}">Perfil</h1>
-		<p class="muted">
-			<span th:if="${profile.createdAt != null}" th:text="${'Creado: ' + profile.createdAt}"></span>
-			<span th:if="${profile.updatedAt != null}" th:text="${' - Actualizado: ' + profile.updatedAt}"></span>
-		</p>
+	<header class="header profile-detail-header">
+		<div class="profile-detail-identity">
+			<div class="profile-detail-avatar avatar-surface"
+				 data-profile-avatar
+				 th:attr="data-avatar-preset=${profile.avatarPreset},data-avatar-name=${profile.name}"
+				 th:text="${profile.name != null && !profile.name.isBlank() ? #strings.toUpperCase(#strings.substring(profile.name, 0, 1)) : 'D'}">D</div>
+			<div>
+				<h1 th:text="${profile.name}">Perfil</h1>
+				<p class="muted">
+					<span th:if="${profile.createdAt != null}" th:text="${'Creado: ' + profile.createdAt}"></span>
+					<span th:if="${profile.updatedAt != null}" th:text="${' - Actualizado: ' + profile.updatedAt}"></span>
+				</p>
+				<p class="muted small">Perfil guardado localmente en esta demo. No requiere login ni cuenta de usuario.</p>
+			</div>
+		</div>
 	</header>
 
 	<section class="actions">
-		<a class="btn btn-primary" th:href="@{/matching(profileId=${profile.id})}">Usar en matching</a>
-		<a class="btn btn-secondary" th:href="@{/profiles/{id}/vector-first-compatibility(id=${profile.id})}">Analizar compatibilidad vectorial</a>
+		<a class="btn btn-primary" th:href="@{/matching(profileId=${profile.id})}">Usar en matching clasico</a>
+		<a class="btn btn-secondary" th:href="@{/profiles/{id}/vector-first-compatibility(id=${profile.id})}">Ver compatibilidad vectorial</a>
+		<a class="btn btn-secondary" th:href="@{/vector-search}">Elegir perfil existente</a>
 		<a class="btn btn-secondary" th:href="@{/profiles}">Volver a perfiles</a>
 	</section>
 
 	<section class="card">
 		<h2>Presentacion del perfil</h2>
+		<p class="muted small">Este perfil puede reutilizar CV, metadata visible, proyectos, preferencias y embedding dentro de la app/base local del proyecto.</p>
 		<p class="muted" th:if="${metadataMessage != null}" th:text="${metadataMessage}">Metadata guardada.</p>
 		<p class="error" th:if="${metadataError != null}" th:text="${metadataError}">Error</p>
 
@@ -38,10 +49,11 @@
 		</div>
 
 		<div class="chips" th:if="${!#lists.isEmpty(profile.declaredSkillTags)}">
-			<span class="chip match-chip skill-chip"
+			<span class="chip match-chip skill-chip tech-badge is-text-only"
 				  th:each="skill : ${profile.declaredSkillTags}"
-				  th:attr="data-skill=${#strings.toLowerCase(skill)}"
-				  th:text="${skill}">Java</span>
+				  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+				<span class="tech-badge-label" th:text="${skill}">Java</span>
+			</span>
 		</div>
 
 		<div class="links">
@@ -53,6 +65,7 @@
 		<p class="muted small">Esta metadata mejora la presentacion visible del perfil. No cambia ranking, embeddings ni matching.</p>
 
 		<form method="post" th:action="@{/profiles/{id}/metadata(id=${profile.id})}" th:object="${metadataForm}">
+			<input type="hidden" th:field="*{avatarPreset}"/>
 			<h3 class="project-form-title">Editar metadata visible</h3>
 			<div class="field">
 				<label for="headline">Titulo profesional breve</label>
@@ -132,10 +145,11 @@
 		</form>
 	</section>
 
-	<section class="card">
+	<section class="card" id="projects">
 		<h2>Evidencia por proyectos</h2>
 		<p class="muted small">Proyectos cargados manualmente como evidencia estructurada. Todavia no alteran ranking, matching, recuperacion vectorial ni embeddings.</p>
 
+		<p class="muted" th:if="${projectMessage != null}" th:text="${projectMessage}">Proyecto guardado.</p>
 		<p class="error" th:if="${projectError != null}" th:text="${projectError}">Error</p>
 
 		<div class="project-empty" th:if="${#lists.isEmpty(projects)}">
@@ -156,7 +170,11 @@
 				<p th:text="${project.description}">Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests.</p>
 
 				<div class="chips" th:if="${!#lists.isEmpty(project.skillTags)}">
-					<span class="chip match-chip project-skill-chip" th:each="skill : ${project.skillTags}" th:text="${skill}">Java</span>
+					<span class="chip match-chip project-skill-chip skill-chip tech-badge is-text-only"
+						  th:each="skill : ${project.skillTags}"
+						  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+						<span class="tech-badge-label" th:text="${skill}">Java</span>
+					</span>
 				</div>
 
 				<div class="links">
@@ -242,6 +260,7 @@
 
 	<section class="card">
 		<h2>CV textual editable</h2>
+		<p class="muted small">Para una prueba puntual, carga o actualiza el CV de este perfil local antes de procesar el embedding.</p>
 		<p class="muted" th:if="${cvMessage != null}" th:text="${cvMessage}">CV guardado.</p>
 		<p class="error" th:if="${cvError != null}" th:text="${cvError}">Error</p>
 		<p class="muted" th:if="${cvUploadMessage != null}" th:text="${cvUploadMessage}">Texto extraido.</p>
@@ -284,5 +303,7 @@
 		</form>
 	</section>
 </main>
+<script th:src="@{/profile-avatar-display.js}"></script>
+<script th:src="@{/technology-visual-catalog.js}"></script>
 </body>
 </html>

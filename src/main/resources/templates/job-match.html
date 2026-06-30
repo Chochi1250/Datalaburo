@@ -107,7 +107,11 @@
 			<div th:if="${not #lists.isEmpty(result.primaryStack)}">
 				<p class="muted small">Stack principal de la oferta</p>
 				<div class="chips">
-					<span class="chip match-chip profile-chip" th:each="s : ${result.primaryStack}" th:text="${s}"></span>
+					<span class="chip match-chip profile-chip skill-chip tech-badge is-text-only"
+						  th:each="s : ${result.primaryStack}"
+						  th:attr="data-skill=${#strings.toLowerCase(s)},data-tech=${s}">
+						<span class="tech-badge-label" th:text="${s}"></span>
+					</span>
 				</div>
 			</div>
 		</div>
@@ -116,7 +120,11 @@
 			<p class="muted small">Skills encontradas</p>
 			<p th:if="${#lists.isEmpty(result.coincidences)}" class="muted">No se detectaron coincidencias explicables.</p>
 			<div th:if="${!#lists.isEmpty(result.coincidences)}" class="chips">
-				<span class="chip match-chip" th:each="s : ${result.coincidences}" th:text="${s}"></span>
+				<span class="chip match-chip skill-chip tech-badge is-text-only"
+					  th:each="s : ${result.coincidences}"
+					  th:attr="data-skill=${#strings.toLowerCase(s)},data-tech=${s}">
+					<span class="tech-badge-label" th:text="${s}"></span>
+				</span>
 			</div>
 		</div>
 
@@ -142,5 +150,6 @@
 		</div>
 	</section>
 </main>
+<script th:src="@{/technology-visual-catalog.js}"></script>
 </body>
 </html>

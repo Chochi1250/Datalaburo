@@ -1,118 +1,1276 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
-	<title>DataLaburo - Nuevo perfil</title>
+	<title th:text="${profileEditMode == true} ? 'DataLaburo - Editar perfil' : 'DataLaburo - Crear perfil'">DataLaburo - Crear perfil</title>
 	<link rel="stylesheet" th:href="@{/app.css}"/>
 </head>
-<body>
+<body class="page-profile-create">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<main class="container">
-	<header class="header">
-		<h1>Nuevo perfil</h1>
-		<p class="muted">Guarda un nombre y un CV en texto para reutilizarlo en matching.</p>
+<main class="container profile-create-page">
+	<header class="profile-create-hero">
+		<div class="profile-create-hero-copy">
+			<h1 th:text="${profileEditMode == true} ? 'Editar perfil laboral' : 'Crear perfil laboral'">Crear perfil laboral</h1>
+			<p th:text="${profileEditMode == true} ? 'Actualiza tu informacion visible, foco, skills y CV base desde el formulario existente.' : 'Completa un CV base claro, define tu foco y suma evidencias para presentar mejor tu recorrido.'">Completa un CV base claro, define tu foco y suma evidencias para presentar mejor tu recorrido.</p>
+		</div>
 	</header>
 
-	<section class="card" th:if="${error}">
+	<section class="profile-create-alert" th:if="${error}">
 		<p class="error" th:text="${error}"></p>
 	</section>
 
-	<section class="card">
-		<form method="post" th:action="@{/profiles}" th:object="${form}">
-			<div class="field">
-				<label for="name">Nombre del perfil</label>
-				<input id="name" type="text" th:field="*{name}" placeholder="Ej: Mi CV backend"/>
-			</div>
+	<section class="profile-create-note" th:if="${profileDraftPrefilled}">
+		<strong>Encontramos un borrador para este perfil</strong>
+		<span>Revísalo, completa lo que falte y guárdalo cuando esté listo.</span>
+	</section>
 
-			<div class="field">
-				<label for="headline">Titulo profesional breve</label>
-				<input id="headline" type="text" th:field="*{headline}" placeholder="Backend Java junior | Spring Boot | PostgreSQL"/>
-			</div>
+	<section class="profile-create-layout">
+		<form class="profile-create-form" method="post"
+			  th:action="${profileEditMode == true} ? @{/profiles/{id}(id=${editingProfileId})} : @{/profiles}"
+			  th:object="${form}">
+			<input type="hidden" name="returnTo" th:value="${returnTo}"/>
+			<div class="profile-create-form-stack">
+				<section class="profile-create-card profile-section-identity">
+					<div class="profile-section-header">
+						<div>
+							<h2>Identidad visible</h2>
+							<p>Nombre, resumen y avatar para reconocer el perfil de un vistazo.</p>
+						</div>
+					</div>
 
-			<div class="field">
-				<label for="summary">Resumen corto</label>
-				<textarea id="summary" rows="4" th:field="*{summary}" placeholder="Resumen visible para presentar el perfil en la demo."></textarea>
-				<p class="hint muted">Estos campos son presentacion visible. No cambian embeddings, ranking ni matching.</p>
-			</div>
+					<div class="profile-identity-layout">
+						<div class="profile-avatar-panel"
+							 data-avatar-panel
+							 th:data-avatar-manifest="@{/images/avatars/avatars.json}">
+							<div class="profile-avatar-panel-top">
+								<div class="profile-avatar-demo avatar-surface"
+									 data-avatar-selected
+									 th:attr="data-avatar-preset=${selectedAvatarPreset}">DL</div>
+								<div>
+									<strong>Avatar del perfil</strong>
+									<p>Si quieres, elige un icono para acompanar la vista previa. Si no, usamos las iniciales del perfil.</p>
+								</div>
+							</div>
 
-			<div class="field">
-				<label for="declaredSkillsText">Skills declaradas</label>
-				<input id="declaredSkillsText" type="text" th:field="*{declaredSkillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, Git"/>
-				<p class="hint muted">Texto simple separado por comas. No se normaliza contra el catalogo en esta fase.</p>
-			</div>
+							<input id="avatarPreset" type="hidden" th:field="*{avatarPreset}"/>
 
-			<div class="grid-2">
-				<div class="field">
-					<label for="targetRole">Rol objetivo</label>
-					<select id="targetRole" th:field="*{targetRole}">
-						<option value="UNDECIDED">Sin definir</option>
-						<option value="BACKEND">Backend</option>
-						<option value="FRONTEND">Frontend</option>
-						<option value="FULL_STACK">Full stack</option>
-						<option value="DATA">Data</option>
-						<option value="QA">QA</option>
-						<option value="DEVOPS">DevOps</option>
-						<option value="CLOUD">Cloud</option>
-						<option value="IT_SUPPORT">IT support</option>
-						<option value="APP_SUPPORT">App support</option>
-						<option value="SECURITY_OPS">Security ops</option>
-						<option value="IAM">IAM</option>
-						<option value="DATABASE">Database</option>
-					</select>
-				</div>
+							<div class="field profile-avatar-field">
+								<label for="avatarSearch">Buscar avatar</label>
+								<input id="avatarSearch" type="search" placeholder="Ej: java, backend, datos" data-avatar-search autocomplete="off"/>
+								<div class="profile-avatar-actions">
+									<p class="hint muted profile-avatar-status" data-avatar-status>Si no eliges un avatar, usamos tus iniciales.</p>
+									<button class="btn btn-ghost btn-sm profile-avatar-clear" type="button" data-avatar-clear>Usar iniciales</button>
+								</div>
+							</div>
 
-				<div class="field">
-					<label for="targetSeniority">Seniority objetivo</label>
-					<select id="targetSeniority" th:field="*{targetSeniority}">
-						<option value="ANY">Cualquiera</option>
-						<option value="TRAINEE">Trainee</option>
-						<option value="JUNIOR">Junior</option>
-						<option value="MID">Mid</option>
-						<option value="SENIOR">Senior</option>
-						<option value="LEAD">Lead</option>
-					</select>
-				</div>
-			</div>
+							<div class="profile-avatar-list" data-avatar-list hidden></div>
+						</div>
 
-			<div class="field">
-				<label for="searchMode">Modo de busqueda</label>
-				<select id="searchMode" th:field="*{searchMode}">
-					<option value="FOCUSED">Enfocado</option>
-					<option value="BALANCED">Balanceado</option>
-					<option value="EXPLORATORY">Exploratorio</option>
-				</select>
-				<p class="hint muted">Estos campos se guardan como contexto del perfil. Todavia no cambian ranking, embeddings ni matching.</p>
-			</div>
+						<div class="profile-identity-fields">
+							<div class="grid-2">
+								<div class="field">
+									<label for="name">Nombre del perfil</label>
+									<input id="name" type="text" th:field="*{name}" placeholder="Ej: Perfil Backend Java"/>
+								</div>
 
-			<div class="grid-3">
-				<div class="field">
-					<label for="linkedinUrl">LinkedIn opcional</label>
-					<input id="linkedinUrl" type="url" th:field="*{linkedinUrl}" placeholder="https://www.linkedin.com/in/..."/>
-				</div>
-				<div class="field">
-					<label for="githubUrl">GitHub opcional</label>
-					<input id="githubUrl" type="url" th:field="*{githubUrl}" placeholder="https://github.com/..."/>
-				</div>
-				<div class="field">
-					<label for="portfolioUrl">Portfolio opcional</label>
-					<input id="portfolioUrl" type="url" th:field="*{portfolioUrl}" placeholder="https://..."/>
-				</div>
-			</div>
+								<div class="field">
+									<label for="headline">Titulo profesional breve</label>
+									<input id="headline" type="text" th:field="*{headline}" placeholder="Backend Java junior | Spring Boot | PostgreSQL"/>
+								</div>
+							</div>
 
-			<div class="field">
-				<label for="cvText">CV (texto)</label>
-				<textarea id="cvText" rows="14" th:field="*{cvText}"
-						  placeholder="Pega aca el CV en texto plano"></textarea>
-				<p class="hint muted">MVP: sin login real y sin PDF todavia.</p>
-			</div>
+							<div class="field">
+								<label for="summary">Resumen corto</label>
+								<textarea id="summary" rows="4" th:field="*{summary}" placeholder="Resume en dos o tres lineas tu foco, experiencia y fortalezas."></textarea>
+								<p class="hint muted">Estos datos ayudan a presentar mejor tu perfil.</p>
+							</div>
+						</div>
+					</div>
+				</section>
 
-			<div class="actions">
-				<button type="submit">Guardar perfil</button>
-				<a class="link" th:href="@{/profiles}">Cancelar</a>
+				<section class="profile-create-card profile-section-target">
+					<div class="profile-section-header">
+						<div>
+							<h2>Skills y objetivo</h2>
+							<p>Declara tu stack y marca hacia dónde quieres orientar la búsqueda.</p>
+						</div>
+					</div>
+
+					<div class="field">
+						<label for="declaredSkillsText">Skills declaradas</label>
+						<input id="declaredSkillsText" type="text" th:field="*{declaredSkillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, Git"/>
+						<p class="hint muted">Sepáralas por comas. Las primeras skills que escribas se muestran como principales en la vista previa.</p>
+					</div>
+
+					<div class="grid-3">
+						<div class="field">
+							<label for="targetRole">Rol objetivo</label>
+							<select id="targetRole" th:field="*{targetRole}">
+								<option value="UNDECIDED">Sin definir</option>
+								<option value="BACKEND">Backend</option>
+								<option value="FRONTEND">Frontend</option>
+								<option value="FULL_STACK">Full stack</option>
+								<option value="DATA">Data</option>
+								<option value="QA">QA</option>
+								<option value="DEVOPS">DevOps</option>
+								<option value="CLOUD">Cloud</option>
+								<option value="IT_SUPPORT">IT support</option>
+								<option value="APP_SUPPORT">App support</option>
+								<option value="SECURITY_OPS">Security ops</option>
+								<option value="IAM">IAM</option>
+								<option value="DATABASE">Database</option>
+							</select>
+						</div>
+
+						<div class="field">
+							<label for="targetSeniority">Seniority objetivo</label>
+							<select id="targetSeniority" th:field="*{targetSeniority}">
+								<option value="ANY">Cualquiera</option>
+								<option value="TRAINEE">Trainee</option>
+								<option value="JUNIOR">Junior</option>
+								<option value="MID">Mid</option>
+								<option value="SENIOR">Senior</option>
+								<option value="LEAD">Lead</option>
+							</select>
+						</div>
+
+						<div class="field">
+							<div class="profile-label-row">
+								<label for="searchMode">Modo de busqueda</label>
+								<details class="profile-help-popover">
+									<summary aria-label="Ayuda sobre modo de busqueda" title="Ayuda sobre modo de busqueda">?</summary>
+									<div class="profile-help-popover-body" role="note">
+										<p><strong>Enfocado.</strong> Prioriza lo que mas te interesa buscar hoy.</p>
+										<p><strong>Balanceado.</strong> Mantiene tu foco principal, pero abre opciones cercanas.</p>
+										<p><strong>Exploratorio.</strong> Te deja recorrer posibilidades mas amplias.</p>
+									</div>
+								</details>
+							</div>
+							<select id="searchMode" th:field="*{searchMode}">
+								<option value="FOCUSED">Enfocado</option>
+								<option value="BALANCED">Balanceado</option>
+								<option value="EXPLORATORY">Exploratorio</option>
+							</select>
+						</div>
+					</div>
+				</section>
+
+				<section class="profile-create-card profile-section-projects" th:if="${profileEditMode != true}">
+					<div class="profile-section-header">
+						<div>
+							<h2>Proyectos</h2>
+							<p>Suma trabajos, practicas o proyectos para dar mas contexto a tu recorrido.</p>
+						</div>
+					</div>
+
+					<div class="profile-section-note">
+						<strong>Evidencia visible</strong>
+						<span>Usalos para mostrar stack, responsabilidades, resultados o links relevantes.</span>
+					</div>
+
+					<div class="project-draft-list" id="projectDraftList" data-project-list>
+						<article class="project-draft-card" data-project-item th:each="projectForm, stat : ${projectForms}">
+							<div class="project-draft-header">
+								<div>
+									<p class="project-draft-index" data-project-number th:text="'Proyecto ' + ${stat.count}">Proyecto 1</p>
+									<h3>Proyecto visible</h3>
+								</div>
+								<button class="btn btn-ghost btn-sm project-draft-remove" type="button" data-project-remove>Quitar</button>
+							</div>
+
+							<div class="grid-2">
+								<div class="field">
+									<label th:for="'project-title-' + ${stat.index}">Titulo</label>
+									<input th:id="'project-title-' + ${stat.index}" type="text" name="projectTitles" th:value="${projectForm.title}" placeholder="API REST de ofertas laborales"/>
+								</div>
+								<div class="field">
+									<label th:for="'project-evidence-' + ${stat.index}">Tipo de evidencia</label>
+									<select th:id="'project-evidence-' + ${stat.index}" name="projectEvidenceTypes">
+										<option th:each="type : ${evidenceTypes}"
+												th:value="${type}"
+												th:text="${type.label()}"
+												th:selected="${projectForm.evidenceType != null ? type == projectForm.evidenceType : type.name() == 'PERSONAL_PROJECT'}">Proyecto personal</option>
+									</select>
+								</div>
+							</div>
+
+							<div class="field">
+								<label th:for="'project-description-' + ${stat.index}">Descripcion</label>
+								<textarea th:id="'project-description-' + ${stat.index}" rows="4" name="projectDescriptions" th:text="${projectForm.description}" placeholder="Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests."></textarea>
+							</div>
+
+							<div class="field">
+								<label th:for="'project-skills-' + ${stat.index}">Skills evidenciadas</label>
+								<input th:id="'project-skills-' + ${stat.index}" type="text" name="projectSkillsTexts" th:value="${projectForm.skillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, SQL, Git"/>
+								<p class="hint muted">Texto simple separado por comas. Si completas un proyecto, titulo, descripcion y skills son requeridos.</p>
+							</div>
+
+							<div class="grid-2">
+								<div class="field">
+									<label th:for="'project-repo-' + ${stat.index}">URL repo opcional</label>
+									<input th:id="'project-repo-' + ${stat.index}" type="url" name="projectRepositoryUrls" th:value="${projectForm.repositoryUrl}" placeholder="https://github.com/..."/>
+								</div>
+								<div class="field">
+									<label th:for="'project-demo-' + ${stat.index}">URL demo opcional</label>
+									<input th:id="'project-demo-' + ${stat.index}" type="url" name="projectDemoUrls" th:value="${projectForm.demoUrl}" placeholder="https://..."/>
+								</div>
+							</div>
+						</article>
+					</div>
+
+					<template id="projectItemTemplate">
+						<article class="project-draft-card" data-project-item>
+							<div class="project-draft-header">
+								<div>
+									<p class="project-draft-index" data-project-number>Proyecto __COUNT__</p>
+									<h3>Proyecto visible</h3>
+								</div>
+								<button class="btn btn-ghost btn-sm project-draft-remove" type="button" data-project-remove>Quitar</button>
+							</div>
+
+							<div class="grid-2">
+								<div class="field">
+									<label for="project-title-__INDEX__">Titulo</label>
+									<input id="project-title-__INDEX__" type="text" name="projectTitles" placeholder="API REST de ofertas laborales"/>
+								</div>
+								<div class="field">
+									<label for="project-evidence-__INDEX__">Tipo de evidencia</label>
+									<select id="project-evidence-__INDEX__" name="projectEvidenceTypes">
+										<option th:each="type : ${evidenceTypes}"
+												th:value="${type}"
+												th:text="${type.label()}"
+												th:selected="${type.name() == 'PERSONAL_PROJECT'}">Proyecto personal</option>
+									</select>
+								</div>
+							</div>
+
+							<div class="field">
+								<label for="project-description-__INDEX__">Descripcion</label>
+								<textarea id="project-description-__INDEX__" rows="4" name="projectDescriptions" placeholder="Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests."></textarea>
+							</div>
+
+							<div class="field">
+								<label for="project-skills-__INDEX__">Skills evidenciadas</label>
+								<input id="project-skills-__INDEX__" type="text" name="projectSkillsTexts" placeholder="Java, Spring Boot, REST, PostgreSQL, SQL, Git"/>
+								<p class="hint muted">Texto simple separado por comas. Si completas un proyecto, titulo, descripcion y skills son requeridos.</p>
+							</div>
+
+							<div class="grid-2">
+								<div class="field">
+									<label for="project-repo-__INDEX__">URL repo opcional</label>
+									<input id="project-repo-__INDEX__" type="url" name="projectRepositoryUrls" placeholder="https://github.com/..."/>
+								</div>
+								<div class="field">
+									<label for="project-demo-__INDEX__">URL demo opcional</label>
+									<input id="project-demo-__INDEX__" type="url" name="projectDemoUrls" placeholder="https://..."/>
+								</div>
+							</div>
+						</article>
+					</template>
+
+					<div class="profile-project-actions">
+						<button class="btn btn-secondary btn-sm" type="button" id="addProjectButton" data-project-add>Agregar proyecto</button>
+						<p class="hint muted">Podes cargar varias evidencias ahora o dejar una sola y sumar mas despues.</p>
+					</div>
+				</section>
+
+				<section class="profile-create-card profile-professional-card">
+					<div class="profile-professional-heading">
+						<h2>Perfil profesional</h2>
+						<p>Completa tu informacion para que podamos entender mejor tu experiencia y mostrarte oportunidades relevantes.</p>
+					</div>
+
+					<div class="profile-professional-section profile-section-links">
+						<div class="profile-subsection-heading">
+							<span class="profile-subsection-icon profile-subsection-icon-links" aria-hidden="true">
+								<svg viewBox="0 0 24 24" focusable="false">
+									<path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.9 5.03"/>
+									<path d="M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07l1.22-1.22"/>
+								</svg>
+							</span>
+							<div>
+								<h3>Links</h3>
+								<p>Comparte perfiles o repositorios si ayudan a entender mejor tu trabajo.</p>
+							</div>
+						</div>
+
+						<div class="profile-links-grid">
+							<div class="field profile-link-field">
+								<label for="linkedinUrl">LinkedIn</label>
+								<div class="profile-link-input">
+									<span class="profile-link-icon profile-link-icon-linkedin" aria-hidden="true">
+										<img th:src="@{/images/tech/linkedin.svg}" alt="" loading="lazy"/>
+									</span>
+									<input id="linkedinUrl" type="url" th:field="*{linkedinUrl}" placeholder=" "/>
+									<span class="profile-link-placeholder">https://www.linkedin.com/in/tu-perfil</span>
+								</div>
+							</div>
+							<div class="field profile-link-field">
+								<label for="githubUrl">GitHub</label>
+								<div class="profile-link-input">
+									<span class="profile-link-icon profile-link-icon-github" aria-hidden="true">
+										<img th:src="@{/images/tech/github.png}" alt="" loading="lazy"/>
+									</span>
+									<input id="githubUrl" type="url" th:field="*{githubUrl}" placeholder=" "/>
+									<span class="profile-link-placeholder">https://github.com/tu-usuario</span>
+								</div>
+							</div>
+							<div class="field profile-link-field profile-links-wide">
+								<label for="portfolioUrl">Portfolio</label>
+								<div class="profile-link-input">
+									<span class="profile-link-icon profile-link-icon-portfolio" aria-hidden="true">
+										<img th:src="@{/images/tech/portfolio.png}" alt="" loading="lazy"/>
+									</span>
+									<input id="portfolioUrl" type="url" th:field="*{portfolioUrl}" placeholder=" "/>
+									<span class="profile-link-placeholder">https://tu-portafolio.com</span>
+								</div>
+							</div>
+						</div>
+
+						<p class="profile-section-helper hint muted">Completa solo los links que quieras mostrar.</p>
+					</div>
+
+					<div class="profile-professional-section profile-section-cv">
+						<div class="profile-subsection-heading">
+							<span class="profile-subsection-icon profile-subsection-icon-cv" aria-hidden="true">
+								<img th:src="@{/images/1f4c4.png}" alt="" loading="lazy"/>
+							</span>
+							<div>
+								<h3>CV base</h3>
+								<p>Subi tu CV o pega el texto para revisarlo antes de guardar. El texto de abajo queda editable.</p>
+							</div>
+						</div>
+
+						<div class="vector-cv-inputs profile-create-cv-inputs profile-cv-layout">
+							<div class="profile-cv-upload-column">
+								<label class="profile-cv-field-label" for="cvFile">Sube tu CV en PDF o DOCX</label>
+								<div class="field vector-cv-upload profile-create-cv-upload"
+									 data-cv-upload
+									 th:data-extract-url="@{/vector-search/cv/extract}">
+									<input class="vector-cv-file-input" id="cvFile" name="cvFile" type="file"
+										   accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"/>
+									<label class="vector-cv-dropzone" for="cvFile" data-cv-dropzone>
+										<span class="vector-cv-document-icon" aria-hidden="true">
+											<img th:src="@{/images/1f4c4.png}" alt="" loading="lazy"/>
+										</span>
+										<span class="vector-cv-upload-copy">
+											<strong>Arrastra y suelta tu archivo aqu&iacute;</strong>
+											<span>o haz clic para buscar en tu dispositivo</span>
+											<small>Formatos permitidos: PDF, DOCX &middot; M&aacute;x. 5 MB</small>
+										</span>
+									</label>
+									<div class="vector-cv-file-status" data-cv-file-status hidden>
+										<span class="vector-cv-file-name" data-cv-file-name>cv.pdf</span>
+										<span class="vector-cv-file-state" data-cv-file-state>Listo para revisar</span>
+									</div>
+									<p class="hint muted" data-cv-upload-message>
+										Cargamos el texto para que puedas revisarlo y corregirlo antes de guardar.
+									</p>
+								</div>
+							</div>
+
+							<div class="field vector-cv-text-field profile-cv-text-column">
+								<label for="cvText">CV como texto</label>
+								<textarea id="cvText" rows="14" th:field="*{cvText}" placeholder="Pega experiencia, proyectos, formacion y habilidades relevantes..."></textarea>
+								<p class="hint muted">Si ya llegaste con un CV cargado, podes revisarlo y ajustarlo antes de guardar.</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="profile-create-actions profile-professional-actions">
+						<button type="submit" th:text="${profileEditMode == true} ? 'Guardar cambios' : 'Guardar perfil'">Guardar perfil</button>
+						<a class="btn btn-secondary" th:href="${cancelHref}">Cancelar</a>
+					</div>
+				</section>
 			</div>
 		</form>
+
+		<aside class="profile-create-preview" aria-label="Vista previa del perfil">
+			<div class="profile-preview-card"
+				 data-profile-preview-card
+				 th:attr="data-avatar-accent=${selectedAvatarPreset}">
+				<div class="profile-preview-topline">
+					<span class="profile-preview-label">Vista previa</span>
+					<span class="profile-preview-status" data-profile-preview="cvStatus"
+						  th:text="${#strings.isEmpty(form.cvText) ? 'CV base pendiente' : 'CV base listo'}">CV base pendiente</span>
+				</div>
+
+				<div class="profile-preview-scroll">
+					<div class="profile-preview-identity">
+						<div class="profile-preview-avatar avatar-surface"
+							 data-profile-preview="avatar"
+							 th:attr="data-avatar-preset=${selectedAvatarPreset}">DL</div>
+						<div class="profile-preview-heading">
+							<h2 data-profile-preview="name"
+								th:text="${#strings.isEmpty(form.name) ? 'Tu perfil laboral' : form.name}">Tu perfil laboral</h2>
+							<p class="profile-preview-headline" data-profile-preview="headline"
+							   th:text="${#strings.isEmpty(form.headline) ? 'Titulo profesional breve' : form.headline}">Titulo profesional breve</p>
+						</div>
+					</div>
+
+					<p class="profile-preview-summary muted" data-profile-preview="summary"
+					   th:text="${#strings.isEmpty(form.summary) ? 'Completa un resumen para darle contexto a tu perfil.' : form.summary}">
+						Completa un resumen para darle contexto a tu perfil.
+					</p>
+
+					<div class="profile-preview-focus">
+						<div class="profile-preview-focus-item">
+							<span>Rol objetivo</span>
+							<strong data-profile-preview="roleValue">Sin definir</strong>
+						</div>
+						<div class="profile-preview-focus-item">
+							<span>Seniority</span>
+							<strong data-profile-preview="seniorityValue">Cualquiera</strong>
+						</div>
+						<div class="profile-preview-focus-item">
+							<span>Busqueda</span>
+							<strong data-profile-preview="modeValue">Enfocado</strong>
+						</div>
+					</div>
+
+					<section class="profile-preview-section">
+						<div class="profile-preview-section-head">
+							<span>Skills visibles</span>
+							<small data-profile-preview="skillsMeta">Se actualizan mientras completas el perfil</small>
+						</div>
+						<div class="profile-preview-tags" data-profile-preview="skills">
+							<span class="chip skill-chip tech-badge profile-preview-badge is-text-only" data-skill="placeholder" data-badge-tone="placeholder" style="--badge-bg:#e8effa;--badge-text:#526075;--badge-border:#c6d4e6;--badge-shadow:rgba(148,163,184,0.18);">
+								<span class="tech-badge-label">Tus badges</span>
+							</span>
+						</div>
+					</section>
+
+					<section class="profile-preview-section">
+						<div class="profile-preview-section-head">
+							<span>Proyectos visibles</span>
+							<small data-profile-preview="projectsMeta">Opcional</small>
+						</div>
+						<div class="profile-preview-project-list" data-profile-preview="projects">
+							<article class="profile-preview-project is-empty">
+								<div class="profile-preview-section-head">
+									<span>Proyecto visible opcional</span>
+									<small>Sin evidencia todavia</small>
+								</div>
+								<strong>Agrega un proyecto si queres mostrar evidencia puntual.</strong>
+								<span>La preview prioriza lo esencial y resume el resto para no crecer sin limite.</span>
+							</article>
+						</div>
+					</section>
+				</div>
+
+				<p class="profile-preview-note">La vista previa te ayuda a revisar cómo se verá el perfil antes de guardarlo. El CV base es el texto principal para compararlo con ofertas.</p>
+			</div>
+		</aside>
 	</section>
 </main>
+<script th:src="@{/technology-visual-catalog.js}"></script>
+<script>
+	(function () {
+		const MAX_VISIBLE_SKILLS = 6;
+		const MAX_VISIBLE_PROJECTS = 2;
+		const fields = {
+			name: document.querySelector("#name"),
+			headline: document.querySelector("#headline"),
+			summary: document.querySelector("#summary"),
+			skills: document.querySelector("#declaredSkillsText"),
+			role: document.querySelector("#targetRole"),
+			seniority: document.querySelector("#targetSeniority"),
+			mode: document.querySelector("#searchMode"),
+			cvText: document.querySelector("#cvText"),
+			avatarPreset: document.querySelector("#avatarPreset")
+		};
+		const preview = {
+			card: document.querySelector("[data-profile-preview-card]"),
+			avatar: document.querySelector("[data-profile-preview='avatar']"),
+			name: document.querySelector("[data-profile-preview='name']"),
+			headline: document.querySelector("[data-profile-preview='headline']"),
+			summary: document.querySelector("[data-profile-preview='summary']"),
+			skills: document.querySelector("[data-profile-preview='skills']"),
+			skillsMeta: document.querySelector("[data-profile-preview='skillsMeta']"),
+			projects: document.querySelector("[data-profile-preview='projects']"),
+			projectsMeta: document.querySelector("[data-profile-preview='projectsMeta']"),
+			roleValue: document.querySelector("[data-profile-preview='roleValue']"),
+			seniorityValue: document.querySelector("[data-profile-preview='seniorityValue']"),
+			modeValue: document.querySelector("[data-profile-preview='modeValue']"),
+			cvStatus: document.querySelector("[data-profile-preview='cvStatus']")
+		};
+		const avatarPreviews = Array.from(document.querySelectorAll("[data-avatar-selected]"));
+		const avatarPanel = document.querySelector("[data-avatar-panel]");
+		const avatarSearch = document.querySelector("[data-avatar-search]");
+		const avatarStatus = document.querySelector("[data-avatar-status]");
+		const avatarClear = document.querySelector("[data-avatar-clear]");
+		const avatarList = document.querySelector("[data-avatar-list]");
+		const projectList = document.querySelector("[data-project-list]");
+		const projectTemplate = document.querySelector("#projectItemTemplate");
+		const addProjectButton = document.querySelector("[data-project-add]");
+		const upload = document.querySelector("[data-cv-upload]");
+		const DEFAULT_AVATAR_PRESET = "atlas";
+		const DEFAULT_AVATAR_OPTION_IDS = ["java", "spring", "python", "docker", "react", "git"];
+		const DEFAULT_AVATAR_DISPLAY_LABELS = {};
+		const EXTRA_AVATAR_OPTIONS = [
+			{
+				id: "react",
+				label: "React",
+				mark: "R",
+				tags: ["react", "frontend", "ui", "javascript"]
+			},
+			{
+				id: "git",
+				label: "Git",
+				file: "/images/tech/github.png",
+				tags: ["git", "github", "repositorios", "codigo"]
+			}
+		];
+		const avatarManifestUrl = avatarPanel ? avatarPanel.dataset.avatarManifest || "" : "";
+		let avatarRegistry = [];
+
+		function valueOrFallback(field, fallback) {
+			const value = field && field.value ? field.value.trim() : "";
+			return value || fallback;
+		}
+
+		function selectedText(select, fallback) {
+			if (!select || !select.options || select.selectedIndex < 0) {
+				return fallback;
+			}
+			return select.options[select.selectedIndex].text || fallback;
+		}
+
+		function splitCommaValues(raw) {
+			return (raw || "")
+				.split(",")
+				.map(function (value) { return value.trim(); })
+				.filter(Boolean);
+		}
+
+		function normalizeSkillKey(value) {
+			return (value || "")
+				.toLowerCase()
+				.normalize("NFD")
+				.replace(/[\u0300-\u036f]/g, "")
+				.replace(/&/g, " and ")
+				.replace(/\+/g, " plus ")
+				.replace(/#/g, " sharp ")
+				.replace(/[._/()-]+/g, " ")
+				.replace(/[^a-z0-9\s]+/g, " ")
+				.replace(/\s+/g, " ")
+				.trim();
+		}
+
+		function buildAvatarLabel() {
+			const source = valueOrFallback(fields.name, "") || valueOrFallback(fields.headline, "");
+			const normalized = source.replace(/[^A-Za-z0-9 ]+/g, " ").trim();
+			if (!normalized) {
+				return "DL";
+			}
+			const words = normalized.split(/\s+/).filter(Boolean);
+			if (words.length === 1) {
+				return words[0].slice(0, 2).toUpperCase();
+			}
+			return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+		}
+
+		function getSelectedAvatarPreset() {
+			return fields.avatarPreset && fields.avatarPreset.value
+				? fields.avatarPreset.value.trim().toLowerCase()
+				: DEFAULT_AVATAR_PRESET;
+		}
+
+		function applyAvatarFallback(target, preset) {
+			if (!target) {
+				return;
+			}
+			target.classList.remove("is-avatar-image");
+			target.setAttribute("data-avatar-preset", preset || DEFAULT_AVATAR_PRESET);
+			target.removeAttribute("data-avatar-image");
+			target.style.removeProperty("--avatar-accent");
+			target.style.removeProperty("--avatar-shadow");
+			target.textContent = buildAvatarLabel();
+		}
+
+		function applyAvatarImage(target, option) {
+			if (!target || !option) {
+				applyAvatarFallback(target, DEFAULT_AVATAR_PRESET);
+				return;
+			}
+			target.classList.add("is-avatar-image");
+			target.removeAttribute("data-avatar-preset");
+			target.setAttribute("data-avatar-image", option.id);
+			target.style.setProperty("--avatar-accent", "#cbd5e1");
+			target.style.setProperty("--avatar-shadow", "rgba(15,23,42,0.12)");
+			target.textContent = "";
+			if (!option.file) {
+				target.classList.remove("is-avatar-image");
+				target.setAttribute("data-avatar-preset", option.id);
+				target.textContent = option.mark || option.label.slice(0, 2).toUpperCase();
+				return;
+			}
+			const image = document.createElement("img");
+			image.className = "avatar-selected-image";
+			image.alt = option.label;
+			image.src = option.file;
+			image.addEventListener("error", function () {
+				if (fields.avatarPreset) {
+					fields.avatarPreset.value = DEFAULT_AVATAR_PRESET;
+				}
+				renderAvatarOptions();
+				updatePreview();
+			}, { once: true });
+			target.appendChild(image);
+		}
+
+		function normalizeAvatarEntry(entry) {
+			if (!entry || !entry.id || !entry.label) {
+				return null;
+			}
+			const tags = Array.isArray(entry.tags)
+				? entry.tags.map(function (tag) { return String(tag || "").trim(); }).filter(Boolean)
+				: String(entry.tags || "").split(",").map(function (tag) { return tag.trim(); }).filter(Boolean);
+			return {
+				id: String(entry.id).trim().toLowerCase(),
+				label: String(entry.label).trim(),
+				file: String(entry.file || "").trim(),
+				mark: String(entry.mark || "").trim(),
+				tags: tags
+			};
+		}
+
+		function findAvatarEntryById(id) {
+			if (!id) {
+				return null;
+			}
+			return avatarRegistry.find(function (entry) {
+				return entry.id === id;
+			}) || null;
+		}
+
+		function avatarMatches(entry, query) {
+			if (!query) {
+				return true;
+			}
+			const haystack = normalizeSkillKey(entry.label + " " + entry.tags.join(" "));
+			return haystack.indexOf(query) !== -1;
+		}
+
+		function uniqueAvatarEntries(entries) {
+			const seen = new Set();
+			return entries.filter(function (entry) {
+				if (!entry || seen.has(entry.id)) {
+					return false;
+				}
+				seen.add(entry.id);
+				return true;
+			});
+		}
+
+		function getDefaultAvatarEntries() {
+			return DEFAULT_AVATAR_OPTION_IDS
+				.map(findAvatarEntryById)
+				.filter(Boolean)
+				.map(function (entry) {
+					if (!DEFAULT_AVATAR_DISPLAY_LABELS[entry.id]) {
+						return entry;
+					}
+					return Object.assign({}, entry, {
+						label: DEFAULT_AVATAR_DISPLAY_LABELS[entry.id]
+					});
+				});
+		}
+
+		function avatarOptionMark(entry) {
+			return entry && entry.mark
+				? entry.mark
+				: String(entry && entry.label ? entry.label : "").slice(0, 2).toUpperCase();
+		}
+
+		function buildAvatarOption(entry, selectedId) {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = "profile-avatar-option";
+			button.title = entry.label;
+			button.setAttribute("aria-pressed", entry.id === selectedId ? "true" : "false");
+			if (entry.id === selectedId) {
+				button.classList.add("is-selected");
+			}
+
+			const media = document.createElement("span");
+			media.className = "profile-avatar-option-media";
+			if (entry.file) {
+				const image = document.createElement("img");
+				image.alt = "";
+				image.src = entry.file;
+				image.addEventListener("error", function () {
+					image.remove();
+					media.textContent = avatarOptionMark(entry);
+					media.classList.add("profile-avatar-option-media-mark");
+				}, { once: true });
+				media.appendChild(image);
+			} else {
+				media.textContent = avatarOptionMark(entry);
+				media.classList.add("profile-avatar-option-media-mark");
+			}
+			button.appendChild(media);
+
+			const label = document.createElement("span");
+			label.className = "profile-avatar-option-label";
+			label.textContent = entry.label;
+			label.title = entry.label;
+			button.appendChild(label);
+
+			button.addEventListener("click", function () {
+				if (fields.avatarPreset) {
+					fields.avatarPreset.value = entry.id;
+				}
+				renderAvatarOptions();
+				updatePreview();
+			});
+			return button;
+		}
+
+		function updateAvatarStatus(selectedEntry, visibleCount, query) {
+			if (!avatarStatus) {
+				return;
+			}
+			if (selectedEntry) {
+				avatarStatus.textContent = "Avatar elegido: " + selectedEntry.label + ".";
+			} else if (query && visibleCount === 0) {
+				avatarStatus.textContent = "No encontramos coincidencias. Si sigues, usamos tus iniciales.";
+			} else {
+				avatarStatus.textContent = "Si no eliges un avatar, usamos tus iniciales.";
+			}
+			avatarStatus.title = selectedEntry ? selectedEntry.label : avatarStatus.textContent;
+			if (avatarClear) {
+				avatarClear.disabled = !selectedEntry;
+			}
+		}
+
+		function renderAvatarOptions() {
+			if (!avatarList) {
+				return;
+			}
+			const selectedId = getSelectedAvatarPreset();
+			const selectedEntry = findAvatarEntryById(selectedId);
+			const query = normalizeSkillKey(avatarSearch && avatarSearch.value ? avatarSearch.value : "");
+			const matches = avatarRegistry.filter(function (entry) {
+				return avatarMatches(entry, query);
+			});
+			const visibleEntries = query ? matches.slice(0, 10) : getDefaultAvatarEntries();
+
+			if (query && selectedEntry && !visibleEntries.some(function (entry) { return entry.id === selectedEntry.id; })) {
+				visibleEntries.unshift(selectedEntry);
+			}
+
+			avatarList.innerHTML = "";
+			if (!visibleEntries.length) {
+				avatarList.hidden = true;
+				updateAvatarStatus(selectedEntry, 0, query);
+				return;
+			}
+
+			visibleEntries.slice(0, 6).forEach(function (entry) {
+				avatarList.appendChild(buildAvatarOption(entry, selectedId));
+			});
+			avatarList.hidden = false;
+			updateAvatarStatus(selectedEntry, visibleEntries.length, query);
+		}
+
+		function applyAvatarPreset(target, preset) {
+			applyAvatarFallback(target, preset || DEFAULT_AVATAR_PRESET);
+		}
+
+		function syncAvatarSelection() {
+			const preset = getSelectedAvatarPreset();
+			const avatarOption = findAvatarEntryById(preset);
+			avatarPreviews.forEach(function (target) {
+				if (avatarOption) {
+					applyAvatarImage(target, avatarOption);
+					return;
+				}
+				applyAvatarPreset(target, preset);
+			});
+			if (avatarOption) {
+				applyAvatarImage(preview.avatar, avatarOption);
+			} else {
+				applyAvatarPreset(preview.avatar, preset);
+			}
+			if (preview.card) {
+				preview.card.setAttribute("data-avatar-accent", avatarOption ? DEFAULT_AVATAR_PRESET : preset);
+				preview.card.style.removeProperty("--profile-preview-accent");
+			}
+			updateAvatarStatus(avatarOption, avatarOption ? 1 : 0, normalizeSkillKey(avatarSearch && avatarSearch.value ? avatarSearch.value : ""));
+		}
+
+		function buildSkillBadge(label) {
+			const chip = document.createElement("span");
+			chip.className = "chip skill-chip tech-badge profile-preview-badge is-text-only";
+			chip.title = label;
+			chip.setAttribute("data-skill", normalizeSkillKey(label));
+			chip.setAttribute("data-tech", label);
+			const text = document.createElement("span");
+			text.className = "tech-badge-label";
+			text.textContent = label;
+			chip.appendChild(text);
+			return chip;
+		}
+
+		function buildPlaceholderBadge() {
+			const chip = document.createElement("span");
+			chip.className = "chip skill-chip tech-badge profile-preview-badge is-text-only";
+			chip.setAttribute("data-skill", "placeholder");
+			chip.setAttribute("data-badge-tone", "placeholder");
+			chip.style.setProperty("--badge-bg", "#E8EFFA");
+			chip.style.setProperty("--badge-text", "#526075");
+			chip.style.setProperty("--badge-border", "#C6D4E6");
+			chip.style.setProperty("--badge-shadow", "rgba(148,163,184,0.18)");
+			const text = document.createElement("span");
+			text.className = "tech-badge-label";
+			text.textContent = "Tus badges";
+			chip.appendChild(text);
+			return chip;
+		}
+
+		function buildMoreBadge(hiddenItems) {
+			const chip = document.createElement("span");
+			chip.className = "chip skill-chip skill-chip-more tech-badge profile-preview-badge is-text-only";
+			chip.setAttribute("data-skill", "more");
+			chip.setAttribute("data-badge-tone", "more");
+			chip.title = hiddenItems.join(", ");
+			const text = document.createElement("span");
+			text.className = "tech-badge-label";
+			text.textContent = "+" + hiddenItems.length + " mas";
+			chip.appendChild(text);
+			return chip;
+		}
+
+		function getProjectItems() {
+			return Array.from(projectList ? projectList.querySelectorAll("[data-project-item]") : []);
+		}
+
+		function reindexProjects() {
+			getProjectItems().forEach(function (item, index) {
+				const number = item.querySelector("[data-project-number]");
+				if (number) {
+					number.textContent = "Proyecto " + (index + 1);
+				}
+				const mapping = [
+					["projectTitles", "project-title-"],
+					["projectEvidenceTypes", "project-evidence-"],
+					["projectDescriptions", "project-description-"],
+					["projectSkillsTexts", "project-skills-"],
+					["projectRepositoryUrls", "project-repo-"],
+					["projectDemoUrls", "project-demo-"]
+				];
+				mapping.forEach(function (pair) {
+					const field = item.querySelector("[name='" + pair[0] + "']");
+					if (!field) {
+						return;
+					}
+					const nextId = pair[1] + index;
+					field.id = nextId;
+					const label = field.closest(".field") ? field.closest(".field").querySelector("label") : null;
+					if (label) {
+						label.setAttribute("for", nextId);
+					}
+				});
+			});
+		}
+
+		function appendProjectItem() {
+			if (!projectTemplate || !projectList) {
+				return;
+			}
+			const index = getProjectItems().length;
+			const html = projectTemplate.innerHTML
+				.replace(/__INDEX__/g, String(index))
+				.replace(/__COUNT__/g, String(index + 1));
+			projectList.insertAdjacentHTML("beforeend", html);
+			reindexProjects();
+			bindProjectFieldListeners();
+			updatePreview();
+		}
+
+		function clearProjectItem(item) {
+			if (!item) {
+				return;
+			}
+			Array.from(item.querySelectorAll("input, textarea")).forEach(function (field) {
+				field.value = "";
+			});
+			Array.from(item.querySelectorAll("select")).forEach(function (field) {
+				field.selectedIndex = 0;
+			});
+		}
+
+		function bindProjectFieldListeners() {
+			getProjectItems().forEach(function (item) {
+				Array.from(item.querySelectorAll("input, textarea, select")).forEach(function (field) {
+					if (field.dataset.previewBound === "true") {
+						return;
+					}
+					field.addEventListener("input", updatePreview);
+					field.addEventListener("change", updatePreview);
+					field.dataset.previewBound = "true";
+				});
+			});
+		}
+
+		function collectProjects() {
+			return getProjectItems().map(function (item) {
+				const titleField = item.querySelector("[name='projectTitles']");
+				const descriptionField = item.querySelector("[name='projectDescriptions']");
+				const skillsField = item.querySelector("[name='projectSkillsTexts']");
+				const repositoryField = item.querySelector("[name='projectRepositoryUrls']");
+				const demoField = item.querySelector("[name='projectDemoUrls']");
+				const evidenceField = item.querySelector("[name='projectEvidenceTypes']");
+				return {
+					title: titleField && titleField.value ? titleField.value.trim() : "",
+					description: descriptionField && descriptionField.value ? descriptionField.value.trim() : "",
+					skills: splitCommaValues(skillsField && skillsField.value ? skillsField.value : ""),
+					repositoryUrl: repositoryField && repositoryField.value ? repositoryField.value.trim() : "",
+					demoUrl: demoField && demoField.value ? demoField.value.trim() : "",
+					evidenceLabel: selectedText(evidenceField, "Proyecto")
+				};
+			}).filter(function (project) {
+				return Boolean(
+					project.title ||
+					project.description ||
+					project.skills.length ||
+					project.repositoryUrl ||
+					project.demoUrl
+				);
+			});
+		}
+
+		function buildProjectSummary(project) {
+			if (project.description) {
+				return project.description.length > 140
+					? project.description.slice(0, 137).trimEnd() + "..."
+					: project.description;
+			}
+			if (project.skills.length) {
+				return "Skills visibles: " + project.skills.slice(0, 3).join(" / ");
+			}
+			if (project.repositoryUrl || project.demoUrl) {
+				return "Incluye links visibles para ampliar contexto.";
+			}
+			return "Proyecto listo para mostrarse como evidencia.";
+		}
+
+		function renderSkills() {
+			if (!preview.skills) {
+				return;
+			}
+			const allSkills = splitCommaValues(fields.skills && fields.skills.value ? fields.skills.value : "");
+			const visibleSkills = allSkills.slice(0, MAX_VISIBLE_SKILLS);
+			const hiddenSkills = allSkills.slice(MAX_VISIBLE_SKILLS);
+			preview.skills.innerHTML = "";
+			if (!allSkills.length) {
+				if (preview.skillsMeta) {
+					preview.skillsMeta.textContent = "Se completan al escribir";
+				}
+				preview.skills.appendChild(buildPlaceholderBadge());
+				return;
+			}
+			if (preview.skillsMeta) {
+				preview.skillsMeta.textContent = allSkills.length === 1 ? "1 badge visible" : allSkills.length + " badges visibles";
+			}
+			visibleSkills.forEach(function (skill) {
+				preview.skills.appendChild(buildSkillBadge(skill));
+			});
+			if (hiddenSkills.length) {
+				preview.skills.appendChild(buildMoreBadge(hiddenSkills));
+			}
+		}
+
+		async function loadAvatarManifest() {
+			if (!avatarManifestUrl || !avatarList) {
+				return;
+			}
+			try {
+				const response = await fetch(avatarManifestUrl, {
+					headers: { "Accept": "application/json" }
+				});
+				if (!response.ok) {
+					throw new Error("avatar-manifest-unavailable");
+				}
+				const payload = await response.json();
+				avatarRegistry = Array.isArray(payload)
+					? payload.map(normalizeAvatarEntry).filter(Boolean)
+					: [];
+				avatarRegistry = uniqueAvatarEntries(avatarRegistry.concat(EXTRA_AVATAR_OPTIONS.map(normalizeAvatarEntry).filter(Boolean)));
+			} catch (error) {
+				avatarRegistry = uniqueAvatarEntries(EXTRA_AVATAR_OPTIONS.map(normalizeAvatarEntry).filter(Boolean));
+			}
+			renderAvatarOptions();
+			updatePreview();
+		}
+
+		if (upload) {
+			const fileInput = upload.querySelector("#cvFile");
+			const dropzone = upload.querySelector("[data-cv-dropzone]");
+			const status = upload.querySelector("[data-cv-file-status]");
+			const fileName = upload.querySelector("[data-cv-file-name]");
+			const fileState = upload.querySelector("[data-cv-file-state]");
+			const message = upload.querySelector("[data-cv-upload-message]");
+			const extractUrl = upload.dataset.extractUrl;
+			const saveButton = document.querySelector(".profile-create-actions button[type='submit']");
+			const maxFileSize = 5 * 1024 * 1024;
+			const allowedExtensions = [".pdf", ".docx"];
+
+			function setUploadStatus(state, name, stateText, helperText) {
+				upload.dataset.uploadState = state;
+				if (status) {
+					status.hidden = false;
+				}
+				if (fileName) {
+					fileName.textContent = name || "Archivo seleccionado";
+				}
+				if (fileState) {
+					fileState.textContent = stateText;
+				}
+				if (message) {
+					message.textContent = helperText || stateText;
+				}
+			}
+
+			function clearDragState() {
+				if (dropzone) {
+					dropzone.classList.remove("is-dragging");
+				}
+			}
+
+			function isAllowed(file) {
+				const lowerName = file.name.toLowerCase();
+				return allowedExtensions.some(function (extension) {
+					return lowerName.endsWith(extension);
+				});
+			}
+
+			async function extractFile(file) {
+				if (!file) {
+					return;
+				}
+				if (!isAllowed(file)) {
+					setUploadStatus("error", file.name, "Formato no soportado", "Usa un archivo PDF o DOCX.");
+					return;
+				}
+				if (file.size > maxFileSize) {
+					setUploadStatus("error", file.name, "Archivo muy grande", "El archivo supera 5 MB. Proba con una version mas liviana.");
+					return;
+				}
+
+				setUploadStatus("loading", file.name, "Procesando", "Extrayendo texto del archivo...");
+				if (saveButton) {
+					saveButton.disabled = true;
+				}
+
+				try {
+					const formData = new FormData();
+					formData.append("cvFile", file);
+					const response = await fetch(extractUrl, {
+						method: "POST",
+						body: formData,
+						headers: { "Accept": "application/json" }
+					});
+					const payload = await response.json();
+					if (!payload.success) {
+						setUploadStatus("error", payload.fileName || file.name, "No se pudo extraer texto", payload.error || "Tambien podes pegarlo manualmente.");
+						return;
+					}
+					if (fields.cvText) {
+						fields.cvText.value = payload.text || "";
+						fields.cvText.dispatchEvent(new Event("input", { bubbles: true }));
+					}
+					setUploadStatus("success", payload.fileName || file.name, "Listo", "Texto extraido. Revisalo antes de guardar.");
+				} catch (error) {
+					setUploadStatus("error", file.name, "No se pudo extraer texto", "Tambien podes pegarlo manualmente.");
+				} finally {
+					if (saveButton) {
+						saveButton.disabled = false;
+					}
+				}
+			}
+
+			if (fileInput) {
+				fileInput.addEventListener("change", function () {
+					extractFile(fileInput.files && fileInput.files[0]);
+				});
+			}
+
+			if (dropzone) {
+				["dragenter", "dragover"].forEach(function (eventName) {
+					dropzone.addEventListener(eventName, function (event) {
+						event.preventDefault();
+						dropzone.classList.add("is-dragging");
+					});
+				});
+
+				["dragleave", "drop"].forEach(function (eventName) {
+					dropzone.addEventListener(eventName, function (event) {
+						event.preventDefault();
+						clearDragState();
+					});
+				});
+
+				dropzone.addEventListener("drop", function (event) {
+					const file = event.dataTransfer.files && event.dataTransfer.files[0];
+					extractFile(file);
+				});
+			}
+		}
+
+		function renderProjects() {
+			if (!preview.projects) {
+				return;
+			}
+			const projects = collectProjects();
+			preview.projects.innerHTML = "";
+			if (preview.projectsMeta) {
+				preview.projectsMeta.textContent = projects.length
+					? projects.length + (projects.length === 1 ? " evidencia" : " evidencias")
+					: "Opcional";
+			}
+			if (!projects.length) {
+				preview.projects.innerHTML = "" +
+					"<article class='profile-preview-project is-empty'>" +
+					"<div class='profile-preview-section-head'><span>Proyecto visible opcional</span><small>Sin evidencia todavia</small></div>" +
+					"<strong>Agrega un proyecto si queres mostrar evidencia puntual.</strong>" +
+					"<span>La preview prioriza lo esencial y resume el resto para no crecer sin limite.</span>" +
+					"</article>";
+				return;
+			}
+			projects.slice(0, MAX_VISIBLE_PROJECTS).forEach(function (project) {
+				const card = document.createElement("article");
+				card.className = "profile-preview-project";
+
+				const top = document.createElement("div");
+				top.className = "profile-preview-section-head";
+
+				const label = document.createElement("span");
+				label.textContent = project.evidenceLabel || "Proyecto";
+				top.appendChild(label);
+
+				const small = document.createElement("small");
+				small.textContent = project.skills.length
+					? project.skills.length + (project.skills.length === 1 ? " skill" : " skills")
+					: "Contexto visible";
+				top.appendChild(small);
+				card.appendChild(top);
+
+				const title = document.createElement("strong");
+				title.textContent = project.title || "Proyecto en borrador";
+				card.appendChild(title);
+
+				const copy = document.createElement("span");
+				copy.textContent = buildProjectSummary(project);
+				card.appendChild(copy);
+
+				if (project.skills.length) {
+					const tags = document.createElement("div");
+					tags.className = "profile-preview-tags";
+					project.skills.slice(0, 3).forEach(function (skill) {
+						tags.appendChild(buildSkillBadge(skill));
+					});
+					if (project.skills.length > 3) {
+						tags.appendChild(buildMoreBadge(project.skills.slice(3)));
+					}
+					card.appendChild(tags);
+				}
+
+				preview.projects.appendChild(card);
+			});
+			if (projects.length > MAX_VISIBLE_PROJECTS) {
+				const more = document.createElement("p");
+				more.className = "profile-preview-overflow-note";
+				more.textContent = "+" + (projects.length - MAX_VISIBLE_PROJECTS) + " proyecto" + (projects.length - MAX_VISIBLE_PROJECTS === 1 ? "" : "s") + " mas en el formulario.";
+				preview.projects.appendChild(more);
+			}
+		}
+
+		function updatePreview() {
+			syncAvatarSelection();
+			if (preview.name) {
+				preview.name.textContent = valueOrFallback(fields.name, "Tu perfil laboral");
+			}
+			if (preview.headline) {
+				preview.headline.textContent = valueOrFallback(fields.headline, "Titulo profesional breve");
+			}
+			if (preview.summary) {
+				preview.summary.textContent = valueOrFallback(fields.summary, "Completa un resumen para darle contexto a tu perfil.");
+			}
+			if (preview.roleValue) {
+				preview.roleValue.textContent = selectedText(fields.role, "Sin definir");
+			}
+			if (preview.seniorityValue) {
+				preview.seniorityValue.textContent = selectedText(fields.seniority, "Cualquiera");
+			}
+			if (preview.modeValue) {
+				preview.modeValue.textContent = selectedText(fields.mode, "Enfocado");
+			}
+			if (preview.cvStatus) {
+				const cvReady = fields.cvText && fields.cvText.value && fields.cvText.value.trim();
+				preview.cvStatus.textContent = cvReady ? "CV base listo" : "CV base pendiente";
+				preview.cvStatus.classList.toggle("is-ready", Boolean(cvReady));
+			}
+			renderSkills();
+			renderProjects();
+		}
+
+		Object.keys(fields).forEach(function (key) {
+			const field = fields[key];
+			if (!field) {
+				return;
+			}
+			field.addEventListener("input", updatePreview);
+			field.addEventListener("change", updatePreview);
+		});
+
+		if (avatarSearch) {
+			avatarSearch.addEventListener("input", renderAvatarOptions);
+		}
+
+		if (avatarClear) {
+			avatarClear.addEventListener("click", function () {
+				if (fields.avatarPreset) {
+					fields.avatarPreset.value = DEFAULT_AVATAR_PRESET;
+				}
+				renderAvatarOptions();
+				updatePreview();
+			});
+		}
+
+		if (addProjectButton) {
+			addProjectButton.addEventListener("click", appendProjectItem);
+		}
+
+		if (projectList) {
+			projectList.addEventListener("click", function (event) {
+				const removeButton = event.target.closest("[data-project-remove]");
+				if (!removeButton) {
+					return;
+				}
+				const projectItem = removeButton.closest("[data-project-item]");
+				if (!projectItem) {
+					return;
+				}
+				if (getProjectItems().length === 1) {
+					clearProjectItem(projectItem);
+				} else {
+					projectItem.remove();
+					reindexProjects();
+				}
+				bindProjectFieldListeners();
+				updatePreview();
+			});
+		}
+
+		reindexProjects();
+		bindProjectFieldListeners();
+		renderAvatarOptions();
+		loadAvatarManifest();
+		updatePreview();
+	})();
+</script>
 </body>
 </html>

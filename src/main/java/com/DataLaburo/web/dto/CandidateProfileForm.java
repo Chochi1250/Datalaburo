@@ -12,6 +12,7 @@ public class CandidateProfileForm {
 	private String linkedinUrl;
 	private String githubUrl;
 	private String portfolioUrl;
+	private String avatarPreset;
 	private String targetRole = "UNDECIDED";
 	private String targetSeniority = "ANY";
 	private String searchMode = "FOCUSED";
@@ -102,6 +103,14 @@ public class CandidateProfileForm {
 
 	public void setPortfolioUrl(String portfolioUrl) {
 		this.portfolioUrl = portfolioUrl;
+	}
+
+	public String getAvatarPreset() {
+		return avatarPreset;
+	}
+
+	public void setAvatarPreset(String avatarPreset) {
+		this.avatarPreset = avatarPreset;
 	}
 
 	public String getTargetRole() {

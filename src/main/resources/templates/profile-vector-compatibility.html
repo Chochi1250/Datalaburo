@@ -1,384 +1,579 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
-	<title>DataLaburo - Compatibilidad vectorial</title>
+	<title>DataLaburo - Resultados para tu perfil</title>
 	<link rel="stylesheet" th:href="@{/app.css}"/>
 </head>
-<body class="page-vector-match">
+<body class="page page-vector-match">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<main class="container vector-container">
-	<header class="header vector-page-header">
-		<p class="muted small">Vector-first</p>
-		<h1>Compatibilidad vectorial</h1>
-		<p class="muted" th:if="${profile != null}" th:text="${'Ranking semántico para el perfil: ' + profile.name}">Perfil</p>
-		<p class="muted" th:if="${profile == null && profileId != null}" th:text="${'Perfil id: ' + profileId}">Perfil id</p>
-	</header>
 
-	<section class="actions vector-page-actions">
-		<a class="btn btn-secondary" th:href="@{/profiles}">Volver a perfiles</a>
-		<a class="btn btn-ghost" th:if="${profile != null}" th:href="@{/matching(profileId=${profile.id})}">Usar en matching clásico</a>
+<main class="container vector-match-page">
+	<section class="vector-alert vector-alert-warning" th:if="${warning}">
+		<h2>Hay algo para revisar antes de seguir</h2>
+		<p th:text="${warning}">Warning</p>
 	</section>
 
-	<section class="card vector-profile-card" th:if="${profile != null}">
-		<div>
-			<p class="muted small">Perfil analizado</p>
-			<h2 th:text="${profile.name}">Nombre del perfil</h2>
-			<p th:if="${profile.headline != null && !profile.headline.isBlank()}" th:text="${profile.headline}">Headline</p>
-			<p class="muted" th:if="${profile.summary != null && !profile.summary.isBlank()}"
-			   th:text="${#strings.abbreviate(profile.summary, 260)}">Resumen</p>
-			<p class="muted small">Solo el CV textual entra en el embedding PROFILE. Metadata visible y proyectos ayudan como evidencia, pero no modifican el ranking.</p>
+	<section class="vector-alert vector-alert-error" th:if="${error}">
+		<h2>No se pudo abrir esta lectura</h2>
+		<p th:text="${error}">Error</p>
+	</section>
+
+	<section class="vector-hero" th:if="${profile != null}">
+		<div class="vector-hero-copy">
+			<h1>Resultados para tu perfil</h1>
+			<p>
+				Comparamos tu perfil con oportunidades reales y te mostramos donde el encaje es mas fuerte
+				para que priorices mejor tu busqueda.
+			</p>
+
 		</div>
-		<div>
-			<div class="match-top">
-				<span class="match-badge is-na" th:text="${profile.targetRole != null ? profile.targetRole : 'UNDECIDED'}">UNDECIDED</span>
-				<span class="chip match-chip profile-chip" th:text="${'Seniority: ' + (profile.targetSeniority != null ? profile.targetSeniority : 'ANY')}">Seniority</span>
-				<span class="chip match-chip domain-chip" th:text="${'Modo: ' + (profile.searchMode != null ? profile.searchMode : 'FOCUSED')}">Modo</span>
-				<span class="chip match-chip"
-					  th:classappend="${profileEmbedding != null && profileEmbedding.status.name() == 'READY' ? ' profile-chip' : ' chip-muted'}"
-					  th:text="${profileEmbedding != null ? 'Embedding: ' + profileEmbedding.status : 'Embedding: sin embedding'}">Embedding</span>
+
+		<aside class="vector-hero-help">
+			<div class="vector-hero-help-media">
+				<img th:src="@{/images/avatar card.png}" alt="" loading="lazy"/>
 			</div>
 
-			<div class="chips" th:if="${!#lists.isEmpty(profile.declaredSkillTags)}">
-				<span class="chip match-chip skill-chip"
-					  th:each="skill : ${profile.declaredSkillTags}"
-					  th:attr="data-skill=${#strings.toLowerCase(skill)}"
-					  th:text="${skill}">Skill</span>
+			<div class="vector-hero-help-copy">
+				<span class="vector-help-pill">0-100</span>
+				<h2>Puntaje 0-100</h2>
+				<p>
+					El puntaje representa una lectura orientativa de cercania entre tu perfil y cada oportunidad.
+				</p>
+				<p>
+					No es una decision absoluta de contratacion: sirve para ayudarte a priorizar mejor.
+				</p>
+				<div class="vector-help-scale">
+					<span class="vector-scale-chip is-low">0-39 Bajo</span>
+					<span class="vector-scale-chip is-mid">40-59 Medio</span>
+					<span class="vector-scale-chip is-ready">60-64 Potencial</span>
+					<span class="vector-scale-chip is-high">65-100 Alto</span>
+				</div>
 			</div>
+		</aside>
+	</section>
 
-			<div th:if="${profileProjects != null}">
-				<p class="muted small" th:text="${#lists.isEmpty(profileProjects) ? 'Sin proyectos visibles cargados.' : 'Proyectos visibles: ' + #lists.size(profileProjects)}">Proyectos</p>
-				<div class="chips" th:if="${!#lists.isEmpty(profileProjects)}">
-					<span class="chip match-chip project-skill-chip"
-						  th:each="project, it : ${profileProjects}"
+	<section class="vector-profile-summary"
+			 th:if="${profile != null}"
+			 th:attr="data-profile-role=${profile.targetRole}">
+		<div class="vector-profile-summary-main">
+			<div class="vector-profile-monogram avatar-surface"
+				 data-profile-avatar
+				 th:attr="data-avatar-preset=${profile.avatarPreset},data-avatar-name=${profile.name}"
+				 th:text="${profile.name != null && !profile.name.isBlank() ? #strings.toUpperCase(#strings.substring(profile.name, 0, 1)) : 'D'}">D</div>
+
+			<div class="vector-profile-summary-copy">
+				<h2 th:text="${profile.name}">Nombre del perfil</h2>
+				<p class="vector-profile-headline"
+				   th:text="${profile.headline != null && !profile.headline.isBlank() ? profile.headline : (profile.summary != null && !profile.summary.isBlank() ? #strings.abbreviate(profile.summary, 160) : 'Perfil listo para revisar oportunidades cercanas.')}">
+					Resumen breve
+				</p>
+
+				<div class="vector-profile-chips">
+					<th:block th:switch="${profile.targetRole}">
+						<span class="chip vector-profile-chip" th:case="'BACKEND'">Backend</span>
+						<span class="chip vector-profile-chip" th:case="'DOTNET_BACKEND'">.NET backend</span>
+						<span class="chip vector-profile-chip" th:case="'FRONTEND'">Frontend</span>
+						<span class="chip vector-profile-chip" th:case="'FULL_STACK'">Full stack</span>
+						<span class="chip vector-profile-chip" th:case="'DOTNET_FULLSTACK'">.NET full stack</span>
+						<span class="chip vector-profile-chip" th:case="'DATA'">Data/BI</span>
+						<span class="chip vector-profile-chip" th:case="'DATABASE'">Base de datos</span>
+						<span class="chip vector-profile-chip" th:case="'IT_SUPPORT'">IT Support</span>
+						<span class="chip vector-profile-chip" th:case="'APP_SUPPORT'">App Support</span>
+						<span class="chip vector-profile-chip" th:case="'SECURITY_OPS'">Security Ops</span>
+						<span class="chip vector-profile-chip" th:case="'IAM'">IAM</span>
+						<span class="chip vector-profile-chip" th:case="*">Sin definir</span>
+					</th:block>
+
+					<th:block th:switch="${profile.targetSeniority}">
+						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'TRAINEE'">Trainee</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'JUNIOR'">Junior</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'MID'">Semi senior</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'SENIOR'">Senior</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'LEAD'">Lead</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="*">Seniority flexible</span>
+					</th:block>
+
+					<span class="chip skill-chip tech-badge is-text-only vector-stack-badge vector-profile-chip vector-profile-chip-skill"
+						  th:each="skill, it : ${profile.declaredSkillTags}"
 						  th:if="${it.index < 3}"
+						  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+						<span class="tech-badge-label" th:text="${skill}">Skill</span>
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="vector-profile-summary-side">
+			<a class="btn btn-primary"
+			   th:href="@{/profiles/{id}/edit(id=${profile.id},returnTo=${'/profiles/' + profile.id + '/vector-first-compatibility'})}">Ver mi perfil</a>
+		</div>
+	</section>
+
+	<section class="vector-metrics-row" th:if="${response != null && overview != null}">
+		<article class="vector-metric-card">
+			<div class="vector-metric-icon">
+				<img th:src="@{/images/1f4bc.webp}" alt="" loading="lazy"/>
+			</div>
+			<div>
+				<p>Oportunidades</p>
+				<strong th:text="${overview.offersAnalyzed}">20</strong>
+				<span>En este ranking visible</span>
+			</div>
+		</article>
+
+		<article class="vector-metric-card">
+			<div class="vector-metric-icon is-success">
+				<img th:src="@{/images/promedio.png}" alt="" loading="lazy"/>
+			</div>
+			<div>
+				<p>Puntaje promedio</p>
+				<strong th:text="${overview.averageScore + '/100'}">64/100</strong>
+				<span>Cercania promedio del listado</span>
+			</div>
+		</article>
+
+		<article class="vector-metric-card">
+			<div class="vector-metric-icon is-warning">
+				<img th:src="@{/images/mejor puntaje.png}" alt="" loading="lazy"/>
+			</div>
+			<div>
+				<p>Mejor puntaje</p>
+				<strong th:text="${overview.bestScore + '/100'}">78/100</strong>
+				<span>Lectura mas cercana de esta tanda</span>
+			</div>
+		</article>
+
+		<article class="vector-metric-card">
+			<div class="vector-metric-icon is-mode">
+				<img th:src="@{/images/pngtree-magnifying-glass-icon-image_1128382.png}" alt="" loading="lazy"/>
+			</div>
+			<div>
+				<p>Modo de busqueda</p>
+				<strong class="vector-metric-text-value" th:text="${overview.searchModeLabel}">Enfocado</strong>
+				<span th:text="${overview.profileUpdatedLabel != null ? overview.profileUpdatedLabel : overview.searchModeDescription}">Actualizado recientemente</span>
+			</div>
+		</article>
+	</section>
+
+	<details class="vector-profile-context" th:if="${profile != null && ((profileEvidence != null && profileEvidence.hasItems) || (profileProjects != null && !#lists.isEmpty(profileProjects)) || !#lists.isEmpty(profile.declaredSkillTags))}">
+		<summary>Ver mas contexto del perfil</summary>
+
+		<div class="vector-profile-context-grid">
+			<div th:if="${!#lists.isEmpty(profile.declaredSkillTags)}">
+				<h3>Skills declaradas</h3>
+				<div class="chips">
+					<span class="chip skill-chip tech-badge is-text-only vector-stack-badge"
+						  th:each="skill, it : ${profile.declaredSkillTags}"
+						  th:if="${it.index < 6}"
+						  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+						<span class="tech-badge-label" th:text="${skill}">Skill</span>
+					</span>
+				</div>
+			</div>
+
+			<div th:if="${profileProjects != null && !#lists.isEmpty(profileProjects)}">
+				<h3>Proyectos visibles</h3>
+				<div class="chips">
+					<span class="chip vector-context-chip"
+						  th:each="project, it : ${profileProjects}"
+						  th:if="${it.index < 4}"
 						  th:text="${project.title}">Proyecto</span>
-					<span class="chip match-chip chip-muted"
-						  th:if="${#lists.size(profileProjects) > 3}"
-						  th:text="${'+' + (#lists.size(profileProjects) - 3) + ' mas'}">+N</span>
+				</div>
+			</div>
+
+			<div th:if="${profileEvidence != null && !#lists.isEmpty(profileEvidence.strongDomains)}">
+				<h3>Dominios fuertes</h3>
+				<div class="chips">
+					<span class="chip vector-context-chip"
+						  th:each="domain : ${profileEvidence.strongDomains}"
+						  th:text="${domain}">Dominio</span>
+				</div>
+			</div>
+
+			<div th:if="${profileEvidence != null && !#lists.isEmpty(profileEvidence.transitionDomains)}">
+				<h3>Dominios de transicion</h3>
+				<div class="chips">
+					<span class="chip vector-context-chip vector-context-chip-soft"
+						  th:each="domain : ${profileEvidence.transitionDomains}"
+						  th:text="${domain}">Dominio</span>
 				</div>
 			</div>
 		</div>
+	</details>
+
+	<section class="vector-ranking-note" th:if="${response != null}">
+		<p>
+			El orden visible sigue la cercania entre tu perfil y cada oportunidad. Los filtros y la navegacion
+			solo ayudan a leer mejor los resultados: no cambian el ranking real.
+		</p>
 	</section>
 
-	<section class="card" th:if="${warning}">
-		<p class="muted" th:text="${warning}"></p>
-	</section>
+	<section class="vector-opportunities" data-carousel th:if="${response != null && !#lists.isEmpty(results)}">
+		<div class="vector-opportunities-head">
+			<div class="vector-opportunities-title">
+				<h2>Oportunidades cercanas</h2>
+			</div>
 
-	<section class="card" th:if="${error}">
-		<h2>No se pudo ejecutar la vista vector-first</h2>
-		<p class="error" th:text="${error}"></p>
-		<p class="muted">No se ejecuta backfill ni procesamiento de embeddings desde esta pantalla.</p>
-	</section>
-
-	<section class="card vector-summary" th:if="${response != null}">
-		<header class="header">
-			<h2>Resumen del análisis</h2>
-			<p class="muted">Resultados recuperados con embeddings y ordenados por ranking vectorial activo.</p>
-			<p class="muted small">El ranking activo se ordena por similitud semantica mediante embeddings. Los diagnosticos interpretan rol, seniority, brechas y evidencia, pero no reordenan resultados.</p>
-		</header>
-		<div class="vector-metrics">
-			<div class="vector-metric">
-				<p class="muted small">Ofertas recuperadas</p>
-				<strong th:text="${#lists.size(results)}">0</strong>
-			</div>
-			<div class="vector-metric">
-				<p class="muted small">Limite comparado</p>
-				<strong th:text="${response.retrieval.limit}">20</strong>
-			</div>
-			<div class="vector-metric">
-				<p class="muted small">Modelo</p>
-				<strong th:text="${response.embeddingModel}">BAAI/bge-m3</strong>
-			</div>
-			<div class="vector-metric">
-				<p class="muted small">Ranking activo</p>
-				<strong>Vectorial</strong>
+			<div class="vector-opportunities-tools">
+				<div class="vector-filter-panel">
+					<div class="vector-filter-pills" role="tablist" aria-label="Filtros de resultados">
+						<button type="button" class="vector-filter-pill is-active" data-filter="all">Todas</button>
+						<button type="button" class="vector-filter-pill" data-filter="high-score">Más cercanas</button>
+						<button type="button" class="vector-filter-pill" data-filter="medium-score">Buen potencial</button>
+						<button type="button" class="vector-filter-pill" data-filter="gap">Puntos a reforzar</button>
+					</div>
+				</div>
 			</div>
 		</div>
-		<details class="vector-technical-note">
-			<summary>Ver detalle técnico</summary>
-			<div class="grid-2">
-				<div>
-					<p class="muted small">Estrategia</p>
-					<p><code th:text="${response.retrieval.strategy}">VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC</code></p>
+
+		<div class="vector-carousel">
+			<div class="vector-carousel-controls" aria-label="Navegacion de oportunidades">
+				<button type="button" class="vector-carousel-arrow is-prev" data-carousel-prev aria-label="Ver oportunidades anteriores">
+					<span aria-hidden="true">&#8249;</span>
+				</button>
+				<button type="button" class="vector-carousel-arrow is-next" data-carousel-next aria-label="Ver mas oportunidades">
+					<span aria-hidden="true">&#8250;</span>
+				</button>
+			</div>
+			<div class="vector-carousel-viewport" data-carousel-viewport>
+				<div class="vector-carousel-track" data-carousel-track>
+					<article class="vector-opportunity-card"
+							 th:each="row : ${results}"
+							 th:style="|--score-progress:${row.closenessScore};|"
+							 th:attr="data-score=${row.closenessScore},
+									  data-score-band=${row.scoreBand},
+									  data-gap-level=${row.gapLevel},
+									  data-modality=${row.modalityCode},
+									  data-category-code=${row.categoryCode}">
+						<div class="vector-opportunity-topbar" th:attr="data-score-band=${row.scoreBand}"></div>
+
+						<div class="vector-opportunity-topline">
+							<div class="vector-opportunity-brand">
+								<span class="vector-rank-chip"
+									  th:attr="data-score-band=${row.scoreBand}"
+									  th:text="${row.analysisRank}">1</span>
+								<span class="company-mark vector-company-mark" th:attr="data-company=${row.company}">
+									<img class="logo-img"
+										 th:if="${row.companyLogoUrl != null && !row.companyLogoUrl.isBlank()}"
+										 th:src="${row.companyLogoUrl}"
+										 alt=""
+										 loading="lazy"
+										 decoding="async"
+										 referrerpolicy="no-referrer"
+										 onload="this.parentElement.querySelector('.logo-fallback').style.display='none';"
+										 onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+									<span class="logo-fallback"
+										  th:style="${row.companyLogoUrl != null && !row.companyLogoUrl.isBlank()} ? 'display:none' : ''"
+										  th:text="${row.companyInitial != null && !row.companyInitial.isBlank() ? row.companyInitial : (row.company != null && !row.company.isBlank() ? #strings.substring(row.company,0,1) : (row.title != null && !row.title.isBlank() ? #strings.substring(row.title,0,1) : '?'))}">A</span>
+								</span>
+							</div>
+							<div class="vector-score-box" th:attr="data-score-band=${row.scoreBand}">
+								<span class="vector-score-label">Puntaje</span>
+								<span class="vector-score-value">
+									<strong class="vector-score-number" th:text="${row.closenessScore}">65</strong>
+									<small>/100</small>
+								</span>
+							</div>
+						</div>
+
+						<div class="vector-opportunity-copy">
+							<h3 th:text="${row.title}">Technical Support Jr.</h3>
+							<p class="vector-opportunity-company"
+							   th:text="${row.company != null && !row.company.isBlank() ? row.company : 'Empresa no informada'}">Empresa</p>
+
+							<div class="vector-opportunity-meta"
+								 th:with="compactLocation=${row.locationLabel == null ? null : #strings.replace(#strings.replace(#strings.replace(row.locationLabel, 'Ciudad Autónoma de Buenos Aires', 'Buenos Aires'), ', Provincia de Buenos Aires, Argentina', ', AR'), ', Argentina', ', AR')}"
+								 th:if="${(compactLocation != null && !compactLocation.isBlank()) || (row.modalityLabel != null && !row.modalityLabel.isBlank()) || (row.opportunityTypeLabel != null && !row.opportunityTypeLabel.isBlank())}">
+								<img class="vector-opportunity-location-icon" th:src="@{/images/ubicacion.png}" alt="" aria-hidden="true" />
+								<span th:if="${compactLocation != null && !compactLocation.isBlank()}" th:text="${compactLocation}">Ubicacion</span>
+								<span th:if="${row.modalityLabel != null && !row.modalityLabel.isBlank()}" th:text="${row.modalityLabel}">Modalidad</span>
+								<span th:if="${row.opportunityTypeLabel != null && !row.opportunityTypeLabel.isBlank()}" th:text="${row.opportunityTypeLabel}">Tipo</span>
+							</div>
+						</div>
+
+						<div class="vector-opportunity-body">
+							<div class="chips vector-opportunity-tags" th:if="${!#lists.isEmpty(row.visibleSkills)}">
+								<span class="chip skill-chip tech-badge is-text-only vector-stack-badge"
+									  th:each="skill, it : ${row.visibleSkills}"
+									  th:if="${it.index < 3}"
+									  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+									<span class="tech-badge-label" th:text="${skill}">Skill</span>
+								</span>
+							</div>
+
+							<div class="vector-opportunity-signals">
+								<th:block th:each="diagnostic, it : ${row.targetDiagnostics}" th:if="${it.index < 2}">
+									<span class="vector-signal-badge"
+										  th:classappend="${diagnostic.category == 'positive' ? ' is-positive' : (diagnostic.category == 'warning' ? ' is-warning' : (diagnostic.category == 'adjacent' ? ' is-adjacent' : ' is-neutral'))}"
+										  th:text="${diagnostic.label}">Senal</span>
+								</th:block>
+								<span class="vector-signal-badge is-category"
+									  th:if="${#lists.isEmpty(row.targetDiagnostics) && row.categoryLabel != null && !row.categoryLabel.isBlank()}"
+									  th:text="${row.categoryLabel}">Lectura</span>
+								<span class="vector-signal-badge is-evidence"
+									  th:text="${row.hasEvidence ? row.evidenceLabel : 'Evidencia por reforzar'}">Evidencia</span>
+								<span class="vector-signal-badge is-gap"
+									  th:if="${#lists.isEmpty(row.targetDiagnostics) && (row.categoryLabel == null || row.categoryLabel.isBlank())}"
+									  th:text="${row.gapLabel}">Brecha</span>
+							</div>
+						</div>
+
+						<div class="vector-opportunity-actions">
+							<a class="btn btn-secondary btn-sm"
+							   th:href="@{/profiles/{profileId}/vector-first-compatibility/jobs/{jobId}(profileId=${profile.id},jobId=${row.jobId},limit=${limit})}">
+								<span class="vector-action-icon" aria-hidden="true">
+									<svg viewBox="0 0 24 24" focusable="false">
+										<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+										<circle cx="12" cy="12" r="3"/>
+									</svg>
+								</span>
+								Ver detalle
+							</a>
+							<a class="btn btn-primary btn-sm"
+							   th:href="@{/jobs(selectedJobId=${row.jobId})}">
+								<span class="vector-action-icon" aria-hidden="true">
+									<img th:src="@{/images/external-link.png}" alt="" loading="lazy"/>
+								</span>
+								Ver oferta
+							</a>
+						</div>
+					</article>
+				</div>
+			</div>
+		</div>
+
+		<div class="vector-carousel-footer">
+			<div class="vector-carousel-dots" data-carousel-dots></div>
+			<p class="vector-carousel-status" data-carousel-status></p>
+		</div>
+	</section>
+
+	<section class="vector-empty-state" th:if="${response != null && #lists.isEmpty(results)}">
+		<h2>Sin oportunidades cercanas por ahora</h2>
+		<p>No encontramos ofertas comparables para este perfil con el limite actual.</p>
+	</section>
+
+	<section class="vector-secondary-stack" th:if="${response != null}">
+		<details class="vector-secondary-panel" th:if="${!#lists.isEmpty(profileImprovementSuggestions)}">
+			<summary>
+				<div class="vector-secondary-icon vector-metric-icon is-warning is-suggestion">
+					<img th:src="@{/images/idea-bulb-icon.svg}" alt="" aria-hidden="true" />
 				</div>
 				<div>
-					<p class="muted small">Embeddings</p>
-					<p>
-						<code th:text="${response.embeddingModel}">BAAI/bge-m3</code>
-						<span class="muted" th:text="${' - ' + response.embeddingDimensions + ' dims'}"> - 1024 dims</span>
-					</p>
+					<strong>Sugerencias generales del perfil</strong>
+					<span>Acciones rapidas para fortalecer tu perfil y aumentar tu compatibilidad.</span>
+				</div>
+			</summary>
+
+			<div class="vector-secondary-body">
+				<article class="vector-secondary-item" th:each="suggestion : ${profileImprovementSuggestions}">
+					<div class="chips">
+						<span class="vector-signal-badge is-category" th:text="${suggestion.categoryLabel}">Categoria</span>
+					</div>
+					<p th:text="${suggestion.message}">Mensaje</p>
+					<p class="muted small"
+					   th:if="${suggestion.reason != null && !suggestion.reason.isBlank()}"
+					   th:text="${suggestion.reason}">Motivo</p>
+				</article>
+			</div>
+		</details>
+
+		<details class="vector-secondary-panel" th:if="${!#lists.isEmpty(profileRoadmaps)}">
+			<summary>
+				<div class="vector-secondary-icon vector-metric-icon is-mode is-roadmap">
+					<img th:src="@{/images/mapa.png}" alt="" aria-hidden="true" />
 				</div>
 				<div>
-					<p class="muted small">Orden mostrado</p>
-					<p><code>analysisRank</code> <span class="muted">igual a</span> <code>vectorRank</code></p>
+					<strong>Roadmaps orientativos</strong>
+					<span>Rutas sugeridas para cerrar brechas y avanzar hacia tus proximos objetivos.</span>
 				</div>
-				<div>
-					<p class="muted small">Reranking</p>
-					<p class="muted">Las señales sugeridas son diagnósticas y no alteran el ranking.</p>
-				</div>
+			</summary>
+
+			<div class="vector-secondary-body vector-roadmap-grid">
+				<article class="vector-secondary-item vector-roadmap-card"
+						 th:each="roadmap : ${profileRoadmaps}"
+						 th:attr="data-roadmap-tone=${#strings.toLowerCase(roadmap.toneLabel)}">
+					<div class="vector-roadmap-badges">
+						<span class="vector-signal-badge is-category vector-roadmap-category" th:text="${roadmap.toneLabel}">Tono</span>
+						<span class="chip skill-chip tech-badge is-text-only vector-stack-badge vector-roadmap-skill"
+							  th:attr="data-skill=${#strings.toLowerCase(roadmap.skillOrFamily)},data-tech=${roadmap.skillOrFamily}">
+							<span class="tech-badge-label" th:text="${roadmap.skillOrFamily}">Skill</span>
+						</span>
+					</div>
+					<h3 th:text="${roadmap.title}">Roadmap</h3>
+					<p class="muted small" th:text="${roadmap.whyItMatters}">Motivo</p>
+
+					<div th:if="${!#lists.isEmpty(roadmap.initialSteps)}">
+						<h4>Pasos iniciales</h4>
+						<ul class="vector-list">
+							<li th:each="step : ${roadmap.initialSteps}" th:text="${step}">Paso</li>
+						</ul>
+					</div>
+
+					<div th:if="${!#lists.isEmpty(roadmap.evidenceIdeas)}">
+						<h4>Evidencia posible</h4>
+						<ul class="vector-list">
+							<li th:each="idea : ${roadmap.evidenceIdeas}" th:text="${idea}">Idea</li>
+						</ul>
+					</div>
+				</article>
 			</div>
 		</details>
 	</section>
 
-	<section class="card" th:if="${response != null && #lists.isEmpty(results)}">
-		<h2>Sin resultados vectoriales</h2>
-		<p class="muted">No hay ofertas con embeddings disponibles para este perfil y límite.</p>
-	</section>
-
-	<section class="card vector-secondary-block" th:if="${response != null && !#lists.isEmpty(profileImprovementSuggestions)}">
-		<h2>Sugerencias generales del perfil</h2>
-		<p class="muted small">Recomendaciones orientativas sobre la presentación visible del perfil. No modifican embeddings, ranking ni matching.</p>
-		<div th:each="suggestion : ${profileImprovementSuggestions}" class="vector-mini-relation">
-			<div class="chips">
-				<span class="chip match-chip signal-chip" th:text="${suggestion.categoryLabel}">Sugerencia</span>
-			</div>
-			<p th:text="${suggestion.message}">Mensaje</p>
-			<p class="muted small" th:if="${suggestion.reason != null && !suggestion.reason.isBlank()}" th:text="${suggestion.reason}">Motivo</p>
-		</div>
-	</section>
-
-	<section class="card vector-secondary-block" th:if="${response != null && !#lists.isEmpty(profileRoadmaps)}">
-		<h2>Roadmaps orientativos por brechas repetidas</h2>
-		<p class="muted small">Orientación basada en brechas observadas en ofertas cercanas. No modifica el ranking ni representa una promesa de resultado.</p>
-		<div class="grid-2">
-			<article class="vector-mini-relation" th:each="roadmap : ${profileRoadmaps}">
-				<div class="chips">
-					<span class="chip match-chip signal-chip" th:text="${roadmap.toneLabel}">Orientativo</span>
-					<span class="chip match-chip skill-chip" th:text="${roadmap.skillOrFamily}">Skill</span>
-				</div>
-				<h3 th:text="${roadmap.title}">Roadmap</h3>
-				<p class="muted small" th:text="${roadmap.whyItMatters}">Motivo</p>
-
-				<div th:if="${!#lists.isEmpty(roadmap.initialSteps)}">
-					<p class="muted small">Pasos iniciales</p>
-					<ul class="small">
-						<li th:each="step : ${roadmap.initialSteps}" th:text="${step}">Paso</li>
-					</ul>
-				</div>
-
-				<div th:if="${!#lists.isEmpty(roadmap.evidenceIdeas)}">
-					<p class="muted small">Evidencia posible</p>
-					<ul class="small">
-						<li th:each="idea : ${roadmap.evidenceIdeas}" th:text="${idea}">Evidencia</li>
-					</ul>
-				</div>
-
-				<div th:if="${!#lists.isEmpty(roadmap.relatedSignals)}">
-					<p class="muted small">Señales relacionadas</p>
-					<div class="chips">
-						<span class="chip match-chip chip-muted"
-							  th:each="signal : ${roadmap.relatedSignals}"
-							  th:text="${signal}">Señal</span>
-					</div>
-				</div>
-			</article>
-		</div>
-	</section>
-
-	<section class="vector-results" th:if="${response != null && !#lists.isEmpty(results)}">
-		<header class="header">
-			<h2>Ranking de ofertas</h2>
-			<p class="muted">Lectura principal del matching semántico. Las señales internas quedan separadas para evitar ruido visual.</p>
-		</header>
-
-		<div class="grid match-grid vector-match-grid">
-			<article class="card vector-result-card" th:each="row : ${results}">
-				<header class="header vector-result-header">
-					<div class="vector-result-title">
-						<div class="match-top">
-							<span class="match-badge vector-rank-badge" th:text="${'#' + row.analysisRank}">#1</span>
-							<span class="chip match-chip vector-rank-chip" th:text="${'Ranking vectorial #' + row.vectorRank}">Ranking vectorial</span>
-						</div>
-						<h3 th:text="${row.title}">Titulo</h3>
-						<p class="muted" th:text="${row.company}">Empresa</p>
-					</div>
-					<div class="vector-score-card">
-						<p class="muted small">Similaridad</p>
-						<strong th:text="${#numbers.formatDecimal(row.vectorSimilarity * 100, 1, 1) + '%'}">82.4%</strong>
-					</div>
-				</header>
-
-				<div class="match-top vector-signal-row">
-					<span class="match-badge compat-badge"
-						  th:attr="data-category=${row.categoryCode}"
-						  th:text="${row.categoryLabel}">Categoria</span>
-					<span class="chip match-chip evidence-chip" th:text="${'Evidencia: ' + row.evidenceLabel}">Evidencia</span>
-					<span class="chip match-chip confidence-chip" th:text="${'Confianza: ' + row.confidenceLabel}">Confianza</span>
-					<span class="chip match-chip domain-chip">
-						<span th:text="${row.detectedRoleLabel}">Rol</span>
-						<span th:text="${' - ' + row.detectedSeniorityLabel}"> - Seniority</span>
-					</span>
-				</div>
-
-				<div class="chips" th:if="${!#lists.isEmpty(row.targetDiagnostics)}">
-					<span class="chip match-chip target-diag-chip"
-						  th:each="diagnostic : ${row.targetDiagnostics}"
-						  th:classappend="${diagnostic.category == 'positive' ? ' is-positive' : (diagnostic.category == 'warning' ? ' is-warning' : (diagnostic.category == 'adjacent' ? ' is-adjacent' : (diagnostic.category == 'mode' ? ' is-mode' : ' is-neutral')))}"
-						  th:title="${diagnostic.detail}"
-						  th:text="${diagnostic.label}">Diagnóstico</span>
-				</div>
-
-				<div class="vector-explanation" th:if="${row.explanation != null && !row.explanation.isBlank()}">
-					<p class="muted small">Explicacion breve</p>
-					<p th:text="${row.explanation}"></p>
-				</div>
-
-				<div class="vector-secondary-block" th:if="${row.requirementChecklist != null && row.requirementChecklist.hasItems}">
-					<p class="muted small">Checklist diagnóstico preliminar</p>
-					<p class="muted small">No es un filtro, no decide aptitud y no modifica el ranking.</p>
-
-					<div th:if="${!#lists.isEmpty(row.requirementChecklist.presentSkills)}">
-						<p class="muted small">Presentes</p>
-						<div class="chips">
-							<span class="chip match-chip skill-chip"
-								  th:each="skill : ${row.requirementChecklist.presentSkills}"
-								  th:attr="data-skill=${#strings.toLowerCase(skill)}"
-								  th:text="${skill}">Skill</span>
-						</div>
-					</div>
-
-					<div class="grid-2 vector-gap-grid">
-						<div th:if="${!#lists.isEmpty(row.requirementChecklist.missingCriticalSkills)}">
-							<p class="muted small">Faltantes críticos</p>
-							<div class="chips">
-								<span class="chip match-chip skill-chip gap-chip is-critical"
-									  th:each="skill : ${row.requirementChecklist.missingCriticalSkills}"
-									  th:attr="data-skill=${#strings.toLowerCase(skill)}"
-									  th:text="${skill}">Skill</span>
-							</div>
-						</div>
-						<div th:if="${!#lists.isEmpty(row.requirementChecklist.missingSecondarySkills)}">
-							<p class="muted small">Faltantes secundarios</p>
-							<div class="chips">
-								<span class="chip match-chip skill-chip gap-chip"
-									  th:each="skill : ${row.requirementChecklist.missingSecondarySkills}"
-									  th:attr="data-skill=${#strings.toLowerCase(skill)}"
-									  th:text="${skill}">Skill</span>
-							</div>
-						</div>
-					</div>
-
-					<div th:if="${!#lists.isEmpty(row.requirementChecklist.transferableSkills)}">
-						<p class="muted small">Transferibles</p>
-						<div th:each="skill : ${row.requirementChecklist.transferableSkills}" class="vector-mini-relation">
-							<div class="chips">
-								<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(skill.from)}" th:text="${skill.from}">from</span>
-								<span class="chip chip-muted">-&gt;</span>
-								<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(skill.to)}" th:text="${skill.to}">to</span>
-								<span class="chip match-chip evidence-chip" th:if="${skill.strengthLabel != null}" th:text="${skill.strengthLabel}">strength</span>
-							</div>
-							<p class="muted small" th:if="${skill.reason != null && !skill.reason.isBlank()}" th:text="${skill.reason}">Reason</p>
-						</div>
-					</div>
-
-					<div th:if="${!#lists.isEmpty(row.requirementChecklist.partialRelations)}">
-						<p class="muted small">Relaciones parciales</p>
-						<div th:each="signal : ${row.requirementChecklist.partialRelations}" class="vector-mini-relation">
-							<div class="chips">
-								<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(signal.candidateSkill)}" th:text="${signal.candidateSkill}">candidate</span>
-								<span class="chip chip-muted">-&gt;</span>
-								<span class="chip match-chip skill-chip" th:attr="data-skill=${#strings.toLowerCase(signal.targetSkill)}" th:text="${signal.targetSkill}">target</span>
-								<span class="chip match-chip evidence-chip" th:text="${signal.relationLabel}">relation</span>
-							</div>
-							<p class="muted small" th:if="${signal.reason != null && !signal.reason.isBlank()}" th:text="${signal.reason}">Reason</p>
-						</div>
-					</div>
-
-					<div th:if="${!#lists.isEmpty(row.requirementChecklist.suggestions)}">
-						<p class="muted small">Sugerencias</p>
-						<div class="chips">
-							<span class="chip match-chip roadmap-chip"
-								  th:each="item : ${row.requirementChecklist.suggestions}"
-								  th:text="${item}">Sugerencia</span>
-						</div>
-					</div>
-				</div>
-
-				<div class="vector-secondary-block" th:if="${!#lists.isEmpty(row.improvementSuggestions)}">
-					<p class="muted small">Sugerencias para mejorar CV/perfil</p>
-					<p class="muted small">Recomendaciones orientativas basadas en la evidencia disponible. No modifican el ranking ni implican aptitud.</p>
-					<div th:each="suggestion, it : ${row.improvementSuggestions}" th:if="${it.index < 3}" class="vector-mini-relation">
-						<div class="chips">
-							<span class="chip match-chip signal-chip" th:text="${suggestion.categoryLabel}">Sugerencia</span>
-						</div>
-						<p th:text="${suggestion.message}">Mensaje</p>
-						<p class="muted small" th:if="${suggestion.reason != null && !suggestion.reason.isBlank()}" th:text="${suggestion.reason}">Motivo</p>
-					</div>
-				</div>
-
-				<details class="vector-diagnostic-details" th:if="${row.hasDiagnostic || !#lists.isEmpty(row.targetDiagnostics)}">
-					<summary>Diagnóstico interno</summary>
-					<p class="muted">
-						Estos campos no cambian el orden mostrado, no son ranking real, no activan reranking y no representan un score híbrido productivo.
-					</p>
-
-					<div th:if="${!#lists.isEmpty(row.targetDiagnostics)}">
-						<p class="muted small">Diagnóstico contra objetivo del perfil</p>
-						<ul class="small">
-							<li th:each="diagnostic : ${row.targetDiagnostics}" th:text="${diagnostic.detail}">Detalle</li>
-						</ul>
-					</div>
-
-					<div class="grid-2">
-						<div>
-							<p class="muted small">Bucket diagnóstico</p>
-							<p>
-								<span th:text="${row.bucketLabel}">N/A</span>
-								<code class="muted" th:if="${row.bucketCode != null}" th:text="${row.bucketCode}">BUCKET</code>
-							</p>
-						</div>
-						<div>
-							<p class="muted small">Ranking sugerido diagnóstico</p>
-							<p>
-								<span th:text="${row.suggestedRerankRank != null ? row.suggestedRerankRank : 'N/A'}">N/A</span>
-								<span class="muted" th:text="${row.suggestedRankDelta != null ? ' - delta ' + row.suggestedRankDelta : ''}"></span>
-							</p>
-						</div>
-					</div>
-
-					<div th:if="${!#lists.isEmpty(row.rerankWarnings)}">
-						<p class="muted small">Advertencias</p>
-						<div class="chips">
-							<span class="chip match-chip warning-chip"
-								  th:each="warning : ${row.rerankWarnings}"
-								  th:title="${warning.detail}"
-								  th:text="${warning.label}">Warning</span>
-						</div>
-					</div>
-					<p class="muted small" th:if="${#lists.isEmpty(row.rerankWarnings)}">Sin advertencias diagnósticas relevantes.</p>
-
-					<div th:if="${!#lists.isEmpty(row.rerankReasons)}">
-						<p class="muted small">Razones diagnósticas</p>
-						<div class="chips">
-							<span class="chip match-chip signal-chip"
-								  th:each="reason, it : ${row.rerankReasons}"
-								  th:if="${it.index < 5}"
-								  th:title="${reason.detail}"
-								  th:text="${reason.label}">Reason</span>
-							<span class="chip match-chip chip-muted" th:if="${#lists.size(row.rerankReasons) > 5}" th:text="${'+' + (#lists.size(row.rerankReasons) - 5) + ' mas'}">+N</span>
-						</div>
-					</div>
-
-					<div th:if="${!#lists.isEmpty(row.rerankSignals)}">
-						<p class="muted small">Señales diagnósticas</p>
-						<div th:each="signal, it : ${row.rerankSignals}" th:if="${it.index < 5}" class="vector-mini-relation">
-							<div class="chips">
-								<span class="chip match-chip signal-chip" th:title="${signal.name}" th:text="${signal.label}">SIGNAL</span>
-								<span class="chip match-chip evidence-chip" th:if="${signal.polarityLabel != null}" th:text="${signal.polarityLabel}">POLARITY</span>
-							</div>
-							<p class="muted small" th:if="${signal.detail != null && !signal.detail.isBlank()}" th:text="${signal.detail}">Detail</p>
-						</div>
-					</div>
-				</details>
-
-				<div class="actions">
-					<a class="btn btn-secondary btn-sm" th:href="@{/jobs/{id}(id=${row.jobId})}">Ver oferta</a>
-				</div>
-			</article>
-		</div>
-	</section>
 </main>
+
+<script th:src="@{/profile-avatar-display.js}"></script>
+<script th:src="@{/technology-visual-catalog.js}"></script>
+<script>
+	(function () {
+		const carousel = document.querySelector("[data-carousel]");
+		if (!carousel) {
+			return;
+		}
+
+		const viewport = carousel.querySelector("[data-carousel-viewport]");
+		const track = carousel.querySelector("[data-carousel-track]");
+		const prevButton = carousel.querySelector("[data-carousel-prev]");
+		const nextButton = carousel.querySelector("[data-carousel-next]");
+		const dotsHost = document.querySelector("[data-carousel-dots]");
+		const status = document.querySelector("[data-carousel-status]");
+		const filters = Array.from(document.querySelectorAll("[data-filter]"));
+		const cards = Array.from(track.querySelectorAll(".vector-opportunity-card"));
+
+		const state = {
+			filter: "all",
+			page: 0,
+			cardsPerView: cardsPerView()
+		};
+
+		function cardsPerView() {
+			if (window.innerWidth < 760) {
+				return 1;
+			}
+			if (window.innerWidth < 1080) {
+				return 2;
+			}
+			return 4;
+		}
+
+		function filteredCards() {
+			return cards.filter(card => !card.hidden);
+		}
+
+		function matchesFilter(card, filter) {
+			const score = Number(card.dataset.score || "0");
+			switch (filter) {
+				case "high-score":
+					return score >= 65;
+				case "medium-score":
+					return score >= 60 && score < 65;
+				case "gap":
+					return card.dataset.gapLevel !== "low";
+				default:
+					return true;
+			}
+		}
+
+		function scrollToPage(page, behavior) {
+			const visibleCards = filteredCards();
+			if (!visibleCards.length) {
+				viewport.scrollTo({ left: 0, behavior: behavior || "auto" });
+				return;
+			}
+
+			const targetIndex = Math.min(page * state.cardsPerView, visibleCards.length - 1);
+			const targetCard = visibleCards[targetIndex];
+			const left = targetCard.offsetLeft - track.offsetLeft;
+			viewport.scrollTo({ left, behavior: behavior || "smooth" });
+		}
+
+		function renderDots(totalPages) {
+			dotsHost.innerHTML = "";
+			for (let index = 0; index < totalPages; index += 1) {
+				const dot = document.createElement("button");
+				dot.type = "button";
+				dot.className = "vector-carousel-dot" + (index === state.page ? " is-active" : "");
+				dot.setAttribute("aria-label", "Ir al bloque " + (index + 1));
+				dot.addEventListener("click", function () {
+					state.page = index;
+					updateCarousel("smooth");
+				});
+				dotsHost.appendChild(dot);
+			}
+		}
+
+		function updateStatus(visibleCards, totalPages) {
+			if (!visibleCards.length) {
+				status.textContent = "Sin resultados para este filtro";
+				return;
+			}
+
+			const start = (state.page * state.cardsPerView) + 1;
+			const end = Math.min(start + state.cardsPerView - 1, visibleCards.length);
+			status.textContent = "Mostrando " + start + "-" + end + " de " + visibleCards.length + " oportunidades";
+			renderDots(totalPages);
+		}
+
+		function updateButtons(totalPages) {
+			prevButton.disabled = state.page <= 0;
+			nextButton.disabled = state.page >= totalPages - 1;
+		}
+
+		function updateCarousel(behavior) {
+			state.cardsPerView = cardsPerView();
+			viewport.style.setProperty("--cards-per-view", String(state.cardsPerView));
+
+			const visibleCards = filteredCards();
+			const totalPages = Math.max(1, Math.ceil(visibleCards.length / state.cardsPerView));
+			state.page = Math.max(0, Math.min(state.page, totalPages - 1));
+
+			updateButtons(totalPages);
+			updateStatus(visibleCards, totalPages);
+			scrollToPage(state.page, behavior);
+		}
+
+		function applyFilter(filter) {
+			state.filter = filter;
+			state.page = 0;
+
+			cards.forEach(card => {
+				card.hidden = !matchesFilter(card, filter);
+			});
+
+			filters.forEach(button => {
+				button.classList.toggle("is-active", button.dataset.filter === filter);
+			});
+
+			updateCarousel("auto");
+		}
+
+		prevButton.addEventListener("click", function () {
+			state.page = Math.max(0, state.page - 1);
+			updateCarousel("smooth");
+		});
+
+		nextButton.addEventListener("click", function () {
+			const visibleCards = filteredCards();
+			const totalPages = Math.max(1, Math.ceil(visibleCards.length / state.cardsPerView));
+			state.page = Math.min(totalPages - 1, state.page + 1);
+			updateCarousel("smooth");
+		});
+
+		filters.forEach(button => {
+			button.addEventListener("click", function () {
+				applyFilter(button.dataset.filter || "all");
+			});
+		});
+
+		window.addEventListener("resize", function () {
+			updateCarousel("auto");
+		});
+
+		applyFilter("all");
+	}());
+</script>
 </body>
 </html>

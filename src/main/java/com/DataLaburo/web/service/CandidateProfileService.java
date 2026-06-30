@@ -70,6 +70,31 @@ public class CandidateProfileService {
     }
 
     @Transactional
+    public Optional<CandidateProfile> updateFromForm(Long profileId, CandidateProfileForm form) {
+        if (profileId == null) {
+            return Optional.empty();
+        }
+        CandidateProfileForm safeForm = form == null ? new CandidateProfileForm() : form;
+        String cleanedName = clean(safeForm.getName());
+        if (cleanedName.isBlank()) {
+            throw new IllegalArgumentException("Ingresa un nombre para el perfil.");
+        }
+        String cleanedCvText = clean(safeForm.getCvText());
+        if (cleanedCvText.isBlank()) {
+            throw new IllegalArgumentException("Pega el CV del perfil como texto.");
+        }
+
+        return candidateProfileRepository.findById(profileId)
+                .map(profile -> {
+                    boolean cvChanged = !clean(profile.getCvText()).equals(cleanedCvText);
+                    profile.setName(cleanedName);
+                    applyVisibleMetadata(profile, safeForm);
+                    CandidateProfile saved = candidateProfileRepository.save(profile);
+                    return cvChanged ? updateCvText(saved, cleanedCvText).profile() : saved;
+                });
+    }
+
+    @Transactional
     public Optional<CvTextUpdateResult> updateCvText(Long profileId, String newCvText) {
         if (profileId == null) {
             return Optional.empty();
@@ -132,6 +157,7 @@ public class CandidateProfileService {
         profile.setLinkedinUrl(optionalText(safeForm.getLinkedinUrl()));
         profile.setGithubUrl(optionalText(safeForm.getGithubUrl()));
         profile.setPortfolioUrl(optionalText(safeForm.getPortfolioUrl()));
+        profile.setAvatarPreset(optionalAvatarPreset(safeForm.getAvatarPreset()));
         profile.setTargetRole(defaultIfBlank(safeForm.getTargetRole(), DEFAULT_TARGET_ROLE));
         profile.setTargetSeniority(defaultIfBlank(safeForm.getTargetSeniority(), DEFAULT_TARGET_SENIORITY));
         profile.setSearchMode(defaultIfBlank(safeForm.getSearchMode(), DEFAULT_SEARCH_MODE));
@@ -140,6 +166,11 @@ public class CandidateProfileService {
     private String optionalText(String value) {
         String cleaned = clean(value);
         return cleaned.isBlank() ? null : cleaned;
+    }
+
+    private String optionalAvatarPreset(String value) {
+        String cleaned = clean(value).toLowerCase();
+        return cleaned.matches("[a-z0-9][a-z0-9-]{0,63}") ? cleaned : null;
     }
 
     private String clean(String value) {

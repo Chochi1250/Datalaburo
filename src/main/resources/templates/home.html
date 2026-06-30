@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -9,86 +9,219 @@
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <main class="landing">
-    <section class="hero">
+    <section class="hero market-hero">
         <div class="hero-inner">
-            <h1 class="hero-title">Descubri que trabajos se ajustan a tu perfil</h1>
-            <p class="hero-subtitle">
-                Carga ofertas reales, explora el catalogo y elegi entre matching clasico o busqueda vectorial por perfil.
-            </p>
+            <div class="hero-copy">
+                <h1 class="hero-title">Encontra oportunidades cercanas a tu perfil</h1>
+                <p class="hero-subtitle">
+                    Compara tu CV con ofertas reales y entende que coincide, que falta reforzar y que evidencia sostiene
+                    cada lectura para orientar mejor tu busqueda laboral.
+                </p>
 
-            <div class="hero-actions">
-                <a class="btn btn-primary" th:href="@{/vector-search}">Busqueda vectorial</a>
-                <a class="btn btn-secondary" th:href="@{/matching}">Matching clasico</a>
-                <a class="btn btn-secondary" th:href="@{/jobs}">Explorar trabajos</a>
+                <div class="hero-actions">
+                    <a class="btn btn-primary" th:href="@{/vector-search}">Comenzar analisis</a>
+                    <a class="btn btn-secondary" th:href="@{/jobs}">Ver ofertas</a>
+                </div>
             </div>
 
-            <div class="hero-meta">
-                <div class="stat-pill">
-                    <div class="stat-number" th:text="${stats.totalJobs}">0</div>
-                    <div class="stat-label muted">jobs cargados</div>
+            <aside class="hero-showcase" aria-label="Vista previa del analisis">
+                <div class="showcase-card profile-card">
+                    <div class="showcase-card-header">
+                        <span class="card-kicker">Perfil</span>
+                        <span class="semantic-badge">CV</span>
+                    </div>
+                    <h2>Perfil Backend Java</h2>
+                    <p>REST, SQL, Spring, soporte a sistemas internos y experiencia en equipos agiles.</p>
+                    <div class="skill-cloud">
+                        <span>Java</span>
+                        <span>PostgreSQL</span>
+                        <span>APIs</span>
+                        <span>Soporte IT</span>
+                    </div>
                 </div>
-                <div class="stat-pill">
-                    <div class="stat-number" th:text="${stats.jobsLast7Days}">0</div>
-                    <div class="stat-label muted">ultimos 7 dias</div>
+
+                <div class="showcase-link">
+                    <span>cercania del perfil</span>
+                    <strong>82/100</strong>
                 </div>
-                <div class="stat-pill">
-                    <div class="stat-number" th:text="${stats.percentWithRequirementsText + '%'}">0%</div>
-                    <div class="stat-label muted">con requisitos</div>
+
+                <div class="showcase-card job-card">
+                    <div class="showcase-card-header">
+                        <span class="card-kicker">Oferta cercana</span>
+                        <span class="semantic-badge">#1</span>
+                    </div>
+                    <h2>Desarrollador Backend</h2>
+                    <p>Java, microservicios, bases relacionales y colaboracion con producto.</p>
+                    <div class="insight-stack">
+                        <span class="insight-pill is-evidence">Evidencia: experiencia laboral</span>
+                        <span class="insight-pill is-gap">Brecha: cloud</span>
+                        <span class="insight-pill is-transfer">Transferible: .NET -> Java</span>
+                    </div>
                 </div>
-            </div>
+            </aside>
         </div>
     </section>
 
     <section class="container landing-below">
-        <div class="grid-3">
-            <div class="card">
-                <h2>1) Captura</h2>
-                <p class="muted">Usa la extension en LinkedIn y guarda la oferta en PostgreSQL, dentro de la tabla principal <code>JOBS</code>.</p>
-                <div class="actions">
-                    <a class="link" th:href="@{/settings}">Ver configuracion</a>
-                </div>
+        <section class="landing-section area-section">
+            <div class="section-heading">
+                <p class="eyebrow">Areas laborales</p>
+                <h2>Areas que podes analizar</h2>
+                <p class="muted">
+                    Un mismo perfil puede leerse contra distintos caminos profesionales, desde backend hasta soporte,
+                    datos o cloud.
+                </p>
             </div>
-            <div class="card">
-                <h2>2) Explora</h2>
-                <p class="muted">Revisa titulo, empresa, ubicacion y detalle del job capturado.</p>
-                <div class="actions">
-                    <a class="link" th:href="@{/jobs}">Ir a Jobs</a>
-                </div>
+            <div class="area-grid" aria-label="Areas laborales">
+                <article class="area-card">
+                    <span class="area-icon">BE</span>
+                    <h3>Backend</h3>
+                    <p>APIs, Java, SQL y servicios.</p>
+                </article>
+                <article class="area-card">
+                    <span class="area-icon">FE</span>
+                    <h3>Frontend</h3>
+                    <p>Interfaces, producto y web.</p>
+                </article>
+                <article class="area-card">
+                    <span class="area-icon">BI</span>
+                    <h3>Data/BI</h3>
+                    <p>Datos, reportes y analisis.</p>
+                </article>
+                <article class="area-card">
+                    <span class="area-icon">IT</span>
+                    <h3>Soporte IT</h3>
+                    <p>Operaciones, usuarios y sistemas.</p>
+                </article>
+                <article class="area-card">
+                    <span class="area-icon">CL</span>
+                    <h3>Cloud/DevOps</h3>
+                    <p>Infraestructura, deploys y monitoreo.</p>
+                </article>
+                <article class="area-card">
+                    <span class="area-icon">QA</span>
+                    <h3>QA</h3>
+                    <p>Pruebas, calidad y automatizacion.</p>
+                </article>
             </div>
-            <div class="card">
-                <h2>3) Match</h2>
-                <p class="muted">Usa matching clasico por reglas o un perfil con embedding READY para ordenar ofertas por similitud semantica.</p>
-                <div class="actions">
-                    <a class="link" th:href="@{/matching}">Matching clasico</a>
-                    <a class="link" th:href="@{/vector-search}">Busqueda vectorial</a>
-                </div>
-            </div>
-        </div>
+        </section>
 
-        <div class="card" th:if="${!#lists.isEmpty(recentJobs)}">
-            <h2>Recientes</h2>
-            <ul class="recent-list">
-                <li th:each="job : ${recentJobs}">
-                    <span class="company-mark small">
-                        <img class="logo-img"
-                             th:if="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}"
-                             th:src="${job.companyLogoUrl}"
-                             alt=""
-                             onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
-                        <span class="logo-fallback"
-                              th:style="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()} ? 'display:none' : ''"
-                              th:text="${job.company != null && !job.company.isBlank() ? #strings.substring(job.company,0,1) : (job.title != null && !job.title.isBlank() ? #strings.substring(job.title,0,1) : '?')}"></span>
-                    </span>
-                    <span class="recent-title" th:text="${job.title != null ? job.title : 'Untitled'}"></span>
-                    <span class="muted" th:text="${' @ ' + (job.company != null ? job.company : 'Unknown')}"></span>
-                    <span class="muted" th:if="${job.location != null && !job.location.isBlank()}" th:text="${' - ' + job.location}"></span>
-                </li>
-            </ul>
-            <div class="actions">
-                <a class="link" th:href="@{/jobs}">Ver todos</a>
-                <a class="link" th:href="@{/stats}">Ver estadisticas</a>
+        <section id="como-funciona" class="landing-section flow-section">
+            <div class="section-heading">
+                <p class="eyebrow">Flujo</p>
+                <h2>Como funciona</h2>
+                <p class="muted">
+                    Un recorrido simple para pasar de tu perfil a una lectura comparable de oportunidades.
+                </p>
             </div>
-        </div>
+
+            <div class="flow-grid">
+                <article class="flow-card">
+                    <span class="step-number">1</span>
+                    <h3>Carga tu perfil o CV</h3>
+                    <p class="muted">Resume experiencia, proyectos, formacion y habilidades en un perfil analizable.</p>
+                </article>
+                <article class="flow-card">
+                    <span class="step-number">2</span>
+                    <h3>Buscamos ofertas cercanas</h3>
+                    <p class="muted">La similitud semantica recupera oportunidades con significado cercano a tu trayectoria.</p>
+                </article>
+                <article class="flow-card">
+                    <span class="step-number">3</span>
+                    <h3>Revisa evidencia y brechas</h3>
+                    <p class="muted">Ves coincidencias, faltantes y habilidades transferibles para orientar el siguiente paso.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-section difference-section">
+            <div class="section-heading">
+                <p class="eyebrow">Diferencial</p>
+                <h2>Que diferencia a DataLaburo</h2>
+                <p class="muted">
+                    La tecnologia queda en segundo plano: el foco esta en ayudarte a entender por que una oferta aparece
+                    cerca de tu perfil.
+                </p>
+            </div>
+
+            <div class="difference-grid">
+                <article class="difference-card accent-teal">
+                    <h3>No solo keywords</h3>
+                    <p class="muted">Busca cercania de significado entre trayectoria y oferta, incluso cuando las palabras cambian.</p>
+                </article>
+                <article class="difference-card accent-blue">
+                    <h3>Evidencia profesional</h3>
+                    <p class="muted">Distingue experiencia, proyectos, formacion y habilidades declaradas.</p>
+                </article>
+                <article class="difference-card accent-violet">
+                    <h3>Proyectos y experiencia</h3>
+                    <p class="muted">Separa antecedentes laborales de proyectos para dar una lectura mas clara.</p>
+                </article>
+                <article class="difference-card accent-amber">
+                    <h3>Brechas explicables</h3>
+                    <p class="muted">Marca puntos a reforzar y transferencias posibles sin convertirlas en experiencia inventada.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-section opportunity-section" th:if="${!#lists.isEmpty(recentJobs)}">
+            <div class="section-heading">
+                <p class="eyebrow">Oportunidades</p>
+                <h2>Preview de ofertas recientes</h2>
+                <p class="muted">
+                    Una muestra rapida del tipo de oportunidades que despues podes comparar desde tu perfil.
+                </p>
+            </div>
+
+            <div class="opportunity-cards">
+                <article class="opportunity-card" th:each="job : ${recentJobs}">
+                    <div class="opportunity-topline">
+                        <span class="company-mark opportunity-logo"
+                              th:attr="data-has-logo=${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}">
+                            <img class="logo-img"
+                                 th:if="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}"
+                                 th:src="${job.companyLogoUrl}"
+                                 alt=""
+                                 loading="lazy"
+                                 decoding="async"
+                                 referrerpolicy="no-referrer"
+                                 onload="this.classList.add('is-loaded'); this.parentElement.querySelector('.logo-fallback').style.display='none';"
+                                 onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+                            <span class="logo-fallback"
+                                  th:text="${job.company != null && !job.company.isBlank() ? #strings.substring(job.company,0,1) : (job.title != null && !job.title.isBlank() ? #strings.substring(job.title,0,1) : '?')}"></span>
+                        </span>
+                        <span class="offer-badge">Oferta IT</span>
+                    </div>
+                    <h3 th:text="${job.title != null ? job.title : 'Oferta sin titulo'}">Oferta</h3>
+                    <p class="opportunity-company" th:text="${job.company != null ? job.company : 'Empresa no informada'}">Empresa</p>
+                    <p class="muted opportunity-location"
+                       th:text="${job.location != null && !job.location.isBlank() ? job.location : 'Ubicacion no informada'}">Ubicacion</p>
+                </article>
+            </div>
+
+            <div class="opportunity-actions">
+                <a class="btn btn-secondary" th:href="@{/jobs}">Ver ofertas</a>
+            </div>
+        </section>
+
+        <section class="landing-section final-cta">
+            <div>
+                <p class="eyebrow">Empezar</p>
+                <h2>Arranca con tu perfil y mira que oportunidades aparecen cerca</h2>
+                <p class="muted">
+                    Elegi un perfil, crea uno nuevo o carga tu CV desde el flujo de analisis.
+                </p>
+            </div>
+            <div class="final-actions">
+                <a class="btn btn-primary" th:href="@{/vector-search}">Comenzar analisis</a>
+                <a class="btn btn-secondary" th:href="@{/profiles/new}">Crear perfil</a>
+            </div>
+        </section>
+
+        <p class="subtle-note">
+            DataLaburo ofrece orientacion laboral y evidencia explicable. No decide aptitud, no reemplaza una evaluacion
+            humana y no promete resultados de contratacion.
+        </p>
     </section>
 </main>
 

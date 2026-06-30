@@ -1,67 +1,293 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
-	<title>DataLaburo - Busqueda vectorial</title>
+	<title>DataLaburo - Analisis laboral</title>
 	<link rel="stylesheet" th:href="@{/app.css}"/>
 </head>
 <body>
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<main class="container">
-	<header class="header">
-		<h1>Busqueda vectorial por perfil</h1>
-		<p class="muted">Usa el embedding del perfil para ordenar ofertas por similitud semantica. Mantiene el ranking vectorial activo.</p>
-	</header>
 
-	<section class="card" th:if="${vectorSearchError != null}">
-		<p class="error" th:text="${vectorSearchError}">Error</p>
+<main class="vector-search-page">
+	<input class="vector-flow-input" type="radio" name="vectorFlow" id="flow-quick"
+		   th:checked="${activeVectorSearchFlow == null || activeVectorSearchFlow == 'quick'}"/>
+	<input class="vector-flow-input" type="radio" name="vectorFlow" id="flow-existing"
+		   th:checked="${activeVectorSearchFlow == 'existing'}"/>
+
+	<section class="vector-alert vector-alert-error" th:if="${vectorSearchError != null}">
+		<p th:text="${vectorSearchError}">No se pudo iniciar el analisis.</p>
 	</section>
 
-	<section class="card">
-		<h2>Matching clasico y busqueda vectorial son flujos separados</h2>
-		<p class="muted">El matching clasico compara un CV o perfil contra ofertas usando reglas del flujo clasico. No usa embeddings.</p>
-		<p class="muted">Esta pantalla solo abre el flujo vector-first existente cuando el perfil tiene embedding PROFILE en estado READY.</p>
-		<div class="actions">
-			<a class="btn btn-secondary" th:href="@{/matching}">Volver a matching clasico</a>
-			<a class="btn btn-secondary" th:href="@{/profiles/new}">Crear perfil</a>
-		</div>
-	</section>
-
-	<section class="card" th:if="${profileOptions == null || #lists.isEmpty(profileOptions)}">
-		<p class="muted">Todavia no hay perfiles guardados para iniciar busqueda vectorial.</p>
-		<div class="actions">
-			<a class="btn btn-primary" th:href="@{/profiles/new}">Crear perfil</a>
-		</div>
-	</section>
-
-	<section th:if="${profileOptions != null && !#lists.isEmpty(profileOptions)}" class="grid">
-		<article class="card" th:each="option : ${profileOptions}">
-			<header class="header">
-				<h2 th:text="${option.name}">Perfil</h2>
-				<p class="muted" th:if="${option.headline != null && !option.headline.isBlank()}" th:text="${option.headline}">Headline</p>
-				<p class="muted" th:if="${(option.headline == null || option.headline.isBlank()) && option.summary != null && !option.summary.isBlank()}"
-				   th:text="${#strings.abbreviate(option.summary, 220)}">Resumen</p>
-			</header>
-
-			<div class="chips">
-				<span class="chip match-chip"
-					  th:classappend="${option.ready ? ' profile-chip' : ' chip-muted'}"
-					  th:text="${option.statusLabel}">READY</span>
+	<section class="vector-search-hero">
+		<div class="hero-inner vector-search-hero-inner">
+			<div class="hero-copy vector-search-copy">
+				<h1 class="hero-title">Empeza tu analisis laboral</h1>
+				<p class="hero-subtitle">
+					Usa un CV o un perfil local para comparar tu trayectoria contra ofertas reales y entender
+					coincidencias, brechas y evidencia con una lectura clara.
+				</p>
 			</div>
-			<p class="muted small" th:text="${option.statusMessage}">Estado</p>
-			<p class="error small" th:if="${option.errorMessage != null && !option.errorMessage.isBlank()}"
-			   th:text="${option.errorMessage}">Error</p>
 
-			<form method="post" th:action="@{/vector-search}">
-				<input type="hidden" name="profileId" th:value="${option.id}"/>
-				<div class="actions">
-					<button type="submit" th:text="${option.ready ? 'Iniciar busqueda vectorial' : 'Revisar perfil'}">Elegir perfil</button>
-					<a class="link" th:href="@{/profiles/{id}(id=${option.id})}">Ver detalle</a>
+			<aside class="hero-showcase vector-start-options" aria-label="Elegir forma de empezar">
+				<label for="flow-quick" class="showcase-card profile-card vector-start-card vector-start-card-cv">
+					<span class="vector-active-marker">Activo</span>
+					<div class="showcase-card-header">
+						<span class="card-kicker">CV rapido</span>
+						<span class="semantic-badge">CV</span>
+					</div>
+					<h2>Pegar CV</h2>
+					<p>Crea un perfil rapido desde texto y abre el analisis de oportunidades cercanas.</p>
+					<div class="skill-cloud">
+						<span>Texto libre</span>
+						<span>Perfil local</span>
+					</div>
+				</label>
+
+				<label for="flow-existing" class="showcase-card job-card vector-start-card vector-start-card-existing">
+					<span class="vector-active-marker">Activo</span>
+					<div class="showcase-card-header">
+						<span class="card-kicker">Perfil guardado</span>
+						<span class="semantic-badge">Perfil</span>
+					</div>
+					<h2>Usar perfil existente</h2>
+					<p>Elegis un perfil guardado localmente y continuas con el mismo flujo de resultados.</p>
+					<div class="insight-stack">
+						<span class="insight-pill is-evidence">Estado visible</span>
+						<span class="insight-pill is-transfer">Continuidad</span>
+					</div>
+				</label>
+			</aside>
+		</div>
+	</section>
+
+	<section id="flujo-activo" class="vector-workbench" aria-label="Formulario de analisis">
+		<div class="vector-workbench-heading">
+			<div>
+				<h2 class="vector-workbench-title vector-workbench-title-quick">Pega tu CV para iniciar el analisis</h2>
+				<h2 class="vector-workbench-title vector-workbench-title-existing">Elegi un perfil guardado</h2>
+			</div>
+		</div>
+
+		<div class="vector-session-inline" th:if="${activeProfile != null}">
+			<div>
+				<span class="card-kicker">Perfil actual</span>
+				<strong th:text="${activeProfile.name}">Perfil usado</strong>
+				<p class="muted small" th:text="${activeProfile.statusMessage}">Estado del perfil</p>
+			</div>
+			<div class="vector-session-actions">
+				<span class="chip match-chip"
+					  th:classappend="${activeProfile.ready ? ' profile-chip' : ' chip-muted'}"
+					  th:text="${activeProfile.statusLabel}">READY</span>
+				<form method="post" th:action="@{/vector-search}">
+					<input type="hidden" name="profileId" th:value="${activeProfile.id}"/>
+					<button type="submit" class="btn btn-primary btn-sm">Continuar analisis</button>
+				</form>
+			</div>
+		</div>
+
+		<div class="vector-flow-panels">
+			<article id="pegar-cv" class="vector-panel vector-panel-quick">
+				<div class="vector-panel-heading">
+					<h3>Crear perfil rapido con CV</h3>
+					<p class="muted">
+						Pega tu CV o subi un archivo PDF/DOCX. DataLaburo crea un perfil local y abre el analisis
+						cuando la lectura del perfil esta lista.
+					</p>
 				</div>
-			</form>
-		</article>
+
+				<form method="post" enctype="multipart/form-data" th:action="@{/vector-search/cv}" th:object="${createForm}">
+					<div class="grid-2">
+						<div class="field">
+							<label for="name">Nombre del perfil</label>
+							<input id="name" type="text" th:field="*{name}" placeholder="Ej. Perfil Backend Java" required/>
+						</div>
+						<div class="field">
+							<label for="headline">Titulo visible</label>
+							<input id="headline" type="text" th:field="*{headline}" placeholder="Ej. Backend Developer"/>
+						</div>
+					</div>
+					<div class="vector-cv-inputs">
+						<div class="field vector-cv-upload" data-cv-upload th:data-extract-url="@{/vector-search/cv/extract}">
+							<input class="vector-cv-file-input" id="cvFile" name="cvFile" type="file"
+								   accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"/>
+							<label class="vector-cv-dropzone" for="cvFile" data-cv-dropzone>
+								<span class="vector-cv-document-icon" aria-hidden="true">
+									<img th:src="@{/images/1f4c4.png}" alt="" loading="lazy"/>
+								</span>
+								<span class="vector-cv-upload-copy">
+									<strong>Subi tu CV en PDF o DOCX</strong>
+									<span>Arrastra un archivo o hace clic para seleccionarlo.</span>
+								</span>
+							</label>
+							<div class="vector-cv-file-status" data-cv-file-status hidden>
+								<span class="vector-cv-file-name" data-cv-file-name>cv.pdf</span>
+								<span class="vector-cv-file-state" data-cv-file-state>Listo para revisar</span>
+							</div>
+							<p class="hint muted" data-cv-upload-message>
+								El archivo se lee para completar el texto de abajo. No se guarda.
+							</p>
+						</div>
+						<div class="field vector-cv-text-field">
+							<label for="cvText">CV como texto</label>
+							<textarea id="cvText" th:field="*{cvText}" rows="8"
+									  placeholder="Pega experiencia, proyectos, formacion y habilidades relevantes..."></textarea>
+							<p class="hint muted">Tambien podes pegar el texto manualmente. Ese texto alimenta el mismo flujo de analisis.</p>
+						</div>
+					</div>
+					<div class="actions">
+						<button type="submit">Crear perfil e iniciar analisis</button>
+						<button type="submit" class="btn btn-secondary" formnovalidate
+								th:formaction="@{/profiles/new/draft}">Completar perfil</button>
+					</div>
+				</form>
+			</article>
+
+			<article class="vector-panel vector-panel-existing">
+				<div class="vector-panel-heading">
+					<h3>Usar perfil existente</h3>
+					<p class="muted">
+						Selecciona un perfil local. El estado aparece junto al nombre y, si hace falta,
+						DataLaburo intenta dejarlo listo antes de analizar.
+					</p>
+				</div>
+
+				<form method="post" th:action="@{/vector-search}" th:if="${profileOptions != null && !#lists.isEmpty(profileOptions)}">
+					<div class="field">
+						<label for="profileId">Perfil local</label>
+						<select id="profileId" name="profileId" required>
+							<option th:each="option : ${profileOptions}"
+									th:value="${option.id}"
+									th:text="${option.name + ' - ' + option.statusLabel}">Perfil - READY</option>
+						</select>
+						<p class="hint muted">No se muestran todos los perfiles como grilla: elegis uno y avanzas.</p>
+					</div>
+					<div class="actions">
+						<button type="submit">Iniciar analisis</button>
+						<a class="btn btn-secondary" th:href="@{/profiles}">Ver perfiles</a>
+					</div>
+				</form>
+
+				<div class="vector-empty-state" th:if="${profileOptions == null || #lists.isEmpty(profileOptions)}">
+					<p class="muted">Todavia no hay perfiles locales para analizar.</p>
+					<label class="btn btn-primary" for="flow-quick">Pegar CV</label>
+				</div>
+			</article>
+		</div>
 	</section>
 </main>
+<script>
+	(function () {
+		const upload = document.querySelector("[data-cv-upload]");
+		if (!upload) {
+			return;
+		}
+
+		const fileInput = upload.querySelector("#cvFile");
+		const dropzone = upload.querySelector("[data-cv-dropzone]");
+		const status = upload.querySelector("[data-cv-file-status]");
+		const fileName = upload.querySelector("[data-cv-file-name]");
+		const fileState = upload.querySelector("[data-cv-file-state]");
+		const message = upload.querySelector("[data-cv-upload-message]");
+		const textarea = document.querySelector("#cvText");
+		const submitButton = document.querySelector(".vector-panel-quick button[type='submit']");
+		const extractUrl = upload.dataset.extractUrl;
+		const maxFileSize = 5 * 1024 * 1024;
+		const allowedExtensions = [".pdf", ".docx"];
+
+		function setStatus(state, name, stateText, helperText) {
+			upload.dataset.uploadState = state;
+			if (status) {
+				status.hidden = false;
+			}
+			if (fileName) {
+				fileName.textContent = name || "Archivo seleccionado";
+			}
+			if (fileState) {
+				fileState.textContent = stateText;
+			}
+			if (message) {
+				message.textContent = helperText || stateText;
+			}
+		}
+
+		function clearDragState() {
+			dropzone.classList.remove("is-dragging");
+		}
+
+		function isAllowed(file) {
+			const lowerName = file.name.toLowerCase();
+			return allowedExtensions.some(function (extension) {
+				return lowerName.endsWith(extension);
+			});
+		}
+
+		async function extractFile(file) {
+			if (!file) {
+				return;
+			}
+			if (!isAllowed(file)) {
+				setStatus("error", file.name, "Formato no soportado", "Usa un archivo PDF o DOCX.");
+				return;
+			}
+			if (file.size > maxFileSize) {
+				setStatus("error", file.name, "Archivo muy grande", "El archivo supera 5 MB. Proba con una version mas liviana.");
+				return;
+			}
+
+			setStatus("loading", file.name, "Procesando", "Extrayendo texto del archivo...");
+			if (submitButton) {
+				submitButton.disabled = true;
+			}
+
+			try {
+				const formData = new FormData();
+				formData.append("cvFile", file);
+				const response = await fetch(extractUrl, {
+					method: "POST",
+					body: formData,
+					headers: { "Accept": "application/json" }
+				});
+				const payload = await response.json();
+				if (!payload.success) {
+					setStatus("error", payload.fileName || file.name, "No se pudo extraer texto", payload.error || "Tambien podes pegarlo manualmente.");
+					return;
+				}
+				textarea.value = payload.text || "";
+				textarea.dispatchEvent(new Event("input", { bubbles: true }));
+				setStatus("success", payload.fileName || file.name, "Listo", "Texto extraido. Revisalo abajo antes de iniciar.");
+			} catch (error) {
+				setStatus("error", file.name, "No se pudo extraer texto", "Tambien podes pegarlo manualmente.");
+			} finally {
+				if (submitButton) {
+					submitButton.disabled = false;
+				}
+			}
+		}
+
+		fileInput.addEventListener("change", function () {
+			extractFile(fileInput.files && fileInput.files[0]);
+		});
+
+		["dragenter", "dragover"].forEach(function (eventName) {
+			dropzone.addEventListener(eventName, function (event) {
+				event.preventDefault();
+				dropzone.classList.add("is-dragging");
+			});
+		});
+
+		["dragleave", "drop"].forEach(function (eventName) {
+			dropzone.addEventListener(eventName, function (event) {
+				event.preventDefault();
+				clearDragState();
+			});
+		});
+
+		dropzone.addEventListener("drop", function (event) {
+			const file = event.dataTransfer.files && event.dataTransfer.files[0];
+			extractFile(file);
+		});
+	})();
+</script>
 </body>
 </html>

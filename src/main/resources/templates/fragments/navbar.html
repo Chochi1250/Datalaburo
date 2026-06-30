@@ -12,22 +12,28 @@
 
   <nav class="navbar">
     <div class="nav-inner">
-      <a class="nav-brand" th:href="@{/}">
-        <span class="nav-logo">DataLaburo</span>
-      </a>
+      <div class="nav-start">
+        <a class="nav-brand" th:href="@{/}" aria-label="DataLaburo - Inicio">
+          <span class="nav-logo"><span class="nav-logo-data">Data</span><span class="nav-logo-accent">Laburo</span></span>
+        </a>
+
+        <form class="nav-search" th:action="@{/jobs}" method="get" role="search" aria-label="Buscar ofertas">
+          <label class="sr-only" for="nav-search-input">Buscar ofertas</label>
+          <img class="nav-search-icon" th:src="@{/images/pngtree-magnifying-glass-icon-image_1128382.png}" alt="" aria-hidden="true" />
+          <input id="nav-search-input" type="search" name="q" placeholder="Buscar" autocomplete="off" />
+          <button class="sr-only" type="submit">Buscar</button>
+        </form>
+      </div>
 
       <div class="nav-links">
-        <a th:href="@{/}">Home</a>
-        <a th:href="@{/jobs}">Jobs</a>
-        <a th:href="@{/matching}">Matching</a>
-        <a th:href="@{/vector-search}">Busqueda vectorial</a>
+        <a th:href="@{/}">Inicio</a>
+        <a th:href="@{/jobs}">Ofertas</a>
+        <a th:href="@{/vector-search}">Matching</a>
         <a th:href="@{/profiles}">Perfiles</a>
       </div>
 
       <div class="nav-actions">
         <button id="theme-toggle" type="button" class="btn btn-ghost btn-sm" aria-pressed="false">Tema: Claro</button>
-        <!-- MVP: no login yet (keep a fixed CTA). -->
-        <a class="btn btn-ghost btn-sm" th:href="@{/profiles/new}">Nuevo perfil</a>
       </div>
     </div>
   </nav>

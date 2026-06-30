@@ -1,37 +1,120 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
-	<title>DataLaburo - Job detail</title>
+	<title>DataLaburo - Detalle de oferta</title>
 	<link rel="stylesheet" th:href="@{/app.css}"/>
 </head>
-<body>
+<body class="page page-jobs page-job-detail">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<main class="container">
-	<header class="header">
-		<h1 th:text="${job.title != null ? job.title : 'Untitled'}"></h1>
-		<p class="muted" th:text="${(job.company != null ? job.company : 'Unknown') + (job.location != null && !job.location.isBlank() ? ' · ' + job.location : '')}"></p>
-	</header>
+<main class="container jobs-page">
+	<section class="jobs-shell job-detail-standalone">
+		<article class="job-detail is-active">
+			<div class="detail-top">
+				<div class="detail-title-row">
+					<div class="company-mark company-mark-lg" th:attr="data-company=${job.company}">
+						<img class="logo-img"
+							 th:if="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}"
+							 th:src="${job.companyLogoUrl}"
+							 alt=""
+							 loading="lazy"
+							 decoding="async"
+							 referrerpolicy="no-referrer"
+							 onload="this.parentElement.querySelector('.logo-fallback').style.display='none';"
+							 onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+						<span class="logo-fallback"
+							  th:style="${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()} ? 'display:none' : ''"
+							  th:text="${job.company != null && !job.company.isBlank() ? #strings.substring(job.company,0,1) : (job.title != null && !job.title.isBlank() ? #strings.substring(job.title,0,1) : '?')}"></span>
+					</div>
+					<div class="detail-heading">
+						<h1 class="detail-title" th:text="${job.title != null ? job.title : 'Oferta sin titulo'}"></h1>
+						<div class="detail-company" th:text="${job.company != null && !job.company.isBlank() ? job.company : 'Empresa no informada'}"></div>
+						<div class="detail-meta">
+							<span th:text="${job.location != null && !job.location.isBlank() ? job.location : 'Ubicacion no informada'}"></span>
+							<span class="posted-time" th:if="${job.postedAtText != null && !job.postedAtText.isBlank()}" th:attr="data-posted=${job.postedAtText}" th:text="${' - ' + job.postedAtText}"></span>
+						</div>
+					</div>
+				</div>
 
-	<section class="card" th:if="${job.sourceUrl != null}">
-		<p><a class="link" th:href="${job.sourceUrl}" target="_blank" rel="noopener">Abrir oferta original</a></p>
-	</section>
+				<div class="detail-actions">
+					<a class="btn btn-primary" th:href="@{/jobs/{id}/match(id=${job.id})}">Analizar con perfil</a>
+					<a class="btn btn-secondary"
+					   th:if="${job.sourceUrl != null && !job.sourceUrl.isBlank()}"
+					   th:href="${job.sourceUrl}"
+					   target="_blank"
+					   rel="noopener">Ver oferta</a>
+					<a class="btn btn-secondary" th:href="@{/jobs}">Volver a ofertas</a>
+				</div>
+			</div>
 
-	<section class="actions">
-		<a class="btn btn-primary" th:href="@{/jobs/{id}/match(id=${job.id})}">Evaluar compatibilidad</a>
-	</section>
+			<div class="detail-body">
+				<section class="detail-panel"
+						 th:with="bestText=${(job.description != null && !job.description.isBlank()) ? job.description : job.visibleText}">
+					<h2>Descripcion</h2>
+					<p class="job-description detail-text"
+					   th:if="${bestText != null && !bestText.isBlank()}"
+					   th:text="${bestText}"></p>
+					<p class="muted" th:if="${bestText == null || bestText.isBlank()}">
+						Esta oferta todavia no tiene una descripcion disponible.
+					</p>
+				</section>
 
-	<section class="card"
-			 th:with="bestText=${(job.description != null && !job.description.isBlank()) ? job.description : job.visibleText}"
-			 th:if="${bestText != null && !bestText.isBlank()}">
-		<h2>Descripción</h2>
-		<p class="muted" th:text="${bestText}"></p>
-	</section>
-
-	<section class="actions">
-		<a class="link" th:href="@{/jobs}">← Volver a Jobs</a>
+				<section class="detail-panel"
+						 th:if="${job.requirementsText != null && !job.requirementsText.isBlank()}">
+					<h2>Requisitos</h2>
+					<p class="job-description detail-text" th:text="${job.requirementsText}"></p>
+				</section>
+			</div>
+		</article>
 	</section>
 </main>
+<script>
+  (function () {
+    function formatPostedAt(text) {
+      const raw = String(text || "").trim();
+      if (!raw) return "";
+      const normalize = (value) => String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+      return raw
+        .replace(/\bhace\s+(\d+)\s+(minuto|minutos|hora|horas|d(?:i|\u00ed)a|d(?:i|\u00ed)as|semana|semanas|mes|meses)\b/gi, function (_, count, unit) {
+          const n = Number(count);
+          const normalized = normalize(unit);
+          const labels = {
+            minuto: ["minuto", "minutos"],
+            hora: ["hora", "horas"],
+            dia: ["dia", "dias"],
+            semana: ["semana", "semanas"],
+            mes: ["mes", "meses"],
+          };
+          const key = normalized.startsWith("minuto") ? "minuto" :
+            normalized.startsWith("hora") ? "hora" :
+            normalized.startsWith("dia") ? "dia" :
+            normalized.startsWith("semana") ? "semana" :
+            normalized.startsWith("mes") ? "mes" : null;
+          if (!key) return _;
+          return `hace ${count} ${n === 1 ? labels[key][0] : labels[key][1]}`;
+        })
+        .replace(/\b(\d+)\s+(minute|minutes|hour|hours|day|days|week|weeks|month|months)\s+ago\b/gi, function (_, count, unit) {
+          const n = Number(count);
+          const normalized = unit.toLowerCase();
+          const key = normalized.startsWith("minute") ? "minute" :
+            normalized.startsWith("hour") ? "hour" :
+            normalized.startsWith("day") ? "day" :
+            normalized.startsWith("week") ? "week" :
+            normalized.startsWith("month") ? "month" : null;
+          if (!key) return _;
+          return `${count} ${n === 1 ? key : `${key}s`} ago`;
+        });
+    }
+
+    document.querySelectorAll(".posted-time[data-posted]").forEach((el) => {
+      const formatted = formatPostedAt(el.dataset.posted);
+      el.textContent = formatted ? ` - ${formatted}` : "";
+    });
+  })();
+</script>
 </body>
 </html>

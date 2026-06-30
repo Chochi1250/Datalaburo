@@ -48,6 +48,7 @@ class CandidateProfileServiceTest {
         form.setLinkedinUrl(" https://www.linkedin.com/in/example ");
         form.setGithubUrl(" https://github.com/example ");
         form.setPortfolioUrl(" https://example.dev ");
+        form.setAvatarPreset(" Java ");
         when(candidateProfileRepository.save(any(CandidateProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CandidateProfile profile = service.create(form);
@@ -60,10 +61,62 @@ class CandidateProfileServiceTest {
         assertEquals("https://www.linkedin.com/in/example", profile.getLinkedinUrl());
         assertEquals("https://github.com/example", profile.getGithubUrl());
         assertEquals("https://example.dev", profile.getPortfolioUrl());
+        assertEquals("java", profile.getAvatarPreset());
         assertEquals("BACKEND", profile.getTargetRole());
         assertEquals("JUNIOR", profile.getTargetSeniority());
         assertEquals("FOCUSED", profile.getSearchMode());
         verify(embeddingPreparationService, never()).prepareCandidateProfile(any(CandidateProfile.class));
+    }
+
+    @Test
+    void updatesCompleteProfileWithoutLosingEditableFields() {
+        CandidateProfile profile = profile(7L, "Existing CV");
+        profile.setAvatarPreset("java");
+        CandidateProfileForm form = profileForm();
+        form.setName(" Updated profile ");
+        form.setCvText(" Existing CV ");
+        form.setAvatarPreset(" kubernetes ");
+        form.setHeadline("Cloud backend engineer");
+        form.setSummary("Builds and operates backend services.");
+        form.setDeclaredSkillsText(" Java, Kubernetes, PostgreSQL ");
+        form.setLinkedinUrl(" https://www.linkedin.com/in/updated ");
+        form.setGithubUrl(" https://github.com/updated ");
+        form.setPortfolioUrl(" https://updated.dev ");
+        form.setTargetRole("CLOUD");
+        form.setTargetSeniority("MID");
+        form.setSearchMode("EXPLORATORY");
+
+        when(candidateProfileRepository.findById(7L)).thenReturn(Optional.of(profile));
+        when(candidateProfileRepository.save(any(CandidateProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CandidateProfile updated = service.updateFromForm(7L, form).orElseThrow();
+
+        assertEquals("Updated profile", updated.getName());
+        assertEquals("Existing CV", updated.getCvText());
+        assertEquals("kubernetes", updated.getAvatarPreset());
+        assertEquals("Cloud backend engineer", updated.getHeadline());
+        assertEquals("Builds and operates backend services.", updated.getSummary());
+        assertEquals("Java, Kubernetes, PostgreSQL", updated.getDeclaredSkillsText());
+        assertEquals("https://www.linkedin.com/in/updated", updated.getLinkedinUrl());
+        assertEquals("https://github.com/updated", updated.getGithubUrl());
+        assertEquals("https://updated.dev", updated.getPortfolioUrl());
+        assertEquals("CLOUD", updated.getTargetRole());
+        assertEquals("MID", updated.getTargetSeniority());
+        assertEquals("EXPLORATORY", updated.getSearchMode());
+        verify(embeddingPreparationService, never()).prepareCandidateProfile(any(CandidateProfile.class));
+    }
+
+    @Test
+    void keepsAvatarPresetNullForLegacyProfileFallback() {
+        CandidateProfileForm form = profileForm();
+        form.setName("Legacy profile");
+        form.setCvText("Legacy CV");
+        form.setAvatarPreset(null);
+        when(candidateProfileRepository.save(any(CandidateProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CandidateProfile profile = service.create(form);
+
+        assertNull(profile.getAvatarPreset());
     }
 
     @Test
