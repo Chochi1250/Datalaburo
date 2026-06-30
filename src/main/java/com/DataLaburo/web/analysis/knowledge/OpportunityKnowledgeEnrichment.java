@@ -9,6 +9,7 @@ public record OpportunityKnowledgeEnrichment(
         ContextLevel contextLevel,
         CoverageLevel coverageLevel,
         RoleFamily roleFamily,
+        SecondaryFocus secondaryFocus,
         String roleExplanation,
         List<Strength> strengths,
         List<Gap> gaps,
@@ -52,6 +53,9 @@ public record OpportunityKnowledgeEnrichment(
     }
 
     public record RoleFamily(String id, String label) {
+    }
+
+    public record SecondaryFocus(String roleFamilyId, String label, String limit) {
     }
 
     public record Strength(

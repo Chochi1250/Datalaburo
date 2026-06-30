@@ -7,8 +7,18 @@ import com.DataLaburo.web.analysis.TransferableSkill;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResult;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResponse;
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityService;
+import com.DataLaburo.web.analysis.evidence.ProfessionalEvidenceService;
+import com.DataLaburo.web.analysis.evidence.ProfessionalEvidenceStrength;
+import com.DataLaburo.web.analysis.evidence.ProfessionalEvidenceType;
+import com.DataLaburo.web.analysis.evidence.ProfessionalSkillEvidence;
+import com.DataLaburo.web.analysis.evidence.ProfileEvidenceSummary;
+import com.DataLaburo.web.analysis.evidence.SeniorityByDomain;
+import com.DataLaburo.web.analysis.knowledge.OpportunityKnowledgeDetailMapper;
+import com.DataLaburo.web.analysis.knowledge.OpportunityKnowledgeDetailView;
 import com.DataLaburo.web.model.CandidateProfile;
 import com.DataLaburo.web.model.CandidateProfileProject;
+import com.DataLaburo.web.model.Job;
+import com.DataLaburo.web.repository.JobRepository;
 import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
 import com.DataLaburo.web.service.ProfileImprovementSuggestionService;
@@ -20,18 +30,29 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 public class ProfileVectorCompatibilityController {
-    private static final int DEFAULT_LIMIT = 20;
+    private static final int DEFAULT_LIMIT = 100;
+    private static final ZoneId UI_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
+    private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-AR"));
 
     private final CandidateProfileService candidateProfileService;
     private final CandidateProfileProjectService candidateProfileProjectService;
     private final ProfileImprovementSuggestionService profileImprovementSuggestionService;
     private final ProfileRoadmapSuggestionService profileRoadmapSuggestionService;
+    private final ProfessionalEvidenceService professionalEvidenceService;
+    private final OpportunityKnowledgeDetailMapper opportunityKnowledgeDetailMapper;
+    private final JobRepository jobRepository;
     private final ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider;
 
     public ProfileVectorCompatibilityController(
@@ -39,12 +60,18 @@ public class ProfileVectorCompatibilityController {
             CandidateProfileProjectService candidateProfileProjectService,
             ProfileImprovementSuggestionService profileImprovementSuggestionService,
             ProfileRoadmapSuggestionService profileRoadmapSuggestionService,
+            ProfessionalEvidenceService professionalEvidenceService,
+            OpportunityKnowledgeDetailMapper opportunityKnowledgeDetailMapper,
+            JobRepository jobRepository,
             ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider
     ) {
         this.candidateProfileService = candidateProfileService;
         this.candidateProfileProjectService = candidateProfileProjectService;
         this.profileImprovementSuggestionService = profileImprovementSuggestionService;
         this.profileRoadmapSuggestionService = profileRoadmapSuggestionService;
+        this.professionalEvidenceService = professionalEvidenceService;
+        this.opportunityKnowledgeDetailMapper = opportunityKnowledgeDetailMapper;
+        this.jobRepository = jobRepository;
         this.compatibilityServiceProvider = compatibilityServiceProvider;
     }
 
@@ -54,12 +81,67 @@ public class ProfileVectorCompatibilityController {
             @RequestParam(value = "limit", required = false) String rawLimit,
             Model model
     ) {
+        loadCompatibilityPage(profileId, rawLimit, model);
+        return "profile-vector-compatibility";
+    }
+
+    @GetMapping("/profiles/{profileId}/vector-first-compatibility/jobs/{jobId}")
+    public String vectorFirstCompatibilityDetail(
+            @PathVariable Long profileId,
+            @PathVariable Long jobId,
+            @RequestParam(value = "limit", required = false) String rawLimit,
+            Model model
+    ) {
+        CompatibilityPageData pageData = loadCompatibilityPage(profileId, rawLimit, model);
+        if (pageData == null) {
+            return "profile-vector-compatibility-detail";
+        }
+
+        ResultView selectedResult = pageData.results().stream()
+                .filter(result -> Objects.equals(result.jobId(), jobId))
+                .findFirst()
+                .orElse(null);
+
+        model.addAttribute("selectedResult", selectedResult);
+        model.addAttribute("selectedJobId", jobId);
+        model.addAttribute("relatedResults", pageData.results().stream()
+                .filter(result -> !Objects.equals(result.jobId(), jobId))
+                .limit(4)
+                .toList());
+
+        if (selectedResult == null) {
+            model.addAttribute("error", "La oportunidad seleccionada no aparece en este ranking visible.");
+        } else {
+            VectorFirstCompatibilityResult selectedAnalysis = pageData.response().results().stream()
+                    .filter(result -> Objects.equals(result.jobId(), jobId))
+                    .findFirst()
+                    .orElse(null);
+            if (selectedAnalysis != null) {
+                OpportunityKnowledgeDetailView knowledgeDetail = opportunityKnowledgeDetailMapper.map(
+                        pageData.profile(),
+                        pageData.jobsById().get(jobId),
+                        selectedAnalysis,
+                        pageData.profileEvidenceSummary()
+                );
+                model.addAttribute("knowledgeDetail", knowledgeDetail);
+            }
+        }
+
+        return "profile-vector-compatibility-detail";
+    }
+
+    private CompatibilityPageData loadCompatibilityPage(
+            Long profileId,
+            String rawLimit,
+            Model model
+    ) {
         Optional<CandidateProfile> profile = candidateProfileService.findById(profileId);
         if (profile.isEmpty()) {
             model.addAttribute("profileId", profileId);
             model.addAttribute("error", "No se encontro el perfil seleccionado. Volve a perfiles y elegi otro.");
             model.addAttribute("limit", DEFAULT_LIMIT);
-            return "profile-vector-compatibility";
+            model.addAttribute("results", List.of());
+            return null;
         }
 
         int limit = parseLimit(rawLimit, model);
@@ -68,11 +150,16 @@ public class ProfileVectorCompatibilityController {
         model.addAttribute("limit", limit);
         List<CandidateProfileProject> projects = candidateProfileProjectService.findByProfileId(profileId);
         model.addAttribute("profileProjects", projects);
+        ProfileEvidenceSummary profileEvidenceSummary = professionalEvidenceService.summarizeProfile(profile.get(), projects);
+        model.addAttribute("profileEvidence", ProfessionalEvidenceSummaryView.from(profileEvidenceSummary));
+        model.addAttribute("results", List.of());
+        model.addAttribute("profileImprovementSuggestions", List.of());
+        model.addAttribute("profileRoadmaps", List.of());
 
         VectorFirstCompatibilityService compatibilityService = compatibilityServiceProvider.getIfAvailable();
         if (compatibilityService == null) {
             model.addAttribute("error", "La vista vector-first requiere PostgreSQL + pgvector y embeddings BAAI/bge-m3. H2 queda como legado historico/test.");
-            return "profile-vector-compatibility";
+            return null;
         }
 
         try {
@@ -80,6 +167,23 @@ public class ProfileVectorCompatibilityController {
             List<VectorFirstCompatibilityResult> responseResults = response.results() == null
                     ? List.of()
                     : response.results();
+            Map<Long, Job> jobsById = jobRepository.findAllById(responseResults.stream()
+                            .map(VectorFirstCompatibilityResult::jobId)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .toList())
+                    .stream()
+                    .collect(Collectors.toMap(Job::getId, job -> job));
+            List<ResultView> results = responseResults.stream()
+                    .map(result -> ResultView.from(
+                            result,
+                            jobsById.get(result.jobId()),
+                            profile.get(),
+                            projects,
+                            profileEvidenceSummary,
+                            profileImprovementSuggestionService
+                    ))
+                    .toList();
             model.addAttribute("response", response);
             model.addAttribute("profileImprovementSuggestions", profileImprovementSuggestionService
                     .suggestProfile(profile.get())
@@ -91,15 +195,18 @@ public class ProfileVectorCompatibilityController {
                     .stream()
                     .map(ProfileRoadmapView::from)
                     .toList());
-            model.addAttribute("results", responseResults.stream()
-                    .map(result -> ResultView.from(
-                            result,
-                            profile.get(),
-                            projects,
-                            profileImprovementSuggestionService
-                    ))
-                    .toList());
+            model.addAttribute("results", results);
+            model.addAttribute("overview", ResultsOverviewView.from(results, profile.get()));
             model.addAttribute("limit", response.retrieval() == null ? limit : response.retrieval().limit());
+            return new CompatibilityPageData(
+                    profile.get(),
+                    projects,
+                    response,
+                    results,
+                    profileEvidenceSummary,
+                    jobsById,
+                    response.retrieval() == null ? limit : response.retrieval().limit()
+            );
         } catch (CompatibilityAnalysisException e) {
             model.addAttribute("error", friendlyMessage(e.getMessage()));
         } catch (IllegalArgumentException e) {
@@ -108,7 +215,7 @@ public class ProfileVectorCompatibilityController {
             model.addAttribute("error", "No se pudo ejecutar la compatibilidad vector-first. Revisa que PostgreSQL, pgvector y los embeddings READY esten disponibles.");
         }
 
-        return "profile-vector-compatibility";
+        return null;
     }
 
     private static int parseLimit(String rawLimit, Model model) {
@@ -153,13 +260,41 @@ public class ProfileVectorCompatibilityController {
         return message;
     }
 
+    private record CompatibilityPageData(
+            CandidateProfile profile,
+            List<CandidateProfileProject> projects,
+            VectorFirstCompatibilityResponse response,
+            List<ResultView> results,
+            ProfileEvidenceSummary profileEvidenceSummary,
+            Map<Long, Job> jobsById,
+            int limit
+    ) {
+    }
+
     private record ResultView(
             Long jobId,
             String title,
             String company,
+            String companyLogoUrl,
+            String companyInitial,
+            String locationLabel,
+            String modalityLabel,
+            String modalityCode,
+            String opportunityTypeLabel,
+            String opportunityTypeCode,
+            String postedAtLabel,
+            List<String> visibleSkills,
+            String userSummary,
             int vectorRank,
             double vectorSimilarity,
             int analysisRank,
+            int closenessScore,
+            String scoreBand,
+            boolean roleAligned,
+            boolean seniorityCompatible,
+            boolean hasEvidence,
+            String gapLevel,
+            String gapLabel,
             String detectedRoleLabel,
             String detectedRoleCode,
             String detectedSeniorityLabel,
@@ -191,8 +326,10 @@ public class ProfileVectorCompatibilityController {
     ) {
         static ResultView from(
                 VectorFirstCompatibilityResult result,
+                Job job,
                 CandidateProfile profile,
                 List<CandidateProfileProject> projects,
+                ProfileEvidenceSummary profileEvidenceSummary,
                 ProfileImprovementSuggestionService profileImprovementSuggestionService
         ) {
             String bucketCode = result.compatibilityBucket() == null ? null : result.compatibilityBucket().name();
@@ -217,8 +354,29 @@ public class ProfileVectorCompatibilityController {
                     safeList(result.missingSecondarySkills()),
                     transferableSkills,
                     skillEquivalenceSignals,
-                    safeList(result.roadmapSuggestions())
+                    safeList(result.roadmapSuggestions()),
+                    profileEvidenceSummary
             );
+            List<TargetDiagnosticView> targetDiagnostics = buildTargetDiagnostics(profile, result);
+            int closenessScore = (int) Math.round(result.vectorSimilarity() * 100);
+            String scoreBand = closenessScore >= 70 ? "high" : (closenessScore >= 40 ? "medium" : "low");
+            String modalityCode = detectModality(job);
+            String opportunityTypeCode = detectOpportunityType(job);
+            boolean roleAligned = targetDiagnostics.stream().anyMatch(diagnostic -> "Rol alineado".equals(diagnostic.label()));
+            boolean seniorityCompatible = targetDiagnostics.stream().anyMatch(diagnostic ->
+                    "Seniority compatible".equals(diagnostic.label())
+                            || "Seniority abierto".equals(diagnostic.label())
+                            || "Seniority no concluyente".equals(diagnostic.label())
+            );
+            boolean hasEvidence = result.evidenceLevel() != null && result.evidenceLevel() != com.DataLaburo.web.analysis.EvidenceLevel.NO_EVIDENCE;
+            String gapLevel = !requirementChecklist.missingCriticalSkills().isEmpty()
+                    ? "high"
+                    : (!requirementChecklist.missingSecondarySkills().isEmpty() ? "medium" : "low");
+            String gapLabel = switch (gapLevel) {
+                case "high" -> "Brecha clave";
+                case "medium" -> "Brecha menor";
+                default -> "Sin brechas visibles";
+            };
             boolean hasDiagnostic = bucketCode != null
                     || suggestedRank != null
                     || suggestedDelta != null
@@ -231,9 +389,26 @@ public class ProfileVectorCompatibilityController {
                     result.jobId(),
                     result.title(),
                     result.company(),
+                    job == null ? null : job.getCompanyLogoUrl(),
+                    ProfileVectorCompatibilityController.companyInitial(result.company(), result.title()),
+                    ProfileVectorCompatibilityController.locationLabel(job),
+                    labelModality(modalityCode),
+                    modalityCode,
+                    labelOpportunityType(opportunityTypeCode),
+                    opportunityTypeCode,
+                    ProfileVectorCompatibilityController.postedAtLabel(job),
+                    ProfileVectorCompatibilityController.visibleSkills(result),
+                    ProfileVectorCompatibilityController.userSummary(result, closenessScore, gapLevel),
                     result.vectorRank(),
                     result.vectorSimilarity(),
                     result.analysisRank(),
+                    closenessScore,
+                    scoreBand,
+                    roleAligned,
+                    seniorityCompatible,
+                    hasEvidence,
+                    gapLevel,
+                    gapLabel,
                     labelRole(result.detectedRole()),
                     codeOrUnknown(result.detectedRole()),
                     labelSeniority(result.detectedSeniority()),
@@ -262,8 +437,53 @@ public class ProfileVectorCompatibilityController {
                     profileImprovementSuggestionService.suggest(profile, projects, result).stream()
                             .map(ProfileImprovementSuggestionView::from)
                             .toList(),
-                    buildTargetDiagnostics(profile, result),
+                    targetDiagnostics,
                     hasDiagnostic
+            );
+        }
+    }
+
+    private record ResultsOverviewView(
+            int offersAnalyzed,
+            int strongMatches,
+            int visibleGaps,
+            int averageScore,
+            int bestScore,
+            String searchModeLabel,
+            String searchModeDescription,
+            String profileUpdatedLabel
+    ) {
+        static ResultsOverviewView from(List<ResultView> results, CandidateProfile profile) {
+            long strongMatches = safeList(results).stream()
+                    .filter(result -> result.closenessScore() >= 60)
+                    .count();
+            long visibleGaps = safeList(results).stream()
+                    .filter(result -> !"low".equals(result.gapLevel()))
+                    .count();
+            int averageScore = safeList(results).isEmpty()
+                    ? 0
+                    : (int) Math.round(safeList(results).stream()
+                    .mapToInt(ResultView::closenessScore)
+                    .average()
+                    .orElse(0));
+            int bestScore = safeList(results).stream()
+                    .mapToInt(ResultView::closenessScore)
+                    .max()
+                    .orElse(0);
+            String modeCode = profile == null ? "FOCUSED" : codeOrDefault(profile.getSearchMode(), "FOCUSED");
+            return new ResultsOverviewView(
+                    safeList(results).size(),
+                    (int) strongMatches,
+                    (int) visibleGaps,
+                    averageScore,
+                    bestScore,
+                    labelSearchMode(modeCode),
+                    switch (modeCode) {
+                        case "BALANCED" -> "Mantiene tu foco principal y abre oportunidades cercanas sin reordenar.";
+                        case "EXPLORATORY" -> "Amplia la lectura del perfil sin cambiar el orden activo.";
+                        default -> "Prioriza lo mas cercano a tu objetivo actual.";
+                    },
+                    ProfileVectorCompatibilityController.profileUpdatedLabel(profile)
             );
         }
     }
@@ -319,6 +539,167 @@ public class ProfileVectorCompatibilityController {
                     roadmap.evidenceIdeas(),
                     roadmap.relatedSignals(),
                     roadmap.toneLabel()
+            );
+        }
+    }
+
+    private record ProfessionalEvidenceSummaryView(
+            List<String> strongDomains,
+            List<String> transitionDomains,
+            List<SeniorityByDomainView> seniorityByDomain,
+            List<ProfessionalEvidenceSkillView> workExperienceSkills,
+            List<ProfessionalEvidenceSkillView> projectSkills,
+            List<ProfessionalEvidenceSkillView> academicSkills,
+            List<ProfessionalEvidenceSkillView> declaredOnlySkills,
+            List<ProfessionalEvidenceSkillView> transferableSkills,
+            boolean hasItems,
+            String note
+    ) {
+        static ProfessionalEvidenceSummaryView from(ProfileEvidenceSummary summary) {
+            if (summary == null) {
+                return empty();
+            }
+            List<ProfessionalEvidenceSkillView> skillEvidence = safeList(summary.skillEvidence()).stream()
+                    .map(ProfessionalEvidenceSkillView::fromEvidence)
+                    .toList();
+            List<ProfessionalEvidenceSkillView> workExperience = skillEvidence.stream()
+                    .filter(skill -> skill.evidenceTypeCode().equals(ProfessionalEvidenceType.WORK_EXPERIENCE.name()))
+                    .toList();
+            List<ProfessionalEvidenceSkillView> project = skillEvidence.stream()
+                    .filter(skill -> skill.evidenceTypeCode().equals(ProfessionalEvidenceType.PROJECT.name()))
+                    .toList();
+            List<ProfessionalEvidenceSkillView> academic = skillEvidence.stream()
+                    .filter(skill -> skill.evidenceTypeCode().equals(ProfessionalEvidenceType.ACADEMIC.name()))
+                    .toList();
+            List<ProfessionalEvidenceSkillView> declaredOnly = skillEvidence.stream()
+                    .filter(skill -> skill.evidenceTypeCode().equals(ProfessionalEvidenceType.DECLARED_ONLY.name()))
+                    .toList();
+            List<ProfessionalEvidenceSkillView> transferable = skillEvidence.stream()
+                    .filter(skill -> skill.evidenceTypeCode().equals(ProfessionalEvidenceType.TRANSFERABLE.name()))
+                    .toList();
+            List<String> strongDomains = safeList(summary.strongDomains()).stream()
+                    .map(domain -> labelProfessionalDomain(domain.name()))
+                    .distinct()
+                    .toList();
+            List<String> transitionDomains = safeList(summary.transitionDomains()).stream()
+                    .map(domain -> labelProfessionalDomain(domain.name()))
+                    .distinct()
+                    .toList();
+            List<SeniorityByDomainView> seniorityByDomain = safeList(summary.seniorityByDomain()).stream()
+                    .map(SeniorityByDomainView::from)
+                    .toList();
+            boolean hasItems = !strongDomains.isEmpty()
+                    || !transitionDomains.isEmpty()
+                    || !seniorityByDomain.isEmpty()
+                    || !skillEvidence.isEmpty();
+            return new ProfessionalEvidenceSummaryView(
+                    strongDomains,
+                    transitionDomains,
+                    seniorityByDomain,
+                    workExperience,
+                    project,
+                    academic,
+                    declaredOnly,
+                    transferable,
+                    hasItems,
+                    "Esta lectura ayuda a interpretar el perfil, pero no modifica el ranking semantico."
+            );
+        }
+
+        private static ProfessionalEvidenceSummaryView empty() {
+            return new ProfessionalEvidenceSummaryView(
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    false,
+                    "Esta lectura ayuda a interpretar el perfil, pero no modifica el ranking semantico."
+            );
+        }
+    }
+
+    private record ProfessionalEvidenceSkillView(
+            String skillName,
+            String evidenceTypeLabel,
+            String evidenceTypeCode,
+            String strengthLabel,
+            String strengthCode,
+            String domainLabel,
+            String sourceLabel,
+            String context,
+            List<String> warnings,
+            boolean weak,
+            boolean transferable,
+            boolean hasEvidence
+    ) {
+        static ProfessionalEvidenceSkillView fromEvidence(ProfessionalSkillEvidence evidence) {
+            if (evidence == null) {
+                return withoutEvidence("");
+            }
+            String evidenceTypeCode = evidence.evidenceType() == null ? null : evidence.evidenceType().name();
+            String strengthCode = evidence.strength() == null ? null : evidence.strength().name();
+            return new ProfessionalEvidenceSkillView(
+                    evidence.skillName(),
+                    labelProfessionalEvidenceType(evidenceTypeCode),
+                    codeOrUnknown(evidenceTypeCode),
+                    labelProfessionalEvidenceStrength(strengthCode),
+                    codeOrUnknown(strengthCode),
+                    evidence.domain() == null ? "No detectado" : labelProfessionalDomain(evidence.domain().name()),
+                    evidence.sourceLabel(),
+                    evidence.context(),
+                    safeList(evidence.warnings()),
+                    evidence.strength() == ProfessionalEvidenceStrength.WEAK
+                            || evidence.evidenceType() == ProfessionalEvidenceType.DECLARED_ONLY,
+                    evidence.evidenceType() == ProfessionalEvidenceType.TRANSFERABLE,
+                    true
+            );
+        }
+
+        static ProfessionalEvidenceSkillView fromSkill(String skillName, ProfileEvidenceSummary summary) {
+            if (summary == null) {
+                return withoutEvidence(skillName);
+            }
+            return summary.strongestEvidenceFor(skillName)
+                    .map(ProfessionalEvidenceSkillView::fromEvidence)
+                    .orElseGet(() -> withoutEvidence(skillName));
+        }
+
+        private static ProfessionalEvidenceSkillView withoutEvidence(String skillName) {
+            return new ProfessionalEvidenceSkillView(
+                    skillName,
+                    "",
+                    "UNKNOWN",
+                    "",
+                    "UNKNOWN",
+                    "",
+                    "",
+                    "",
+                    List.of(),
+                    false,
+                    false,
+                    false
+            );
+        }
+    }
+
+    private record SeniorityByDomainView(
+            String domainLabel,
+            String seniorityLabel,
+            String evidenceTypeLabel,
+            String confidenceLabel,
+            String reason
+    ) {
+        static SeniorityByDomainView from(SeniorityByDomain seniority) {
+            return new SeniorityByDomainView(
+                    seniority.domain() == null ? "No detectado" : labelProfessionalDomain(seniority.domain().name()),
+                    labelSeniority(seniority.seniority()),
+                    labelProfessionalEvidenceType(seniority.evidenceType() == null ? null : seniority.evidenceType().name()),
+                    labelProfessionalEvidenceStrength(seniority.confidence() == null ? null : seniority.confidence().name()),
+                    seniority.reason()
             );
         }
     }
@@ -386,7 +767,7 @@ public class ProfileVectorCompatibilityController {
     }
 
     private record RequirementChecklistView(
-            List<String> presentSkills,
+            List<ProfessionalEvidenceSkillView> presentSkills,
             List<String> missingCriticalSkills,
             List<String> missingSecondarySkills,
             List<TransferView> transferableSkills,
@@ -400,9 +781,13 @@ public class ProfileVectorCompatibilityController {
                 List<String> missingSecondarySkills,
                 List<TransferView> transferableSkills,
                 List<SkillEquivalenceView> partialRelations,
-                List<String> suggestions
+                List<String> suggestions,
+                ProfileEvidenceSummary profileEvidenceSummary
         ) {
-            List<String> safePresent = nonBlankStrings(presentSkills);
+            List<ProfessionalEvidenceSkillView> safePresent = nonBlankStrings(presentSkills).stream()
+                    .map(skill -> ProfessionalEvidenceSkillView.fromSkill(skill, profileEvidenceSummary))
+                    .filter(skill -> !skill.transferable())
+                    .toList();
             List<String> safeMissingCritical = nonBlankStrings(missingCriticalSkills);
             List<String> safeMissingSecondary = nonBlankStrings(missingSecondarySkills);
             List<TransferView> safeTransferable = safeList(transferableSkills);
@@ -530,6 +915,161 @@ public class ProfileVectorCompatibilityController {
         );
     }
 
+    private static String userSummary(VectorFirstCompatibilityResult result, int closenessScore, String gapLevel) {
+        String categoryCode = result.compatibilityCategory() == null ? "UNKNOWN" : result.compatibilityCategory().name();
+        if (closenessScore >= 70 && "low".equals(gapLevel)) {
+            return "Encaje fuerte para priorizar primero en tu busqueda.";
+        }
+        if (closenessScore >= 70) {
+            return "Muy buen encaje con algunos puntos puntuales para reforzar.";
+        }
+        if (closenessScore >= 55 && "high".equals(gapLevel)) {
+            return "Buen punto de partida, aunque conviene revisar brechas visibles antes de priorizar.";
+        }
+        if (closenessScore >= 55) {
+            return "Oportunidad cercana para explorar con calma y comparar mejor el detalle.";
+        }
+        if ("TRANSFERABLE_OPPORTUNITY".equals(categoryCode) || "ASPIRATIONAL_MATCH".equals(categoryCode)) {
+            return "Oportunidad parcial o transferible para mirar en detalle antes de descartarla.";
+        }
+        return "Lectura orientativa para decidir si te conviene profundizar en esta oportunidad.";
+    }
+
+    private static List<String> visibleSkills(VectorFirstCompatibilityResult result) {
+        LinkedHashSet<String> visible = new LinkedHashSet<>();
+        for (String skill : nonBlankStrings(result.matchedSkills())) {
+            String normalized = skill.trim();
+            if (normalized.length() > 34) {
+                continue;
+            }
+            visible.add(normalized);
+            if (visible.size() == 5) {
+                break;
+            }
+        }
+        return visible.stream().toList();
+    }
+
+    private static String companyInitial(String company, String title) {
+        String base = firstNonBlank(company, title, "Oportunidad");
+        return base.substring(0, 1).toUpperCase(Locale.ROOT);
+    }
+
+    private static String locationLabel(Job job) {
+        return job == null ? null : firstNonBlank(job.getLocation(), job.getLocationRaw());
+    }
+
+    private static String postedAtLabel(Job job) {
+        if (job == null) {
+            return null;
+        }
+        String posted = firstNonBlank(job.getPostedAtText());
+        if (posted != null) {
+            return posted;
+        }
+        if (job.getCreatedAt() == null) {
+            return null;
+        }
+        return "Actualizada " + SHORT_DATE_FORMATTER.format(job.getCreatedAt().atZone(UI_ZONE));
+    }
+
+    private static String profileUpdatedLabel(CandidateProfile profile) {
+        if (profile == null) {
+            return "Perfil listo para revisar";
+        }
+        if (profile.getUpdatedAt() != null) {
+            return "Actualizado " + SHORT_DATE_FORMATTER.format(profile.getUpdatedAt().atZone(UI_ZONE));
+        }
+        if (profile.getCreatedAt() != null) {
+            return "Creado " + SHORT_DATE_FORMATTER.format(profile.getCreatedAt().atZone(UI_ZONE));
+        }
+        return "Perfil listo para revisar";
+    }
+
+    private static String detectModality(Job job) {
+        String text = normalizeForSearch((job == null ? "" : safeText(firstNonBlank(job.getLocation(), job.getLocationRaw())))
+                + " "
+                + descriptiveText(job));
+        if (containsAny(text, "remoto", "remote")) {
+            return "REMOTE";
+        }
+        if (containsAny(text, "hibrido", "hybrid")) {
+            return "HYBRID";
+        }
+        if (containsAny(text, "presencial", "onsite", "on site", "oficina")) {
+            return "ONSITE";
+        }
+        return "UNKNOWN";
+    }
+
+    private static String detectOpportunityType(Job job) {
+        String text = normalizeForSearch((job == null ? "" : safeText(firstNonBlank(job.getTitle())))
+                + " "
+                + descriptiveText(job));
+        if (containsAny(text, "full time", "fulltime", "jornada completa", "tiempo completo")) {
+            return "FULLTIME";
+        }
+        if (containsAny(text, "part time", "parttime", "medio tiempo", "tiempo parcial")) {
+            return "PARTTIME";
+        }
+        if (containsAny(text, "contrato", "contract", "contractor", "temporary", "temp")) {
+            return "CONTRACT";
+        }
+        if (containsAny(text, "freelance", "autonomo", "independiente")) {
+            return "FREELANCE";
+        }
+        return "UNKNOWN";
+    }
+
+    private static String descriptiveText(Job job) {
+        if (job == null) {
+            return "";
+        }
+        return String.join(" ",
+                safeText(job.getDescription()),
+                safeText(job.getVisibleText()),
+                safeText(job.getRequirementsText())
+        );
+    }
+
+    private static boolean containsAny(String text, String... terms) {
+        for (String term : terms) {
+            if (text.contains(normalizeForSearch(term))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String normalizeForSearch(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return value.toLowerCase(Locale.ROOT)
+                .replace('á', 'a')
+                .replace('é', 'e')
+                .replace('í', 'i')
+                .replace('ó', 'o')
+                .replace('ú', 'u')
+                .replace('ü', 'u')
+                .replaceAll("[^a-z0-9\\s]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private static String safeText(String value) {
+        return value == null ? "" : value;
+    }
+
     private static <T> List<T> safeList(List<T> values) {
         return values == null ? List.of() : values;
     }
@@ -581,6 +1121,44 @@ public class ProfileVectorCompatibilityController {
         };
     }
 
+    private static String labelProfessionalEvidenceType(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "WORK_EXPERIENCE" -> "Experiencia laboral";
+            case "PROJECT" -> "Proyecto";
+            case "ACADEMIC" -> "Academica";
+            case "DECLARED_ONLY" -> "Declarada";
+            case "TRANSFERABLE" -> "Transferible";
+            case "MISSING" -> "Brecha";
+            default -> "No detectado";
+        };
+    }
+
+    private static String labelProfessionalEvidenceStrength(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "STRONG" -> "Fuerte";
+            case "MEDIUM" -> "Media";
+            case "WEAK" -> "Debil";
+            case "NONE" -> "Sin evidencia";
+            default -> "No detectada";
+        };
+    }
+
+    private static String labelProfessionalDomain(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "BACKEND_JAVA" -> "Backend Java";
+            case "BACKEND_DOTNET" -> "Backend .NET";
+            case "SUPPORT" -> "Soporte IT";
+            case "APP_SUPPORT" -> "Soporte de aplicaciones";
+            case "INFRA" -> "Infraestructura";
+            case "CLOUD" -> "Cloud";
+            case "DATA" -> "Data/BI";
+            case "FRONTEND" -> "Frontend";
+            case "QA" -> "QA";
+            case "SECURITY" -> "Seguridad";
+            default -> "No detectado";
+        };
+    }
+
     private static String labelConfidence(String code) {
         return switch (codeOrUnknown(code)) {
             case "HIGH" -> "Alta";
@@ -626,6 +1204,25 @@ public class ProfileVectorCompatibilityController {
             case "BALANCED" -> "Balanceado";
             case "EXPLORATORY" -> "Exploratorio";
             default -> "No detectado";
+        };
+    }
+
+    private static String labelModality(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "REMOTE" -> "Remoto";
+            case "HYBRID" -> "Hibrido";
+            case "ONSITE" -> "Presencial";
+            default -> null;
+        };
+    }
+
+    private static String labelOpportunityType(String code) {
+        return switch (codeOrUnknown(code)) {
+            case "FULLTIME" -> "Full time";
+            case "PARTTIME" -> "Part time";
+            case "CONTRACT" -> "Contrato";
+            case "FREELANCE" -> "Freelance";
+            default -> null;
         };
     }
 

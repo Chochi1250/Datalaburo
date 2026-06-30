@@ -7,6 +7,7 @@ import java.util.List;
 public record KnowledgeResolutionInput(
         String profileRole,
         String opportunityRole,
+        String secondaryOpportunityRole,
         String opportunitySeniority,
         List<String> matchedSkills,
         List<String> missingCriticalSkills,
@@ -14,6 +15,29 @@ public record KnowledgeResolutionInput(
         List<ProfessionalSkillEvidence> skillEvidence,
         boolean insufficientOpportunityMetadata
 ) {
+    public KnowledgeResolutionInput(
+            String profileRole,
+            String opportunityRole,
+            String opportunitySeniority,
+            List<String> matchedSkills,
+            List<String> missingCriticalSkills,
+            List<String> missingSecondarySkills,
+            List<ProfessionalSkillEvidence> skillEvidence,
+            boolean insufficientOpportunityMetadata
+    ) {
+        this(
+                profileRole,
+                opportunityRole,
+                null,
+                opportunitySeniority,
+                matchedSkills,
+                missingCriticalSkills,
+                missingSecondarySkills,
+                skillEvidence,
+                insufficientOpportunityMetadata
+        );
+    }
+
     public KnowledgeResolutionInput {
         matchedSkills = safe(matchedSkills);
         missingCriticalSkills = safe(missingCriticalSkills);

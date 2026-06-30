@@ -48,14 +48,18 @@ public class KnowledgeCatalogResolver {
 
         KnowledgeCatalog.RoleFamilyDefinition profileRole = resolveRole(input.profileRole());
         KnowledgeCatalog.RoleFamilyDefinition opportunityRole = resolveRole(input.opportunityRole());
+        KnowledgeCatalog.RoleFamilyDefinition secondaryRole = resolveSecondaryRole(
+                input.secondaryOpportunityRole(),
+                opportunityRole
+        );
         if (input.insufficientOpportunityMetadata()) {
-            return limitedContextResult(input, opportunityRole);
+            return limitedContextResult(input, opportunityRole, secondaryRole);
         }
         if (explicitOutOfScopeRoles.contains(KnowledgeCatalogValidator.normalize(input.opportunityRole()))) {
             return explicitOutOfScopeResult();
         }
         if (opportunityRole == null) {
-            return limitedContextResult(input, null);
+            return limitedContextResult(input, null, null);
         }
 
         List<String> unresolvedSignals = new ArrayList<>();
@@ -76,6 +80,7 @@ public class KnowledgeCatalogResolver {
                 opportunityRole,
                 transfers
         );
+        OpportunityKnowledgeEnrichment.SecondaryFocus secondaryFocus = secondaryFocus(secondaryRole);
         boolean outOfScope = coverage == OpportunityKnowledgeEnrichment.CoverageLevel.OUT_OF_SCOPE;
         List<OpportunityKnowledgeEnrichment.Strength> strengths = outOfScope
                 ? List.of()
@@ -88,17 +93,20 @@ public class KnowledgeCatalogResolver {
                 : buildSeniorityGuidance(input.opportunitySeniority(), opportunityRole, input.skillEvidence());
         List<OpportunityKnowledgeEnrichment.Action> actions = outOfScope
                 ? List.of()
-                : buildActions(critical, secondary, strengths);
+                : buildActions(critical, secondary, strengths, transfers, opportunityRole);
 
         List<String> warnings = new ArrayList<>();
         if (outOfScope) {
             warnings.add(catalog.fallbacks().outOfScope());
+        } else if (secondaryFocus != null) {
+            warnings.add(secondaryFocus.limit());
         }
 
         return new OpportunityKnowledgeEnrichment(
                 OpportunityKnowledgeEnrichment.ContextLevel.SUPPORTED,
                 coverage,
                 new OpportunityKnowledgeEnrichment.RoleFamily(opportunityRole.id(), opportunityRole.label()),
+                secondaryFocus,
                 roleExplanation(profileRole, opportunityRole, coverage),
                 strengths,
                 gaps,
@@ -115,6 +123,7 @@ public class KnowledgeCatalogResolver {
                 OpportunityKnowledgeEnrichment.ContextLevel.SUPPORTED,
                 OpportunityKnowledgeEnrichment.CoverageLevel.OUT_OF_SCOPE,
                 null,
+                null,
                 catalog.fallbacks().outOfScope(),
                 List.of(),
                 List.of(),
@@ -128,7 +137,8 @@ public class KnowledgeCatalogResolver {
 
     private OpportunityKnowledgeEnrichment limitedContextResult(
             KnowledgeResolutionInput input,
-            KnowledgeCatalog.RoleFamilyDefinition opportunityRole
+            KnowledgeCatalog.RoleFamilyDefinition opportunityRole,
+            KnowledgeCatalog.RoleFamilyDefinition secondaryRole
     ) {
         List<String> warnings = new ArrayList<>();
         if (input.insufficientOpportunityMetadata()) {
@@ -146,6 +156,7 @@ public class KnowledgeCatalogResolver {
                 opportunityRole == null
                         ? null
                         : new OpportunityKnowledgeEnrichment.RoleFamily(opportunityRole.id(), opportunityRole.label()),
+                secondaryFocus(secondaryRole),
                 explanation,
                 List.of(),
                 List.of(),
@@ -314,7 +325,9 @@ public class KnowledgeCatalogResolver {
     private List<OpportunityKnowledgeEnrichment.Action> buildActions(
             Map<String, TechnologySignals> critical,
             Map<String, TechnologySignals> secondary,
-            List<OpportunityKnowledgeEnrichment.Strength> strengths
+            List<OpportunityKnowledgeEnrichment.Strength> strengths,
+            List<OpportunityKnowledgeEnrichment.Transfer> transfers,
+            KnowledgeCatalog.RoleFamilyDefinition opportunityRole
     ) {
         Map<String, OpportunityKnowledgeEnrichment.Action> out = new LinkedHashMap<>();
         addGapActions(out, critical, "Brecha critica detectada");
@@ -324,11 +337,20 @@ public class KnowledgeCatalogResolver {
             }
             KnowledgeCatalog.TechnologyDefinition technology = technologyById.get(strength.technologyId());
             String id = "EVIDENCE_" + technology.id();
-            out.putIfAbsent(id, new OpportunityKnowledgeEnrichment.Action(
+            addAction(out, new OpportunityKnowledgeEnrichment.Action(
                     id,
                     technology.evidence().declaredOnlyAction(),
                     technology.id(),
                     "Skill declarada o transferible sin evidencia directa"
+            ));
+        }
+        if (!transfers.isEmpty() && opportunityRole != null && !opportunityRole.concreteActions().isEmpty()) {
+            OpportunityKnowledgeEnrichment.Transfer transfer = transfers.get(0);
+            addAction(out, new OpportunityKnowledgeEnrichment.Action(
+                    "TRANSFER_" + transfer.id(),
+                    opportunityRole.concreteActions().get(0),
+                    null,
+                    "Transferencia parcial explicita"
             ));
         }
         addGapActions(out, secondary, "Brecha secundaria detectada");
@@ -343,13 +365,25 @@ public class KnowledgeCatalogResolver {
         for (TechnologySignals signals : gaps.values()) {
             KnowledgeCatalog.TechnologyDefinition technology = signals.technology();
             for (KnowledgeCatalog.ActionDefinition action : technology.actions()) {
-                out.putIfAbsent(action.id(), new OpportunityKnowledgeEnrichment.Action(
+                addAction(out, new OpportunityKnowledgeEnrichment.Action(
                         action.id(),
                         action.text(),
                         technology.id(),
                         reason
                 ));
             }
+        }
+    }
+
+    private static void addAction(
+            Map<String, OpportunityKnowledgeEnrichment.Action> out,
+            OpportunityKnowledgeEnrichment.Action action
+    ) {
+        String normalizedText = KnowledgeCatalogValidator.normalize(action.text());
+        boolean duplicateText = out.values().stream()
+                .anyMatch(existing -> KnowledgeCatalogValidator.normalize(existing.text()).equals(normalizedText));
+        if (!duplicateText) {
+            out.putIfAbsent(action.id(), action);
         }
     }
 
@@ -507,6 +541,31 @@ public class KnowledgeCatalogResolver {
 
     private KnowledgeCatalog.RoleFamilyDefinition resolveRole(String value) {
         return roleByAlias.get(KnowledgeCatalogValidator.normalize(value));
+    }
+
+    private KnowledgeCatalog.RoleFamilyDefinition resolveSecondaryRole(
+            String value,
+            KnowledgeCatalog.RoleFamilyDefinition primaryRole
+    ) {
+        KnowledgeCatalog.RoleFamilyDefinition secondaryRole = resolveRole(value);
+        if (secondaryRole == null || primaryRole == null) {
+            return secondaryRole;
+        }
+        return secondaryRole.id().equals(primaryRole.id()) ? null : secondaryRole;
+    }
+
+    private static OpportunityKnowledgeEnrichment.SecondaryFocus secondaryFocus(
+            KnowledgeCatalog.RoleFamilyDefinition secondaryRole
+    ) {
+        if (secondaryRole == null) {
+            return null;
+        }
+        return new OpportunityKnowledgeEnrichment.SecondaryFocus(
+                secondaryRole.id(),
+                secondaryRole.label(),
+                "La oferta incluye un foco secundario de " + secondaryRole.label()
+                        + "; se informa como limite contextual y no como experiencia demostrada del perfil."
+        );
     }
 
     private static Map<String, KnowledgeCatalog.RoleFamilyDefinition> indexRoles(

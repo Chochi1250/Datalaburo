@@ -1,0 +1,1469 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>DataLaburo - Detalle de oportunidad</title>
+	<link rel="stylesheet" th:href="@{/app.css}"/>
+	<style>
+		.vector-detail-transfer-card,
+		.vector-detail-transfer-route,
+		.vector-detail-route-badge,
+		.vector-detail-route-arrow,
+		.vector-detail-transfer-concept,
+		.vector-detail-shared-signal,
+		.vector-detail-action-title {
+			overflow-wrap: anywhere;
+		}
+		.vector-detail-transfer-card {
+			display: grid;
+			gap: .68rem;
+		}
+		.vector-detail-transfer-route {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: .45rem;
+		}
+		.vector-detail-transfer-concepts,
+		.vector-detail-shared-signals {
+			display: flex;
+			flex-wrap: wrap;
+			gap: .6rem .68rem;
+		}
+		.vector-detail-transfer-concept,
+		.vector-detail-shared-signal:not(.tech-badge) {
+			display: inline-flex;
+			align-items: center;
+			border-radius: 999px;
+			padding: .24rem .58rem;
+			background: rgba(37, 99, 235, .1);
+			color: inherit;
+			font-size: .78rem;
+			line-height: 1.25;
+		}
+		.vector-detail-transfer-warning,
+		.vector-detail-limit-note {
+			margin: 0;
+			color: var(--muted);
+			font-size: .88rem;
+			line-height: 1.5;
+		}
+		.vector-detail-action-title {
+			display: block;
+			margin-bottom: .25rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-hero {
+			align-items: center;
+			gap: clamp(1rem, 2.5vw, 1.75rem);
+			padding: 1.18rem 1.25rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-identity {
+			align-items: center;
+			gap: 1rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-hero-copy {
+			display: grid;
+			justify-items: start;
+		}
+		.page-vector-match.page-vector-match-detail .vector-company-mark.is-large {
+			width: 4.25rem;
+			height: 4.25rem;
+			border-radius: 1rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-hero-copy .vector-detail-company {
+			display: block;
+			margin: 0 0 .32rem;
+			font-size: .9rem;
+			line-height: 1.18;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-hero-copy h1 {
+			margin: 0;
+			max-width: 28ch;
+			font-size: clamp(1.78rem, 2.35vw, 2.55rem);
+			line-height: 1.08;
+			letter-spacing: -.038em;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-meta {
+			gap: .45rem 1rem;
+			margin-top: .78rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-meta > span {
+			font-size: .76rem;
+			line-height: 1.35;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-hero-chips {
+			gap: .45rem;
+			margin-top: .85rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-hero-chips .vector-signal-badge {
+			min-height: 1.85rem;
+			padding: .34rem .78rem;
+			box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+			font-size: .76rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-original-cta {
+			align-self: center;
+			min-height: 2.45rem;
+			margin-top: 1.45rem;
+			padding-inline: 1rem;
+			white-space: nowrap;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-heading.is-badged {
+			display: grid;
+			align-items: start;
+			gap: .34rem;
+			margin-bottom: 1.35rem;
+			padding-bottom: .95rem;
+			border-bottom: 1px solid rgba(148, 163, 184, .16);
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-heading.is-badged .vector-detail-card-icon {
+			display: none;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-heading.is-badged > div {
+			min-width: 0;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-heading.is-badged p {
+			margin: .32rem 0 0;
+			color: #64748b;
+			font-size: .85rem;
+			font-weight: 620;
+			line-height: 1.45;
+			letter-spacing: 0;
+			text-transform: none;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-heading.is-badged h2 {
+			margin: 0;
+			min-width: 0;
+			color: #101d3c;
+			font-size: 1.18rem;
+			line-height: 1.2;
+			letter-spacing: -.022em;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-summary-layout {
+			grid-template-columns: minmax(0, 1.08fr) minmax(250px, .92fr);
+			gap: clamp(1.45rem, 3.4vw, 2.65rem);
+		}
+		.vector-detail-summary-main {
+			min-width: 0;
+		}
+		.vector-detail-summary-meta {
+			display: flex;
+			flex-wrap: wrap;
+			gap: .62rem;
+			margin-top: 1.05rem;
+			margin-bottom: .9rem;
+		}
+		.vector-detail-summary-chip {
+			display: inline-flex;
+			align-items: center;
+			max-width: 100%;
+			justify-content: center;
+			gap: 10px;
+			min-height: 30px;
+			padding: 4px 12px;
+			border: 1px solid var(--badge-border);
+			border-radius: 999px;
+			background: var(--badge-bg);
+			color: var(--badge-text);
+			box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+			font-size: 12px;
+			font-weight: 800;
+			letter-spacing: .012em;
+			line-height: 1.1;
+			text-align: center;
+			overflow-wrap: anywhere;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-summary-chip.tech-badge {
+			padding: 4px 12px;
+		}
+		.vector-detail-summary-chip.is-family {
+			--badge-bg: #5b45ed;
+			--badge-border: #4f39d8;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(91, 69, 237, .22);
+		}
+		.vector-detail-summary-chip.is-coverage {
+			--badge-bg: #64748b;
+			--badge-border: #526173;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(51, 65, 85, .22);
+		}
+		.vector-detail-summary-chip.is-coverage.is-direct {
+			--badge-bg: #0f8f70;
+			--badge-border: #0b735a;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(15, 143, 112, .22);
+		}
+		.vector-detail-summary-chip.is-coverage.is-partial {
+			--badge-bg: #d97706;
+			--badge-border: #b85f05;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(217, 119, 6, .22);
+		}
+		.vector-detail-summary-chip.is-coverage.is-low {
+			--badge-bg: #64748b;
+			--badge-border: #526173;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(51, 65, 85, .22);
+		}
+		.vector-detail-limit-note {
+			margin-top: .8rem;
+		}
+		.vector-detail-summary-support-strip {
+			display: grid;
+			gap: .28rem;
+			margin-top: 1rem;
+			padding-top: 0;
+			border-top: 0;
+		}
+		.vector-detail-summary-support-strip strong {
+			color: #293650;
+			font-size: .78rem;
+			font-weight: 850;
+			line-height: 1.3;
+		}
+		.vector-detail-summary-support-strip span {
+			color: #62718a;
+			font-size: .78rem;
+			line-height: 1.45;
+		}
+		.vector-detail-signal-stats {
+			display: grid;
+			align-content: center;
+			gap: 1.35rem;
+			margin: 0;
+			padding: 0;
+			list-style: none;
+		}
+		.vector-detail-signal-stat {
+			--signal-accent: #5b45ed;
+			position: relative;
+			display: grid;
+			grid-template-columns: 3.25rem minmax(0, 1fr);
+			align-items: center;
+			gap: 1.45rem;
+			min-height: 4.2rem;
+			padding: .2rem 0;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+		}
+		.vector-detail-signal-stat::before {
+			content: "";
+			position: absolute;
+			top: .2rem;
+			bottom: .2rem;
+			left: 3.98rem;
+			width: 2px;
+			border-radius: 999px;
+			background: var(--signal-accent);
+		}
+		.vector-detail-signal-stat:last-child {
+			border-bottom: 0;
+		}
+		.vector-detail-signal-stat > b {
+			display: block;
+			width: auto;
+			height: auto;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+			color: var(--signal-accent);
+			font-size: clamp(2.25rem, 3.35vw, 3rem);
+			font-weight: 900;
+			letter-spacing: -.075em;
+			line-height: .9;
+			text-align: left;
+		}
+		.vector-detail-signal-stat.is-positive {
+			--signal-accent: #10b981;
+		}
+		.vector-detail-signal-stat.is-warning {
+			--signal-accent: #d97706;
+		}
+		.vector-detail-signal-stat strong {
+			display: block;
+			color: #101b3c;
+			font-size: 1.02rem;
+			font-weight: 850;
+			line-height: 1.22;
+		}
+		.vector-detail-signal-stat small {
+			display: block;
+			margin-top: .32rem;
+			color: #6b768f;
+			font-size: .9rem;
+			line-height: 1.42;
+		}
+		.vector-detail-state-note,
+		.vector-detail-empty-state {
+			display: grid;
+			gap: .48rem;
+			padding: .1rem 0 .1rem .85rem;
+			border: 0;
+			border-left: 3px solid rgba(148, 163, 184, .24);
+			border-radius: 0;
+			background: transparent;
+		}
+		.vector-detail-state-note.is-prudent {
+			border-color: var(--feature-accent);
+			background: transparent;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-card.is-strengths .vector-detail-empty-state {
+			border-left-color: var(--feature-accent);
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-card.is-reinforce .vector-detail-empty-state {
+			border-left-color: var(--feature-accent);
+		}
+		.vector-detail-state-note h3,
+		.vector-detail-empty-state strong {
+			margin: 0;
+			color: #24314c;
+			font-size: .98rem;
+			font-weight: 850;
+			line-height: 1.3;
+		}
+		.vector-detail-state-note p,
+		.vector-detail-empty-state p {
+			margin: 0;
+			color: #62718a;
+			font-size: .86rem;
+			line-height: 1.5;
+		}
+		.vector-detail-state-note .vector-detail-shared-signals {
+			margin-top: .1rem;
+		}
+		.vector-detail-state-note .vector-detail-shared-signal.tech-badge {
+			min-height: 30px;
+			padding: 4px 12px;
+			box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+			font-size: 12px;
+			font-weight: 800;
+			line-height: 1.1;
+			text-align: center;
+		}
+		.vector-detail-state-warning {
+			color: #5f6f88;
+			font-size: .78rem;
+			line-height: 1.45;
+		}
+		.vector-detail-main-grid.is-prudent-only,
+		.vector-detail-summary-layout.is-prudent-only {
+			grid-template-columns: 1fr;
+		}
+		.vector-detail-main-grid.has-single-support-card .vector-detail-feature-card.is-full-span {
+			grid-column: 1 / -1;
+		}
+		@media (min-width: 901px) {
+			.page-vector-match.page-vector-match-detail .vector-detail-main-grid.has-single-support-card .vector-detail-feature-card.is-strengths.is-full-span {
+				grid-column: auto;
+			}
+		}
+		.vector-detail-transfer-inline {
+			display: grid;
+			align-items: stretch;
+			gap: 1.18rem;
+			margin-top: 1.65rem;
+			padding-top: 1.3rem;
+			border-top: 1px solid rgba(148, 163, 184, .18);
+		}
+		.vector-detail-transfer-card {
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+			box-shadow: none;
+			padding: 0;
+		}
+		.vector-detail-transfer-heading {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1.1rem;
+			margin-bottom: .05rem;
+		}
+		.vector-detail-transfer-heading strong {
+			color: #59677e;
+			font-size: .72rem;
+			font-weight: 900;
+			letter-spacing: .04em;
+			line-height: 1.2;
+			text-transform: uppercase;
+		}
+		.vector-detail-transfer-heading .tech-badge {
+			justify-content: center;
+			min-height: 30px;
+			padding: 4px 12px;
+			font-size: 12px;
+			font-weight: 800;
+			line-height: 1.1;
+			box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+			text-align: center;
+			white-space: nowrap;
+		}
+		.page-vector-match.page-vector-match-detail .tech-badge.is-transfer-strong {
+			--badge-bg: #0f8f70;
+			--badge-border: #0b735a;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(15, 143, 112, .22);
+		}
+		.page-vector-match.page-vector-match-detail .tech-badge.is-transfer-partial {
+			--badge-bg: #2563eb;
+			--badge-border: #1d4ed8;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(37, 99, 235, .22);
+		}
+		.page-vector-match.page-vector-match-detail .tech-badge.is-transfer-route {
+			--badge-bg: #4f46e5;
+			--badge-border: #4338ca;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(79, 70, 229, .22);
+		}
+		.page-vector-match.page-vector-match-detail .tech-badge.is-transfer-concept {
+			--badge-bg: #0e7490;
+			--badge-border: #0b5f77;
+			--badge-text: #ecfeff;
+			--badge-shadow: rgba(14, 116, 144, .2);
+		}
+		.page-vector-match.page-vector-match-detail .tech-badge.is-transfer-weak {
+			--badge-bg: #b91c1c;
+			--badge-border: #7f1d1d;
+			--badge-text: #ffffff;
+			--badge-shadow: rgba(185, 28, 28, .22);
+		}
+		.vector-detail-route-badge {
+			display: inline-flex;
+			align-items: center;
+			min-height: 1.6rem;
+			padding: .18rem .6rem;
+			border-radius: 999px;
+			font-size: .76rem;
+			font-weight: 850;
+			line-height: 1.25;
+			white-space: normal;
+		}
+		.vector-detail-route-arrow {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0 .05rem;
+			border: 0;
+			background: transparent;
+			color: #536079;
+			font-size: 1rem;
+			font-weight: 900;
+			line-height: 1;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-card .vector-detail-transfer-inline {
+			display: grid;
+			align-items: stretch;
+			gap: 1.18rem;
+			margin-top: 1.65rem;
+			padding-top: 1.3rem;
+			border-top: 1px solid rgba(148, 163, 184, .18);
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-transfer-inline .vector-detail-transfer-card {
+			display: grid;
+			gap: .9rem;
+			padding: 0;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+			box-shadow: none;
+			color: inherit;
+			font-size: inherit;
+			font-weight: inherit;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-transfer-inline .vector-detail-transfer-concepts {
+			display: flex;
+			flex-wrap: wrap;
+			gap: .74rem .82rem;
+			padding: 0;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-transfer-inline .vector-detail-route-badge {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 10px;
+			min-height: 30px;
+			padding: 4px 12px;
+			border-color: var(--badge-border);
+			border-radius: 999px;
+			background: var(--badge-bg);
+			color: var(--badge-text);
+			font-size: 12px;
+			font-weight: 800;
+			letter-spacing: .012em;
+			line-height: 1.1;
+			text-align: center;
+			white-space: normal;
+			box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-transfer-inline .vector-detail-route-arrow {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0 .05rem;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+			color: #536079;
+			font-size: 1rem;
+			font-weight: 900;
+			line-height: 1;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-transfer-inline .vector-detail-transfer-concept {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 10px;
+			border-radius: 999px;
+			min-height: 30px;
+			padding: 4px 12px;
+			border: 1px solid var(--badge-border);
+			background: var(--badge-bg);
+			color: var(--badge-text);
+			box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+			font-size: 12px;
+			font-weight: 800;
+			letter-spacing: .012em;
+			line-height: 1.1;
+			text-align: center;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-card.is-strengths .vector-detail-tech-chips {
+			margin-bottom: 1.22rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-card.is-strengths .vector-detail-evidence-list {
+			gap: .86rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-evidence-list img.vector-detail-check {
+			width: 20px;
+			height: 20px;
+			border: 0;
+			background: transparent;
+			object-fit: contain;
+		}
+		.vector-detail-transfer-warning {
+			color: #66758d;
+			font-size: .82rem;
+			line-height: 1.5;
+			display: -webkit-box;
+			overflow: hidden;
+			max-width: 68ch;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 2;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list > div {
+			grid-template-columns: 12px minmax(0, 1fr);
+			align-items: start;
+			gap: .78rem;
+			padding: .08rem 0 1.05rem;
+			border-bottom: 1px solid rgba(148, 163, 184, .18);
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list .vector-detail-status-dot {
+			margin-top: .34rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list .vector-detail-status-dot.is-high {
+			color: #dc2626;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list .vector-detail-status-dot.is-medium {
+			color: #d97706;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list .vector-detail-status-dot.is-low {
+			color: #16a34a;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list > div:last-child {
+			padding-bottom: 0;
+			border-bottom: 0;
+		}
+		.vector-detail-gap-copy {
+			display: grid;
+			gap: .38rem;
+			min-width: 0;
+		}
+		.vector-detail-gap-heading {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: .42rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list p {
+			margin: 0;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list strong {
+			display: block;
+			align-items: center;
+			margin: 0;
+			color: #263550;
+			font-size: .9rem;
+			font-weight: 780;
+			line-height: 1.35;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list small {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 10px;
+			vertical-align: middle;
+			margin: 0;
+			min-height: 30px;
+			padding: 4px 12px;
+			border: 1px solid var(--badge-border);
+			border-radius: 999px;
+			background: var(--badge-bg);
+			color: var(--badge-text);
+			box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+			font-size: 12px;
+			font-weight: 800;
+			letter-spacing: .012em;
+			line-height: 1.1;
+			text-align: center;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list small.is-high {
+			--badge-bg: #dc2626;
+			--badge-border: #b91c1c;
+			--badge-text: #ffffff;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list small.is-medium {
+			--badge-bg: #d97706;
+			--badge-border: #b85f05;
+			--badge-text: #ffffff;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list small.is-low {
+			--badge-bg: #16a34a;
+			--badge-border: #15803d;
+			--badge-text: #ffffff;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-gap-list span:not(.vector-detail-status-dot) {
+			color: #53627a;
+			font-size: .82rem;
+			line-height: 1.48;
+		}
+		.vector-detail-gap-list em {
+			display: block;
+			margin-top: .25rem;
+			font-style: normal;
+			color: var(--muted);
+			font-size: .78rem;
+			line-height: 1.45;
+			overflow-wrap: anywhere;
+		}
+		.vector-detail-timeline {
+			--timeline-dot-size: 2rem;
+			--timeline-line-size: 3px;
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+			align-items: start;
+			align-content: start;
+			gap: 1.55rem;
+			padding: .3rem .2rem 0;
+		}
+		.vector-detail-timeline::before {
+			top: calc(.3rem + (var(--timeline-dot-size) / 2));
+			left: max(1rem, 7%);
+			right: max(1rem, 7%);
+			height: var(--timeline-line-size);
+			transform: translateY(-50%);
+			border-radius: 999px;
+			background: linear-gradient(90deg, rgba(99, 102, 241, .18), #5c45e6, rgba(37, 99, 235, .2));
+		}
+		.vector-detail-timeline li > span {
+			width: var(--timeline-dot-size);
+			height: var(--timeline-dot-size);
+			border-width: 4px;
+			box-shadow: 0 0 0 1px rgba(92, 69, 230, .45), 0 10px 20px rgba(92, 69, 230, .16);
+		}
+		.vector-detail-timeline li {
+			margin: 0;
+		}
+		.vector-detail-timeline p {
+			max-width: min(26ch, 100%);
+			font-size: .86rem;
+			line-height: 1.48;
+		}
+		.vector-detail-timeline small {
+			display: block;
+			margin-top: .2rem;
+			color: #64748b;
+			font-size: .8rem;
+			line-height: 1.45;
+		}
+		.vector-detail-timeline.is-single-action {
+			grid-template-columns: minmax(0, min(24rem, 100%));
+			justify-content: center;
+		}
+		.vector-detail-timeline.is-two-actions {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.vector-detail-timeline.is-single-action::before {
+			display: none;
+		}
+		.vector-detail-timeline.is-single-action li {
+			justify-items: center;
+			text-align: center;
+		}
+		.vector-detail-timeline.is-single-action p {
+			max-width: 26rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline {
+			--timeline-dot-size: 2rem;
+			--timeline-line-size: 3px;
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+			position: relative;
+			align-items: start;
+			align-content: start;
+			gap: 1.55rem;
+			margin: 0;
+			padding: .3rem .2rem 0;
+			list-style: none;
+			counter-reset: action-step;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline::before {
+			content: "";
+			position: absolute;
+			top: calc(.3rem + (var(--timeline-dot-size) / 2));
+			left: max(1rem, 7%);
+			right: max(1rem, 7%);
+			height: var(--timeline-line-size);
+			transform: translateY(-50%);
+			border-radius: 999px;
+			background: linear-gradient(90deg, rgba(99, 102, 241, .18), #5c45e6, rgba(37, 99, 235, .2));
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline li {
+			display: grid;
+			justify-items: center;
+			align-content: start;
+			position: relative;
+			min-width: 0;
+			margin: 0;
+			text-align: center;
+			counter-increment: action-step;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline li > span {
+			display: grid;
+			place-items: center;
+			z-index: 1;
+			width: var(--timeline-dot-size);
+			height: var(--timeline-dot-size);
+			border: 4px solid #ffffff;
+			border-radius: 50%;
+			background: #5c45e6;
+			box-shadow: 0 0 0 1px rgba(92, 69, 230, .45), 0 10px 20px rgba(92, 69, 230, .16);
+			color: #ffffff;
+			font-size: .68rem;
+			font-weight: 900;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline p {
+			margin: .9rem auto 0;
+			max-width: min(26ch, 100%);
+			color: #4f5d76;
+			font-size: .86rem;
+			line-height: 1.48;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline small {
+			display: block;
+			margin-top: .2rem;
+			color: #64748b;
+			font-size: .8rem;
+			line-height: 1.45;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline.is-single-action {
+			grid-template-columns: minmax(0, min(24rem, 100%));
+			justify-content: center;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline.is-two-actions {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			max-width: 48rem;
+			margin-inline: auto;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline.is-two-actions::before {
+			left: calc(25% - (var(--timeline-dot-size) / 2));
+			right: calc(25% - (var(--timeline-dot-size) / 2));
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline.is-single-action::before {
+			display: none;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline.is-single-action li {
+			justify-items: center;
+			text-align: center;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline.is-single-action p {
+			max-width: 26rem;
+		}
+		.vector-detail-guide-note {
+			margin: 1rem 0 0;
+			color: #68758c;
+			font-size: .8rem;
+			line-height: 1.45;
+			text-align: center;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-feature-card.is-plan.is-guide {
+			--feature-accent: #6757e9;
+			--feature-accent-soft: #f5f3ff;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline.is-guide-timeline li > span {
+			background: #6757e9;
+			box-shadow: 0 0 0 1px rgba(103, 87, 233, .42), 0 10px 20px rgba(103, 87, 233, .12);
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-timeline.is-guide-timeline::before {
+			background: linear-gradient(90deg, rgba(103, 87, 233, .16), #6757e9, rgba(37, 99, 235, .16));
+		}
+		.vector-detail-highlight.is-prudent {
+			align-items: flex-start;
+		}
+		.vector-detail-highlight.is-prudent p {
+			margin: .25rem 0 0;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-card,
+		.page-vector-match.page-vector-match-detail .vector-detail-side-card {
+			padding: 1.08rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-card {
+			--detail-score-accent: var(--score-accent, #d97706);
+			display: grid;
+			gap: .74rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-card .vector-detail-score-copy {
+			font-size: .8rem;
+			line-height: 1.55;
+			margin: 0;
+		}
+		.vector-detail-score-explain-card {
+			display: grid;
+			gap: .8rem;
+		}
+		.vector-detail-score-explain-card p {
+			margin: 0;
+			color: #64748b;
+			font-size: .78rem;
+			line-height: 1.5;
+		}
+		.vector-detail-score-scale {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: .55rem;
+			margin-top: .1rem;
+		}
+		.vector-detail-score-scale span {
+			display: grid;
+			gap: .12rem;
+			padding-bottom: .42rem;
+			border-bottom: 2px solid #ef4444;
+			color: #64748b;
+			font-size: .7rem;
+			line-height: 1.25;
+		}
+		.vector-detail-score-scale span:nth-child(2) {
+			border-color: #eab308;
+		}
+		.vector-detail-score-scale span:nth-child(3) {
+			border-color: #16a34a;
+		}
+		.vector-detail-score-scale b {
+			color: #334155;
+			font-size: .72rem;
+			font-weight: 850;
+		}
+		.vector-detail-score-scale small {
+			color: #718097;
+			font-size: .72rem;
+			line-height: 1.2;
+		}
+		.vector-detail-profile-link {
+			display: inline-flex;
+			align-items: center;
+			width: fit-content;
+			margin-top: .1rem;
+			color: #4f46e5;
+			font-size: .78rem;
+			font-weight: 820;
+			text-decoration: none;
+		}
+		.vector-detail-profile-link:hover {
+			text-decoration: underline;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-heading {
+			align-items: start;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-heading > span {
+			width: auto;
+			height: auto;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+			color: #64748b;
+			font-family: inherit;
+			font-size: .82rem;
+			line-height: 1.2;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-side-card .vector-detail-card-icon.is-asset-icon {
+			width: 1.55rem;
+			height: 1.55rem;
+			flex: 0 0 1.55rem;
+			border-radius: 0;
+			background: transparent;
+			box-shadow: none;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-side-card .vector-detail-card-icon.is-asset-icon img {
+			display: block;
+			max-width: 100%;
+			max-height: 100%;
+			object-fit: contain;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-quick-signals {
+			gap: 1.45rem;
+			margin-top: 1rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-quick-signals > div {
+			grid-template-columns: .75rem minmax(0, 1fr);
+			gap: .9rem;
+			padding-bottom: 1.16rem;
+			border-bottom: 1px solid rgba(148, 163, 184, .16);
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-quick-signals > div:last-child {
+			padding-bottom: 0;
+			border-bottom: 0;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-quick-signals strong {
+			font-size: .84rem;
+			line-height: 1.35;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-quick-signals small {
+			margin-top: .32rem;
+			font-size: .77rem;
+			line-height: 1.5;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-card-heading.is-compact h2,
+		.page-vector-match.page-vector-match-detail .vector-detail-related-heading h2 {
+			font-size: .98rem;
+			line-height: 1.25;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-related-heading a {
+			font-size: .72rem;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-scale b,
+		.page-vector-match.page-vector-match-detail .vector-detail-score-scale small {
+			font-size: .72rem;
+			line-height: 1.2;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-scale span:nth-child(1) {
+			border-color: #ef4444;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-scale span:nth-child(2) {
+			border-color: #eab308;
+		}
+		.page-vector-match.page-vector-match-detail .vector-detail-score-scale span:nth-child(3) {
+			border-color: #16a34a;
+		}
+		.page-vector-match.page-vector-match-detail .vector-related-item {
+			grid-template-columns: 2.45rem minmax(0, 1fr) auto;
+			gap: .7rem;
+			padding: .78rem 0;
+		}
+		.page-vector-match.page-vector-match-detail .vector-related-copy strong {
+			font-size: .8rem;
+			font-weight: 850;
+			line-height: 1.32;
+		}
+		.page-vector-match.page-vector-match-detail .vector-related-copy small,
+		.page-vector-match.page-vector-match-detail .vector-related-copy em {
+			font-size: .71rem;
+			line-height: 1.35;
+		}
+		.page-vector-match.page-vector-match-detail .vector-related-score {
+			color: #eab308;
+			font-size: .75rem;
+			font-weight: 800;
+			line-height: 1.2;
+		}
+		.page-vector-match.page-vector-match-detail .vector-related-score[data-score-band="high"] {
+			color: #16a34a;
+		}
+		.page-vector-match.page-vector-match-detail .vector-related-score[data-score-band="low"] {
+			color: #ef4444;
+		}
+		.page-vector-match.page-vector-match-detail .vector-related-score b {
+			font-size: 1.05rem;
+		}
+		@media (max-width: 1180px) {
+			.vector-detail-workspace {
+				grid-template-columns: minmax(0, 1fr);
+			}
+			.vector-detail-primary,
+			.vector-detail-sidebar {
+				min-width: 0;
+			}
+			.vector-detail-sidebar {
+				position: static;
+				top: auto;
+				width: 100%;
+			}
+		}
+		@media (max-width: 900px) {
+			.page-vector-match.page-vector-match-detail .vector-detail-timeline:not(.is-single-action) {
+				grid-template-columns: minmax(0, 1fr);
+				gap: 1rem;
+				padding: .15rem 0 0;
+			}
+			.page-vector-match.page-vector-match-detail .vector-detail-timeline:not(.is-single-action)::before {
+				top: calc(.15rem + (var(--timeline-dot-size) / 2));
+				bottom: .45rem;
+				left: calc(var(--timeline-dot-size) / 2);
+				right: auto;
+				width: var(--timeline-line-size);
+				height: auto;
+				transform: translateX(-50%);
+			}
+			.page-vector-match.page-vector-match-detail .vector-detail-timeline:not(.is-single-action) li {
+				grid-template-columns: var(--timeline-dot-size) minmax(0, 1fr);
+				justify-items: start;
+				gap: .8rem;
+				text-align: left;
+			}
+			.page-vector-match.page-vector-match-detail .vector-detail-timeline:not(.is-single-action) p {
+				max-width: none;
+				margin: 0;
+				padding-top: .12rem;
+			}
+			.page-vector-match.page-vector-match-detail .vector-detail-summary-layout {
+				grid-template-columns: minmax(0, 1fr);
+			}
+			.vector-detail-signal-stat {
+				grid-template-columns: 2.75rem minmax(0, 1fr);
+				gap: 1.15rem;
+				min-height: 3.75rem;
+			}
+			.vector-detail-signal-stat::before {
+				left: 3.32rem;
+			}
+			.vector-detail-signal-stat > b {
+				font-size: 2.35rem;
+			}
+		}
+	</style>
+</head>
+<body class="page page-vector-match page-vector-match-detail">
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<main class="container vector-match-detail-page">
+	<a class="vector-detail-back"
+	   th:if="${profile != null}"
+	   th:href="@{/profiles/{profileId}/vector-first-compatibility(profileId=${profile.id},limit=${limit})}">
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+		Volver a resultados
+	</a>
+
+	<section class="vector-alert vector-alert-error" th:if="${error}">
+		<h2>No se pudo abrir esta oportunidad</h2>
+		<p th:text="${error}">Error</p>
+	</section>
+
+	<div class="vector-detail-workspace" th:if="${selectedResult != null}">
+		<div class="vector-detail-primary">
+			<section class="vector-detail-hero">
+				<div class="vector-detail-identity">
+					<span class="company-mark vector-company-mark is-large" th:attr="data-company=${selectedResult.company}">
+						<img class="logo-img"
+							 th:if="${selectedResult.companyLogoUrl != null && !selectedResult.companyLogoUrl.isBlank()}"
+							 th:src="${selectedResult.companyLogoUrl}"
+							 alt=""
+							 loading="lazy"
+							 decoding="async"
+							 referrerpolicy="no-referrer"
+							 onload="this.parentElement.querySelector('.logo-fallback').style.display='none';"
+							 onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+						<span class="logo-fallback"
+							  th:style="${selectedResult.companyLogoUrl != null && !selectedResult.companyLogoUrl.isBlank()} ? 'display:none' : ''"
+							  th:text="${selectedResult.companyInitial}">A</span>
+					</span>
+
+					<div class="vector-detail-hero-copy">
+						<p class="vector-detail-company"
+						   th:text="${selectedResult.company != null && !selectedResult.company.isBlank() ? selectedResult.company : 'Empresa no informada'}">Empresa</p>
+						<h1 th:text="${selectedResult.title}">Technical Consultant Intern</h1>
+
+						<div class="vector-detail-meta"
+							 th:if="${selectedResult.locationLabel != null || selectedResult.modalityLabel != null || selectedResult.opportunityTypeLabel != null || selectedResult.postedAtLabel != null}">
+							<span th:if="${selectedResult.locationLabel != null}">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+								<span th:text="${selectedResult.locationLabel}">Ubicación</span>
+							</span>
+							<span th:if="${selectedResult.modalityLabel != null}">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M8 22h8m-4-4v4"/></svg>
+								<span th:text="${selectedResult.modalityLabel}">Modalidad</span>
+							</span>
+							<span th:if="${selectedResult.opportunityTypeLabel != null}">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3m-5 5h2"/></svg>
+								<span th:text="${selectedResult.opportunityTypeLabel}">Jornada</span>
+							</span>
+							<span th:if="${selectedResult.postedAtLabel != null}">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+								<span th:text="${selectedResult.postedAtLabel}">Publicada recientemente</span>
+							</span>
+						</div>
+
+						<div class="vector-detail-hero-chips">
+							<span class="vector-signal-badge is-rank" th:text="${'Orden visible #' + selectedResult.analysisRank}">Orden visible #10</span>
+							<span class="vector-signal-badge is-category" th:text="${selectedResult.categoryLabel}">Match aspiracional</span>
+							<span class="vector-signal-badge is-evidence" th:if="${selectedResult.hasEvidence}" th:text="${selectedResult.evidenceLabel}">Evidencia</span>
+							<span class="vector-signal-badge"
+								  th:classappend="${selectedResult.gapLevel == 'low' ? ' is-positive' : ' is-gap'}"
+								  th:text="${selectedResult.gapLabel}">Brecha menor</span>
+						</div>
+					</div>
+				</div>
+
+				<a class="btn btn-secondary vector-detail-original-cta"
+				   th:href="@{/jobs(selectedJobId=${selectedResult.jobId})}">
+					Ver oferta original
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6m0-6-9 9"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg>
+				</a>
+			</section>
+
+			<section class="vector-detail-main-grid"
+					 id="lectura-principal"
+					 th:if="${knowledgeDetail != null}"
+					 th:classappend="${knowledgeDetail.outOfScope()} ? ' is-prudent-only' : (${knowledgeDetail.strengthsFullWidth()} ? ' has-single-support-card' : (${knowledgeDetail.gapsFullWidth()} ? ' has-single-support-card' : ''))">
+				<article class="vector-detail-feature-card is-summary">
+					<header class="vector-detail-feature-heading is-badged">
+						<div>
+							<h2>Resumen de la oportunidad</h2>
+							<p>Lectura del cat&aacute;logo sobre se&ntilde;ales visibles; no modifica el ranking.</p>
+						</div>
+					</header>
+					<div class="vector-detail-summary-layout"
+						 th:classappend="${knowledgeDetail.outOfScope() || knowledgeDetail.lowContext} ? ' is-prudent-only' : ''">
+						<div class="vector-detail-summary-main">
+							<div class="vector-detail-state-note is-prudent" th:if="${knowledgeDetail.outOfScope()}">
+								<h3>Lectura prudente</h3>
+								<p>La oferta pertenece a un dominio para el que todavía no hay evidencia suficiente en el perfil.</p>
+								<div th:if="${knowledgeDetail.showSharedSignals}">
+									<p><strong>Se&ntilde;ales compartidas, no equivalencia profesional</strong></p>
+									<div class="vector-detail-shared-signals">
+										<span class="chip skill-chip tech-badge is-text-only vector-stack-badge vector-detail-shared-signal"
+											  th:each="signal : ${knowledgeDetail.sharedSignals}"
+											  th:attr="data-skill=${#strings.toLowerCase(signal.skill)},data-tech=${signal.skill}">
+											<span class="tech-badge-label" th:text="${signal.skill + ' · ' + #strings.toLowerCase(signal.evidenceTypeLabel)}">Java · proyecto</span>
+										</span>
+									</div>
+								</div>
+								<small class="vector-detail-state-warning">Estas se&ntilde;ales no demuestran experiencia en el dominio de la oferta.</small>
+							</div>
+							<div class="vector-detail-state-note" th:if="${knowledgeDetail.lowContext && !knowledgeDetail.outOfScope()}">
+								<h3>Información insuficiente para profundizar</h3>
+								<p>La publicación no detalla suficientes requisitos o responsabilidades verificables para generar una lectura más específica.</p>
+								<p>Con mayor detalle de la oferta podrían aparecer coincidencias, brechas o próximos pasos más concretos.</p>
+							</div>
+							<div th:if="${!knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext}">
+								<p class="vector-detail-summary"
+								   th:text="${knowledgeDetail.summary}">Lectura general de esta oportunidad.</p>
+								<div class="vector-detail-summary-meta">
+									<span class="tech-badge is-text-only vector-detail-summary-chip"
+										  th:if="${knowledgeDetail.roleFamilyLabel != null}"
+										  th:classappend="' is-family'"
+										  th:text="${'Familia: ' + knowledgeDetail.roleFamilyLabel}">Familia: Backend</span>
+									<span class="tech-badge is-text-only vector-detail-summary-chip is-coverage"
+										  th:classappend="${knowledgeDetail.coverageCode == 'DIRECT_COVERAGE' ? ' is-direct' : (knowledgeDetail.coverageCode == 'PARTIAL_COVERAGE' ? ' is-partial' : ' is-low')}"
+										  th:text="${knowledgeDetail.coverageLabel}">Cobertura parcial</span>
+									<span class="tech-badge is-text-only vector-detail-summary-chip"
+										  th:if="${knowledgeDetail.showSecondaryFocus}"
+										  th:classappend="' is-family'"
+										  th:text="${'Foco secundario: ' + knowledgeDetail.secondaryFocusLabel}">Foco secundario</span>
+								</div>
+								<p class="vector-detail-limit-note"
+								   th:if="${knowledgeDetail.showTechnicalMatchLimitNote}"
+								   th:text="${knowledgeDetail.technicalMatchLimitNote}">Hay coincidencias técnicas sin evidencia visible.</p>
+								<p class="vector-detail-supporting-copy"
+								   th:if="${knowledgeDetail.showSecondaryFocus}"
+								   th:text="${knowledgeDetail.secondaryFocusLimit}">Límite del foco secundario.</p>
+								<div class="vector-detail-summary-support-strip"
+									 th:if="${knowledgeDetail.showStrengths || knowledgeDetail.showGaps || knowledgeDetail.showTransfers}">
+									<strong>Qué sostiene esta lectura</strong>
+									<span th:text="${'Se apoya en ' + knowledgeDetail.strengths.size() + ' coincidencias con evidencia visible, ' + knowledgeDetail.gaps.size() + ' brechas explícitas y ' + knowledgeDetail.transfers.size() + ' señales transferibles.'}">Se apoya en se&ntilde;ales visibles.</span>
+								</div>
+							</div>
+						</div>
+						<ul class="vector-detail-signal-stats" th:if="${!knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext}">
+							<li class="vector-detail-signal-stat is-positive" th:if="${knowledgeDetail.showStrengths}">
+								<b th:text="${knowledgeDetail.strengths.size()}">2</b>
+								<div>
+									<strong th:text="${knowledgeDetail.strengths.size() == 1 ? 'coincidencia con evidencia' : 'coincidencias con evidencia'}">coincidencias con evidencia</strong>
+									<small>Se&ntilde;ales clasificadas en el perfil.</small>
+								</div>
+							</li>
+							<li class="vector-detail-signal-stat is-warning" th:if="${knowledgeDetail.showGaps}">
+								<b th:text="${knowledgeDetail.gaps.size()}">2</b>
+								<div>
+									<strong th:text="${knowledgeDetail.gaps.size() == 1 ? 'brecha explícita' : 'brechas explícitas'}">brechas explícitas</strong>
+									<small>Provienen del diagnóstico existente de esta oferta.</small>
+								</div>
+							</li>
+							<li class="vector-detail-signal-stat" th:if="${knowledgeDetail.showTransfers}">
+								<b th:text="${knowledgeDetail.transfers.size()}">1</b>
+								<div>
+									<strong th:text="${knowledgeDetail.transfers.size() == 1 ? 'señal transferible' : 'señales transferibles'}">se&ntilde;al transferible</strong>
+									<small>Transición parcial, no equivalencia profesional.</small>
+								</div>
+							</li>
+							<li class="vector-detail-signal-stat" th:if="${!knowledgeDetail.showStrengths && !knowledgeDetail.showGaps && !knowledgeDetail.showTransfers}">
+								<b>0</b>
+								<div>
+									<strong>se&ntilde;ales espec&iacute;ficas</strong>
+									<small>La lectura se mantiene prudente con los datos visibles.</small>
+								</div>
+							</li>
+						</ul>
+					</div>
+				</article>
+
+				<article class="vector-detail-feature-card is-strengths"
+						 th:if="${!knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext}"
+						 th:classappend="${!knowledgeDetail.showGaps()} ? ' is-full-span' : ''">
+					<header class="vector-detail-feature-heading is-badged">
+						<div>
+							<h2>Lo que ya suma a tu perfil</h2>
+							<p>Evidencia y habilidades que sostienen una lectura favorable.</p>
+						</div>
+					</header>
+					<div class="chips vector-detail-tech-chips" th:if="${knowledgeDetail.showStrengths}">
+						<span class="chip skill-chip tech-badge is-text-only vector-stack-badge" th:each="strength : ${knowledgeDetail.strengths}" th:attr="data-skill=${#strings.toLowerCase(strength.skill)},data-tech=${strength.skill}"><span class="tech-badge-label" th:text="${strength.skill}">Skill</span></span>
+					</div>
+					<div class="vector-detail-evidence-list" th:if="${knowledgeDetail.showStrengths}">
+						<div th:each="strength : ${knowledgeDetail.strengths}">
+							<img class="vector-detail-check" th:src="@{/images/circlegreen.webp}" src="/images/circlegreen.webp" alt="" aria-hidden="true">
+							<div>
+								<strong th:text="${strength.skill + ' — ' + #strings.toLowerCase(strength.evidenceTypeLabel)}">Skill — evidencia</strong>
+								<p th:text="${strength.explanation}">Explicación contextual.</p>
+								<p th:if="${strength.limit != null}" th:text="${strength.limit}">Límite de la evidencia.</p>
+							</div>
+						</div>
+					</div>
+					<div class="vector-detail-empty-state" th:if="${!knowledgeDetail.showStrengths}">
+						<strong>Todavía no hay evidencia visible que sostenga coincidencias en esta oportunidad.</strong>
+						<p>Un proyecto, experiencia o descripción técnica más detallada en tu perfil podría habilitar este bloque.</p>
+					</div>
+					<div class="vector-detail-transfer-inline" th:if="${knowledgeDetail.showTransfers}">
+						<div class="vector-detail-transfer-heading">
+							<strong aria-label="Señales transferibles">SE&Ntilde;ALES TRANSFERIBLES</strong>
+							<small class="tech-badge is-text-only is-transfer-partial">Transición parcial</small>
+						</div>
+						<div class="vector-detail-transfer-card"
+							 th:each="transfer : ${knowledgeDetail.transfers}"
+							 th:with="routeParts=${#strings.arraySplit(transfer.route, '→')}">
+							<div class="vector-detail-transfer-route" th:if="${routeParts.length >= 2}">
+								<span class="tech-badge is-text-only vector-detail-route-badge is-transfer-route"
+									  th:text="${#strings.trim(routeParts[0])}">Backend</span>
+								<span class="vector-detail-route-arrow" aria-hidden="true">→</span>
+								<span class="tech-badge is-text-only vector-detail-route-badge is-transfer-route"
+									  th:text="${#strings.trim(routeParts[1])}">Cloud / DevOps</span>
+							</div>
+							<b class="tech-badge is-text-only vector-detail-route-badge is-transfer-route"
+							   th:unless="${routeParts.length >= 2}"
+							   th:text="${transfer.route}">IT Support → Cloud / DevOps</b>
+							<span class="vector-detail-transfer-concepts">
+								<small class="tech-badge is-text-only vector-detail-transfer-concept is-transfer-concept"
+									   th:each="concept : ${transfer.visibleConcepts()}"
+									   th:text="${concept}">Concepto transferible</small>
+							</span>
+							<small class="vector-detail-transfer-warning" th:text="${transfer.warning}">Advertencia</small>
+						</div>
+					</div>
+				</article>
+
+				<article class="vector-detail-feature-card is-reinforce"
+						 th:if="${!knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext}"
+						 th:classappend="${!knowledgeDetail.showStrengths() && !knowledgeDetail.showTransfers()} ? ' is-full-span' : ''">
+					<header class="vector-detail-feature-heading is-badged">
+						<div>
+							<h2>Lo que conviene reforzar</h2>
+							<p>Brechas explícitas y prioridades orientativas para esta oportunidad.</p>
+						</div>
+					</header>
+					<div class="vector-detail-gap-list" th:if="${knowledgeDetail.showGaps}">
+						<div th:each="gap : ${knowledgeDetail.gaps}">
+							<span class="vector-detail-status-dot"
+								  th:classappend="${gap.severityCode == 'CRITICAL' ? ' is-high' : (gap.severityCode == 'LOW' ? ' is-low' : ' is-medium')}"></span>
+							<div class="vector-detail-gap-copy">
+								<div class="vector-detail-gap-heading">
+									<strong th:text="${gap.skill}">Skill</strong>
+									<small class="tech-badge is-text-only" th:classappend="${gap.severityCode == 'CRITICAL' ? 'is-high' : (gap.severityCode == 'LOW' ? 'is-low' : 'is-medium')}" th:text="${gap.severityLabel}">Alta</small>
+								</div>
+								<p><span th:text="${gap.explanation}">Por qué importa.</span></p>
+								<em th:if="${gap.transferNote != null}" th:text="${gap.transferNote}">Transferencia explícita.</em>
+								<em th:if="${gap.action != null}" th:text="${gap.action}">Acción concreta.</em>
+							</div>
+						</div>
+					</div>
+					<div class="vector-detail-empty-state" th:if="${!knowledgeDetail.showGaps}">
+						<strong>No aparecen requisitos explícitos adicionales para priorizar en esta publicación.</strong>
+						<p>Eso no reemplaza la revisión de la oferta original.</p>
+					</div>
+					<p class="vector-detail-note" th:if="${knowledgeDetail.showGaps}">Prioridades orientativas para enfocar tu preparación, no un filtro de aptitud.</p>
+				</article>
+
+				<article class="vector-detail-feature-card is-plan"
+						 th:if="${(knowledgeDetail.showActions && !knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext) || knowledgeDetail.coverageCode == 'DIRECT_COVERAGE' || knowledgeDetail.coverageCode == 'PARTIAL_COVERAGE' || knowledgeDetail.outOfScope() || knowledgeDetail.lowContext}"
+						 th:classappend="${!(knowledgeDetail.showActions && !knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext)} ? ' is-guide' : ''">
+					<header class="vector-detail-feature-heading is-badged">
+						<div>
+							<h2 th:text="${(knowledgeDetail.showActions && !knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext) ? 'Plan de acción recomendado' : 'Cómo avanzar desde acá'}">Plan de acción recomendado</h2>
+							<p>Acciones sugeridas para ordenar preparación y evidencia.</p>
+						</div>
+					</header>
+					<ol class="vector-detail-timeline" th:if="${knowledgeDetail.showActions && !knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext}" th:classappend="${knowledgeDetail.actionLayoutClass()}">
+						<li th:each="action : ${knowledgeDetail.actions}">
+							<span aria-hidden="true"></span>
+							<p>
+								<strong class="vector-detail-action-title" th:text="${action.title != null ? action.title : 'Evidencia visible'}">Evidencia visible</strong>
+								<small th:text="${action.text}">Accion</small>
+								<small th:text="${action.reason}">Motivo</small>
+							</p>
+						</li>
+					</ol>
+					<ol class="vector-detail-timeline is-timeline-action is-guide-timeline"
+						th:if="${!(knowledgeDetail.showActions && !knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext) && !knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext}">
+						<li>
+							<span aria-hidden="true"></span>
+							<p>
+								<strong class="vector-detail-action-title">Revisá los requisitos</strong>
+								<small>Contrastar la publicación con tu experiencia visible.</small>
+							</p>
+						</li>
+						<li>
+							<span aria-hidden="true"></span>
+							<p>
+								<strong class="vector-detail-action-title">Hacé visible tu evidencia</strong>
+								<small>Destacar proyectos, responsabilidades o resultados relevantes.</small>
+							</p>
+						</li>
+						<li>
+							<span aria-hidden="true"></span>
+							<p>
+								<strong class="vector-detail-action-title">Volvé a evaluar</strong>
+								<small>Actualizar el perfil y revisar cómo cambia la lectura.</small>
+							</p>
+						</li>
+					</ol>
+					<ol class="vector-detail-timeline is-timeline-action is-guide-timeline"
+						th:if="${knowledgeDetail.outOfScope() || knowledgeDetail.lowContext}">
+						<li>
+							<span aria-hidden="true"></span>
+							<p>
+								<strong class="vector-detail-action-title">Entendé el dominio</strong>
+								<small>Revis&aacute; responsabilidades y se&ntilde;ales propias de la especialidad.</small>
+							</p>
+						</li>
+						<li>
+							<span aria-hidden="true"></span>
+							<p>
+								<strong class="vector-detail-action-title">Construí evidencia relevante</strong>
+								<small>Sumá proyectos o experiencia verificable antes de inferir afinidad.</small>
+							</p>
+						</li>
+						<li>
+							<span aria-hidden="true"></span>
+							<p>
+								<strong class="vector-detail-action-title">Volvé a comparar</strong>
+								<small>Revisá la oportunidad cuando exista más contexto defendible.</small>
+							</p>
+						</li>
+					</ol>
+					<p class="vector-detail-guide-note" th:if="${!(knowledgeDetail.showActions && !knowledgeDetail.outOfScope() && !knowledgeDetail.lowContext)}">Es una guía general; no modifica el ranking ni representa una recomendación personalizada.</p>
+				</article>
+			</section>
+		</div>
+
+		<aside class="vector-detail-sidebar">
+			<section class="vector-detail-score-card"
+					 th:style="${'--score-progress:' + selectedResult.closenessScore + ';--score-accent:' + (selectedResult.closenessScore < 40 ? '#ef4444' : (selectedResult.closenessScore < 55 ? '#f97316' : (selectedResult.closenessScore < 70 ? '#eab308' : (selectedResult.closenessScore < 85 ? '#84cc16' : '#16a34a')))) + ';'}"
+					 th:attr="data-score-band=${selectedResult.scoreBand}">
+				<div class="vector-detail-score-heading">
+					<p>Tu puntaje de cercanía</p>
+					<span title="Es una lectura orientativa basada en similitud semántica y señales visibles.">i</span>
+				</div>
+				<div class="vector-detail-score-value">
+					<strong th:text="${selectedResult.closenessScore}">53</strong><span>/100</span>
+				</div>
+				<div class="vector-detail-score-track" aria-hidden="true"><i></i></div>
+				<p class="vector-detail-score-copy">Lectura visual para priorizar oportunidades, no una decisión absoluta.</p>
+				<a class="vector-detail-profile-link" th:href="@{/profiles/{profileId}(profileId=${profile.id})}">Ver perfil completo</a>
+			</section>
+
+			<section class="vector-detail-side-card vector-detail-score-explain-card">
+				<header class="vector-detail-card-heading is-compact">
+					<span class="vector-detail-card-icon is-blue is-asset-icon">
+						<img th:src="@{/images/disclaimer.png}" alt="" loading="lazy" decoding="async"/>
+					</span>
+					<h2>Cómo interpretar tu puntaje</h2>
+				</header>
+				<p>El puntaje indica cercanía semántica con tu perfil. Sirve para priorizar, no reemplaza la lectura de la oferta.</p>
+				<div class="vector-detail-score-scale" aria-label="Cómo interpretar el puntaje">
+					<span><b>0–39</b><small>Bajo</small></span>
+					<span><b>40–69</b><small>Medio</small></span>
+					<span><b>70–100</b><small>Alto</small></span>
+				</div>
+			</section>
+
+			<section class="vector-detail-side-card">
+				<header class="vector-detail-card-heading is-compact">
+					<span class="vector-detail-card-icon is-blue is-asset-icon is-signal">
+						<img th:src="${selectedResult.scoreBand == 'high'} ? @{/images/signal full green.png} : (${selectedResult.scoreBand == 'low'} ? @{/images/signal red.png} : @{/images/signal yellow.png})" alt="" loading="lazy" decoding="async"/>
+					</span>
+					<h2>Se&ntilde;ales r&aacute;pidas</h2>
+				</header>
+				<div class="vector-detail-quick-signals" th:if="${knowledgeDetail != null}">
+					<div class="is-info" th:if="${knowledgeDetail.roleFamilyLabel != null}">
+						<span class="vector-detail-status-dot"></span>
+						<p><strong>Familia profesional</strong><small th:text="${knowledgeDetail.roleFamilyLabel}">Backend</small></p>
+					</div>
+					<div th:classappend="${knowledgeDetail.coverageCode == 'DIRECT_COVERAGE' ? 'is-positive' : (knowledgeDetail.lowContext || knowledgeDetail.outOfScope ? 'is-info' : 'is-warning')}">
+						<span class="vector-detail-status-dot"></span>
+						<p><strong>Cobertura del catálogo</strong><small th:text="${knowledgeDetail.coverageLabel}">Cobertura parcial</small></p>
+					</div>
+					<div class="is-warning" th:if="${knowledgeDetail.showGaps}">
+						<span class="vector-detail-status-dot"></span>
+						<p><strong>Brechas explícitas</strong><small th:text="${knowledgeDetail.gaps.size() + ' priorizadas sin alterar el ranking.'}">Brechas priorizadas.</small></p>
+					</div>
+				</div>
+			</section>
+
+			<section class="vector-detail-side-card" th:if="${!#lists.isEmpty(relatedResults)}">
+				<div class="vector-detail-related-heading">
+					<h2>Oportunidades cercanas</h2>
+					<a th:href="@{/profiles/{profileId}/vector-first-compatibility(profileId=${profile.id},limit=${limit})}">Ver todas <span>→</span></a>
+				</div>
+				<div class="vector-related-list">
+					<a class="vector-related-item"
+					   th:each="row, it : ${relatedResults}"
+					   th:if="${it.index < 3}"
+					   th:href="@{/profiles/{profileId}/vector-first-compatibility/jobs/{jobId}(profileId=${profile.id},jobId=${row.jobId},limit=${limit})}">
+						<span class="company-mark vector-company-mark" th:attr="data-company=${row.company}">
+							<img class="logo-img"
+								 th:if="${row.companyLogoUrl != null && !row.companyLogoUrl.isBlank()}"
+								 th:src="${row.companyLogoUrl}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+								 onload="this.parentElement.querySelector('.logo-fallback').style.display='none';"
+								 onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+							<span class="logo-fallback"
+								  th:style="${row.companyLogoUrl != null && !row.companyLogoUrl.isBlank()} ? 'display:none' : ''"
+								  th:text="${row.companyInitial}">A</span>
+						</span>
+						<span class="vector-related-copy">
+							<strong th:text="${row.title}">Título</strong>
+							<small th:text="${row.company}">Empresa</small>
+							<em th:text="${(row.modalityLabel != null ? row.modalityLabel : '') + (row.locationLabel != null ? (row.modalityLabel != null ? ' · ' : '') + row.locationLabel : '')}">Remoto</em>
+						</span>
+						<span class="vector-related-score" th:attr="data-score-band=${row.scoreBand}"><b th:text="${row.closenessScore}">52</b>/100</span>
+					</a>
+				</div>
+			</section>
+		</aside>
+	</div>
+
+</main>
+<script th:src="@{/technology-visual-catalog.js}"></script>
+</body>
+</html>

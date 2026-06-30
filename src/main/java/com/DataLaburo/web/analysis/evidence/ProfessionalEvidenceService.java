@@ -23,23 +23,41 @@ import java.util.regex.Pattern;
 public class ProfessionalEvidenceService {
     private static final List<String> WORK_CONTEXT = List.of(
             "professional experience",
+            "professional",
+            "experiencia profesional",
+            "experiencia laboral",
             "work experience",
+            "experience",
             "years of experience",
             "year of experience",
+            "years",
             "worked",
+            "trabaje",
+            "trabajo",
             "implemented",
             "maintained",
+            "mantuve",
+            "mantenimiento",
             "production",
             "supported production",
             "led",
             "migrated",
             "incidents",
+            "incidentes",
+            "tickets",
             "on call",
             "on-call",
             "operated",
+            "operacion",
+            "operado",
             "designed",
             "deployed",
             "managed",
+            "soporte",
+            "soporte tecnico",
+            "troubleshooting",
+            "diagnostico",
+            "servidores",
             "company",
             "client",
             "team"
@@ -98,6 +116,17 @@ public class ProfessionalEvidenceService {
             "academic"
     );
 
+    private static final List<String> DECLARED_LIST_CONTEXT = List.of(
+            "skills",
+            "technical skills",
+            "technologies",
+            "tools",
+            "stack",
+            "habilidades",
+            "tecnologias",
+            "herramientas"
+    );
+
     private static final Pattern YEARS_PATTERN = Pattern.compile("\\b(\\d{1,2})\\s*(?:\\+\\s*)?(?:years|year|anos|anio|anios)\\b");
 
     private static final List<SkillRule> SKILL_RULES = List.of(
@@ -109,11 +138,18 @@ public class ProfessionalEvidenceService {
             rule(".NET", ProfessionalDomain.BACKEND_DOTNET, ".net", "dotnet", "asp.net", "asp net"),
             rule("App Support", ProfessionalDomain.APP_SUPPORT, "app support", "application support", "production support"),
             rule("IT Support", ProfessionalDomain.SUPPORT, "technical support", "it support", "help desk", "service desk", "support analyst", "support engineer", "soporte tecnico"),
+            rule("Tickets", ProfessionalDomain.SUPPORT, "tickets", "service tickets", "incident tickets"),
+            rule("Troubleshooting", ProfessionalDomain.SUPPORT, "troubleshooting", "diagnostico", "diagnosis"),
             rule("Windows Server", ProfessionalDomain.INFRA, "windows server"),
             rule("Linux", ProfessionalDomain.INFRA, "linux"),
             rule("Active Directory", ProfessionalDomain.INFRA, "active directory"),
             rule("Networking", ProfessionalDomain.INFRA, "networking", "networks", "redes"),
+            rule("Infrastructure", ProfessionalDomain.INFRA, "infrastructure", "infraestructura", "infra"),
+            rule("OpenShift", ProfessionalDomain.INFRA, "openshift", "red hat openshift"),
+            rule("Storage", ProfessionalDomain.INFRA, "storage", "enterprise storage", "almacenamiento", "ds8000", "flashsystem"),
+            rule("Servers", ProfessionalDomain.INFRA, "servers", "servidores"),
             rule("ITIL", ProfessionalDomain.SUPPORT, "itil", "itsm"),
+            rule("Git", ProfessionalDomain.BACKEND_JAVA, "git"),
             rule("Docker", ProfessionalDomain.CLOUD, "docker", "docker compose"),
             rule("Kubernetes", ProfessionalDomain.CLOUD, "kubernetes", "k8s"),
             rule("Cloud", ProfessionalDomain.CLOUD, "cloud", "aws", "azure", "gcp"),
@@ -451,10 +487,11 @@ public class ProfessionalEvidenceService {
                     from = index + alias.length();
                     continue;
                 }
-                if (containsAny(window, WORK_CONTEXT)) {
-                    return true;
+                if (isDeclaredListContext(window)) {
+                    from = index + alias.length();
+                    continue;
                 }
-                if (containsAny(normalizedCv, WORK_CONTEXT) && isRoleLike(rule)) {
+                if (containsAny(window, WORK_CONTEXT)) {
                     return true;
                 }
                 from = index + alias.length();
@@ -480,12 +517,8 @@ public class ProfessionalEvidenceService {
                 && !containsAny(window, List.of("production", "professional", "worked", "company", "client", "team", "maintained", "on call", "on-call"));
     }
 
-    private boolean isRoleLike(SkillRule rule) {
-        return rule.domain() == ProfessionalDomain.BACKEND_JAVA
-                || rule.domain() == ProfessionalDomain.BACKEND_DOTNET
-                || rule.domain() == ProfessionalDomain.SUPPORT
-                || rule.domain() == ProfessionalDomain.APP_SUPPORT
-                || rule.domain() == ProfessionalDomain.INFRA;
+    private boolean isDeclaredListContext(String window) {
+        return containsAny(window, DECLARED_LIST_CONTEXT);
     }
 
     private ProfessionalEvidenceStrength workStrength(String normalizedCv) {

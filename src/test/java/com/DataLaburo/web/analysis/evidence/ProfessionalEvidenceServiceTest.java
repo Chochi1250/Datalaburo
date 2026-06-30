@@ -133,6 +133,49 @@ class ProfessionalEvidenceServiceTest {
     }
 
     @Test
+    void supportStorageAndInfraSignalsBecomeWorkEvidenceOnlyWhenOperationalContextExists() {
+        CandidateProfile profile = profile(
+                18L,
+                """
+                IT Support and infrastructure analyst with 3 years of professional experience.
+                Resolved incident tickets, performed Linux troubleshooting and maintained OpenShift,
+                enterprise storage, DS8000, FlashSystem and servers for internal operations.
+                """,
+                "IT Support, OpenShift, Linux, Storage, Docker, Git"
+        );
+
+        ProfileEvidenceSummary summary = service.summarizeProfile(profile, List.of());
+
+        assertEvidence(summary, "IT Support", ProfessionalEvidenceType.WORK_EXPERIENCE, ProfessionalDomain.SUPPORT);
+        assertEvidence(summary, "Tickets", ProfessionalEvidenceType.WORK_EXPERIENCE, ProfessionalDomain.SUPPORT);
+        assertEvidence(summary, "Linux", ProfessionalEvidenceType.WORK_EXPERIENCE, ProfessionalDomain.INFRA);
+        assertEvidence(summary, "OpenShift", ProfessionalEvidenceType.WORK_EXPERIENCE, ProfessionalDomain.INFRA);
+        assertEvidence(summary, "Storage", ProfessionalEvidenceType.WORK_EXPERIENCE, ProfessionalDomain.INFRA);
+        assertTrue(summary.strongDomains().contains(ProfessionalDomain.SUPPORT));
+        assertTrue(summary.strongDomains().contains(ProfessionalDomain.INFRA));
+    }
+
+    @Test
+    void declaredInfraToolsDoNotBecomeWorkEvidenceFromNearbyGenericExperience() {
+        CandidateProfile profile = profile(
+                19L,
+                """
+                IT Support analyst with 1 year of professional experience resolving user incidents.
+                Technical skills: OpenShift, Linux, Docker and Git.
+                """,
+                "IT Support, OpenShift, Linux, Docker, Git"
+        );
+
+        ProfileEvidenceSummary summary = service.summarizeProfile(profile, List.of());
+
+        assertEvidence(summary, "IT Support", ProfessionalEvidenceType.WORK_EXPERIENCE, ProfessionalDomain.SUPPORT);
+        assertEvidence(summary, "OpenShift", ProfessionalEvidenceType.DECLARED_ONLY, ProfessionalDomain.INFRA);
+        assertEvidence(summary, "Linux", ProfessionalEvidenceType.DECLARED_ONLY, ProfessionalDomain.INFRA);
+        assertEvidence(summary, "Docker", ProfessionalEvidenceType.DECLARED_ONLY, ProfessionalDomain.CLOUD);
+        assertEvidence(summary, "Git", ProfessionalEvidenceType.DECLARED_ONLY, ProfessionalDomain.BACKEND_JAVA);
+    }
+
+    @Test
     void seniorDotnetMigratingToJavaKeepsJavaTransferableNotWorkExperience() {
         CandidateProfile profile = profile(
                 15L,
