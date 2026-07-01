@@ -19,9 +19,12 @@ class EmbeddingVectorSearchServiceTest {
 
     @Test
     void validatesLimitWithDefaultAndMaximum() {
+        assertEquals(50, EmbeddingVectorSearchService.DEFAULT_LIMIT);
+        assertEquals(50, EmbeddingVectorSearchService.MAX_LIMIT);
         assertEquals(EmbeddingVectorSearchService.DEFAULT_LIMIT, EmbeddingVectorSearchService.normalizeLimit(null));
         assertEquals(EmbeddingVectorSearchService.DEFAULT_LIMIT, EmbeddingVectorSearchService.normalizeLimit(0));
         assertEquals(5, EmbeddingVectorSearchService.normalizeLimit(5));
+        assertEquals(50, EmbeddingVectorSearchService.normalizeLimit(50));
         assertEquals(EmbeddingVectorSearchService.MAX_LIMIT, EmbeddingVectorSearchService.normalizeLimit(999));
     }
 

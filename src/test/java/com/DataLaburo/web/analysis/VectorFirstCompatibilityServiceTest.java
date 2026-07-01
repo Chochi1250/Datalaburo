@@ -145,6 +145,18 @@ class VectorFirstCompatibilityServiceTest {
         verify(vectorSearchService).searchJobsForProfile(1L, 50, DocumentEmbedding.DEFAULT_EMBEDDING_MODEL);
     }
 
+    @Test
+    void normalizesLimitWithSingleVectorFirstPolicy() {
+        assertEquals(50, VectorFirstCompatibilityService.normalizeLimit(null));
+        assertEquals(50, VectorFirstCompatibilityService.normalizeLimit(0));
+        assertEquals(50, VectorFirstCompatibilityService.normalizeLimit(-1));
+        assertEquals(1, VectorFirstCompatibilityService.normalizeLimit(1));
+        assertEquals(20, VectorFirstCompatibilityService.normalizeLimit(20));
+        assertEquals(50, VectorFirstCompatibilityService.normalizeLimit(50));
+        assertEquals(50, VectorFirstCompatibilityService.normalizeLimit(51));
+        assertEquals(50, VectorFirstCompatibilityService.normalizeLimit(999));
+    }
+
     private static RuleBasedEnrichmentService.EnrichedDocument enrichedWithBackend() {
         return new RuleBasedEnrichmentService.EnrichedDocument(
                 new SkillExtractionService.ExtractedSkills(Set.of(), Map.of()),

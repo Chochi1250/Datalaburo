@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 
 @Controller
 public class ProfileVectorCompatibilityController {
-    private static final int DEFAULT_LIMIT = 100;
+    private static final int DEFAULT_LIMIT = 50;
     private static final ZoneId UI_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
     private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-AR"));
 
@@ -225,12 +225,12 @@ public class ProfileVectorCompatibilityController {
         try {
             int limit = Integer.parseInt(rawLimit.trim());
             if (limit <= 0) {
-                model.addAttribute("warning", "El limite indicado no es valido. Se usa 20 por defecto.");
+                model.addAttribute("warning", "El limite indicado no es valido. Se usa 50 por defecto.");
                 return DEFAULT_LIMIT;
             }
-            return limit;
+            return Math.min(limit, DEFAULT_LIMIT);
         } catch (NumberFormatException e) {
-            model.addAttribute("warning", "El limite indicado no es numerico. Se usa 20 por defecto.");
+            model.addAttribute("warning", "El limite indicado no es numerico. Se usa 50 por defecto.");
             return DEFAULT_LIMIT;
         }
     }

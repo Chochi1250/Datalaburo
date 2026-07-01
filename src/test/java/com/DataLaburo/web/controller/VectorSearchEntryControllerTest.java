@@ -120,7 +120,7 @@ class VectorSearchEntryControllerTest {
 
         mockMvc.perform(post("/vector-search").param("profileId", "7"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profiles/7/vector-first-compatibility?limit=100"))
+                .andExpect(redirectedUrl("/profiles/7/vector-first-compatibility?limit=50"))
                 .andExpect(request().sessionAttribute("vectorSearchActiveProfileId", 7L));
 
         verify(candidateProfileService).findById(7L);
@@ -140,7 +140,7 @@ class VectorSearchEntryControllerTest {
 
         mockMvc.perform(post("/vector-search").param("profileId", "7"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profiles/7/vector-first-compatibility?limit=100"))
+                .andExpect(redirectedUrl("/profiles/7/vector-first-compatibility?limit=50"))
                 .andExpect(request().sessionAttribute("vectorSearchActiveProfileId", 7L));
     }
 
@@ -187,7 +187,7 @@ class VectorSearchEntryControllerTest {
 
         mockMvc.perform(post("/vector-search").param("profileId", "7"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profiles/7/vector-first-compatibility?limit=100"))
+                .andExpect(redirectedUrl("/profiles/7/vector-first-compatibility?limit=50"))
                 .andExpect(request().sessionAttribute("vectorSearchActiveProfileId", 7L));
     }
 
@@ -218,7 +218,7 @@ class VectorSearchEntryControllerTest {
                         .param("headline", "Backend Java")
                         .param("cvText", "CV text with enough context"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profiles/11/vector-first-compatibility?limit=100"))
+                .andExpect(redirectedUrl("/profiles/11/vector-first-compatibility?limit=50"))
                 .andExpect(request().sessionAttribute("vectorSearchActiveProfileId", 11L));
     }
 
@@ -291,7 +291,7 @@ class VectorSearchEntryControllerTest {
                         .param("headline", "Backend Java")
                         .param("cvText", ""))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profiles/12/vector-first-compatibility?limit=100"))
+                .andExpect(redirectedUrl("/profiles/12/vector-first-compatibility?limit=50"))
                 .andExpect(request().sessionAttribute("vectorSearchActiveProfileId", 12L));
 
         ArgumentCaptor<CandidateProfileForm> formCaptor = ArgumentCaptor.forClass(CandidateProfileForm.class);

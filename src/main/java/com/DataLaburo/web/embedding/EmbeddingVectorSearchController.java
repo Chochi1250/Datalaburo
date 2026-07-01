@@ -25,7 +25,7 @@ public class EmbeddingVectorSearchController {
     @GetMapping("/profiles/{profileId}/jobs")
     public EmbeddingVectorSearchResponse searchJobsForProfile(
             @PathVariable Long profileId,
-            @RequestParam(defaultValue = "20") Integer limit,
+            @RequestParam(defaultValue = "50") Integer limit,
             @RequestParam(required = false) String embeddingModel
     ) {
         try {

@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
         havingValue = "org.postgresql.Driver"
 )
 public class VectorFirstCompatibilityService {
-    static final int DEFAULT_LIMIT = 20;
+    static final int DEFAULT_LIMIT = 50;
     static final int MAX_LIMIT = 50;
     static final String STRATEGY = "VECTOR_FIRST_WITH_RERANKING_DIAGNOSTIC";
 

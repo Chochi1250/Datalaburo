@@ -76,7 +76,7 @@ public class VectorSearchEntryController {
 
         EmbeddingStartResult result = prepareAndProcessProfileEmbedding(profileId);
         if (result.ready()) {
-            return "redirect:/profiles/" + profileId + "/vector-first-compatibility?limit=100";
+            return "redirect:/profiles/" + profileId + "/vector-first-compatibility?limit=50";
         }
 
         redirectAttributes.addFlashAttribute("vectorSearchError", result.message());
@@ -127,7 +127,7 @@ public class VectorSearchEntryController {
         rememberActiveProfile(session, profile.getId());
         EmbeddingStartResult result = prepareAndProcessProfileEmbedding(profile.getId());
         if (result.ready()) {
-            return "redirect:/profiles/" + profile.getId() + "/vector-first-compatibility?limit=100";
+            return "redirect:/profiles/" + profile.getId() + "/vector-first-compatibility?limit=50";
         }
 
         redirectAttributes.addFlashAttribute("vectorSearchError", result.message());

@@ -11,8 +11,8 @@ import java.util.List;
         havingValue = "org.postgresql.Driver"
 )
 public class EmbeddingVectorSearchService {
-    static final int DEFAULT_LIMIT = 20;
-    static final int MAX_LIMIT = 100;
+    static final int DEFAULT_LIMIT = 50;
+    static final int MAX_LIMIT = 50;
     private static final int EMBEDDING_DIMENSIONS = DocumentEmbedding.DEFAULT_EMBEDDING_DIMENSIONS;
     private static final String FAKE_RESULT_MESSAGE = "Internal pgvector infrastructure search only. "
             + "fake-deterministic-1024 does not represent real professional compatibility.";
