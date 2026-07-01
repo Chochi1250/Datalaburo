@@ -1,4 +1,4 @@
-﻿package com.DataLaburo.web.analysis.knowledge;
+package com.DataLaburo.web.analysis.knowledge;
 
 import com.DataLaburo.web.analysis.VectorFirstCompatibilityResult;
 import com.DataLaburo.web.analysis.evidence.ProfessionalDomain;
