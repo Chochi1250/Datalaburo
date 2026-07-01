@@ -388,8 +388,8 @@ class ProfileVectorCompatibilityControllerTest {
         assertFalse(vectorCompatibilityTemplate.contains("rankingMode"));
 
         assertTrue(vectorCompatibilityDetailTemplate.contains("Resumen de la oportunidad"));
-        assertTrue(vectorCompatibilityDetailTemplate.contains("Lo más relevante"));
-        assertTrue(vectorCompatibilityDetailTemplate.contains("Coincidencias concretas"));
+        assertTrue(vectorCompatibilityDetailTemplate.contains("Qué sostiene esta lectura"));
+        assertTrue(vectorCompatibilityDetailTemplate.contains("coincidencias con evidencia"));
         assertTrue(vectorCompatibilityDetailTemplate.contains("Lo que ya suma a tu perfil"));
         assertTrue(vectorCompatibilityDetailTemplate.contains("Lo que conviene reforzar"));
         assertTrue(vectorCompatibilityDetailTemplate.contains("Plan de acción recomendado"));
@@ -398,7 +398,7 @@ class ProfileVectorCompatibilityControllerTest {
         assertTrue(vectorCompatibilityDetailTemplate.contains("Ver oferta original"));
         assertTrue(vectorCompatibilityDetailTemplate.contains("Señales transferibles"));
         assertTrue(vectorCompatibilityDetailTemplate.contains("Lectura prudente"));
-        assertTrue(vectorCompatibilityDetailTemplate.contains("Señales compartidas, no equivalencia profesional"));
+        assertTrue(vectorCompatibilityDetailTemplate.contains("Se&ntilde;ales compartidas, no equivalencia profesional"));
         assertTrue(vectorCompatibilityDetailTemplate.contains("is-prudent-only"));
         assertTrue(vectorCompatibilityDetailTemplate.contains("has-single-support-card"));
         assertTrue(vectorCompatibilityDetailTemplate.contains("is-single-action"));
