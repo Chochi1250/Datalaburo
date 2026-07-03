@@ -12,7 +12,7 @@
     <section class="hero market-hero">
         <div class="hero-inner">
             <div class="hero-copy">
-                <h1 class="hero-title">Encontra oportunidades cercanas a tu perfil</h1>
+                <h1 class="hero-title">Encontra oportunidades <span class="hero-title-accent">cercanas</span> a tu perfil</h1>
                 <p class="hero-subtitle">
                     Compara tu CV con ofertas reales y entende que coincide, que falta reforzar y que evidencia sostiene
                     cada lectura para orientar mejor tu busqueda laboral.
@@ -25,18 +25,65 @@
             </div>
 
             <aside class="hero-showcase" aria-label="Vista previa del analisis">
-                <div class="showcase-card profile-card">
+                <div class="showcase-card job-card vector-opportunity-card hero-opportunity-card"
+                     style="--score-progress:82; --stack-accent:#f97316;"
+                     data-score="82"
+                     data-score-band="high">
+                    <div class="vector-opportunity-topbar hero-card-topbar" aria-hidden="true"></div>
                     <div class="showcase-card-header">
-                        <span class="card-kicker">Perfil</span>
-                        <span class="semantic-badge">CV</span>
+                        <span class="card-kicker">Oferta cercana</span>
                     </div>
-                    <h2>Perfil Backend Java</h2>
-                    <p>REST, SQL, Spring, soporte a sistemas internos y experiencia en equipos agiles.</p>
-                    <div class="skill-cloud">
-                        <span>Java</span>
-                        <span>PostgreSQL</span>
-                        <span>APIs</span>
-                        <span>Soporte IT</span>
+                    <div class="vector-opportunity-topline">
+                        <div class="vector-opportunity-brand">
+                            <span class="company-mark vector-company-mark hero-company-mark" data-company="Despegar" aria-hidden="true">
+                                <img class="logo-img"
+                                     src="https://media.licdn.com/dms/image/v2/C4D0BAQEYuLi6DP5oGw/company-logo_100_100/company-logo_100_100/0/1630560293178/despegarcom_logo?e=1783555200&amp;v=beta&amp;t=qiulcnRr8T8GoWT-IvktdehICpZRrEOhnJuFp-ZoYcs"
+                                     alt=""
+                                     loading="lazy"
+                                     decoding="async"
+                                     referrerpolicy="no-referrer"
+                                     onload="this.parentElement.querySelector('.logo-fallback').style.display='none';"
+                                     onerror="this.style.display='none'; this.parentElement.querySelector('.logo-fallback').style.display='grid';" />
+                                <span class="logo-fallback" style="display:none">D</span>
+                            </span>
+                        </div>
+                        <div class="vector-score-box" data-score-band="high" aria-label="Puntaje de cercania 82 de 100">
+                            <span class="vector-score-label">Puntaje</span>
+                            <span class="vector-score-value">
+                                <strong class="vector-score-number">82</strong>
+                                <small>/100</small>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="vector-opportunity-copy">
+                        <h3>Software Developer III - Posventa II</h3>
+                        <p class="vector-opportunity-company">Despegar</p>
+                        <div class="vector-opportunity-meta" aria-label="Datos de la oportunidad">
+                            <img class="vector-opportunity-location-icon" src="/images/ubicacion.png" alt="" aria-hidden="true" />
+                            <span>Buenos Aires, AR</span>
+                            <span>Hibrido</span>
+                            <span>Full time</span>
+                        </div>
+                    </div>
+
+                    <div class="vector-opportunity-body">
+                        <div class="chips vector-opportunity-tags">
+                            <span class="chip skill-chip tech-badge is-text-only vector-stack-badge" data-skill="java" data-tech="Java">
+                                <span class="tech-badge-label">Java</span>
+                            </span>
+                            <span class="chip skill-chip tech-badge is-text-only vector-stack-badge" data-skill="sql" data-tech="SQL">
+                                <span class="tech-badge-label">SQL</span>
+                            </span>
+                            <span class="chip skill-chip tech-badge is-text-only vector-stack-badge" data-skill="spring boot" data-tech="Spring Boot">
+                                <span class="tech-badge-label">Spring Boot</span>
+                            </span>
+                        </div>
+                        <div class="vector-opportunity-signals">
+                            <span class="vector-signal-badge is-adjacent">Oportunidad adyacente</span>
+                            <span class="vector-signal-badge is-warning">Seniority aspiracional</span>
+                            <span class="vector-signal-badge is-evidence">Proyecto</span>
+                        </div>
                     </div>
                 </div>
 
@@ -45,17 +92,47 @@
                     <strong>82/100</strong>
                 </div>
 
-                <div class="showcase-card job-card">
+                <div class="showcase-card profile-card vector-opportunity-card hero-profile-card"
+                     style="--score-progress:82; --stack-accent:#22c55e;"
+                     data-score="82"
+                     data-score-band="high">
+                    <div class="vector-opportunity-topbar hero-card-topbar" aria-hidden="true"></div>
                     <div class="showcase-card-header">
-                        <span class="card-kicker">Oferta cercana</span>
-                        <span class="semantic-badge">#1</span>
+                        <span class="card-kicker">Perfil simulado</span>
+                        <span class="semantic-badge">CV</span>
                     </div>
-                    <h2>Desarrollador Backend</h2>
-                    <p>Java, microservicios, bases relacionales y colaboracion con producto.</p>
-                    <div class="insight-stack">
-                        <span class="insight-pill is-evidence">Evidencia: experiencia laboral</span>
-                        <span class="insight-pill is-gap">Brecha: cloud</span>
-                        <span class="insight-pill is-transfer">Transferible: .NET -> Java</span>
+                    <div class="hero-profile-main">
+                        <span class="hero-profile-photo" aria-hidden="true">
+                            <img src="/images/tech/java.png" alt="" loading="lazy" />
+                        </span>
+                        <div class="vector-opportunity-copy hero-profile-copy">
+                            <h3>Lucas Java App</h3>
+                            <p class="vector-opportunity-company">App Developer</p>
+                            <div class="vector-opportunity-meta" aria-label="Datos del perfil simulado">
+                                <span>App Support</span>
+                                <span>Junior</span>
+                                <span>Backend Java</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p>REST, Spring, soporte de aplicaciones y proyectos Java con foco en sistemas internos.</p>
+
+                    <div class="vector-opportunity-body">
+                        <div class="chips vector-opportunity-tags">
+                            <span class="chip skill-chip tech-badge is-text-only vector-stack-badge" data-skill="java" data-tech="Java">
+                                <span class="tech-badge-label">Java</span>
+                            </span>
+                            <span class="chip skill-chip tech-badge is-text-only vector-stack-badge" data-skill="spring boot" data-tech="Spring Boot">
+                                <span class="tech-badge-label">Spring Boot</span>
+                            </span>
+                            <span class="chip skill-chip tech-badge is-text-only vector-stack-badge" data-skill="postgresql" data-tech="PostgreSQL">
+                                <span class="tech-badge-label">PostgreSQL</span>
+                            </span>
+                        </div>
+                        <div class="vector-opportunity-signals">
+                            <span class="vector-signal-badge is-category">App Support</span>
+                            <span class="vector-signal-badge is-positive">Proyecto visible</span>
+                        </div>
                     </div>
                 </div>
             </aside>
@@ -73,36 +150,36 @@
                 </p>
             </div>
             <div class="area-grid" aria-label="Areas laborales">
-                <article class="area-card">
+                <a class="area-card" href="/jobs?q=backend" aria-label="Ver ofertas de Backend y APIs">
                     <span class="area-icon">BE</span>
-                    <h3>Backend</h3>
+                    <h3>Backend/APIs</h3>
                     <p>APIs, Java, SQL y servicios.</p>
-                </article>
-                <article class="area-card">
-                    <span class="area-icon">FE</span>
-                    <h3>Frontend</h3>
-                    <p>Interfaces, producto y web.</p>
-                </article>
-                <article class="area-card">
-                    <span class="area-icon">BI</span>
-                    <h3>Data/BI</h3>
-                    <p>Datos, reportes y analisis.</p>
-                </article>
-                <article class="area-card">
+                </a>
+                <a class="area-card" href="/jobs?q=support" aria-label="Ver ofertas de Soporte IT">
                     <span class="area-icon">IT</span>
                     <h3>Soporte IT</h3>
                     <p>Operaciones, usuarios y sistemas.</p>
-                </article>
-                <article class="area-card">
+                </a>
+                <a class="area-card" href="/jobs?q=data" aria-label="Ver ofertas de Data y BI">
+                    <span class="area-icon">BI</span>
+                    <h3>Data/BI</h3>
+                    <p>Datos, reportes y analisis.</p>
+                </a>
+                <a class="area-card" href="/jobs?q=analyst" aria-label="Ver ofertas de analisis funcional y producto">
+                    <span class="area-icon">AN</span>
+                    <h3>Analisis funcional</h3>
+                    <p>Producto, procesos y relevamiento.</p>
+                </a>
+                <a class="area-card" href="/jobs?q=devops" aria-label="Ver ofertas de Cloud y DevOps">
                     <span class="area-icon">CL</span>
                     <h3>Cloud/DevOps</h3>
                     <p>Infraestructura, deploys y monitoreo.</p>
-                </article>
-                <article class="area-card">
+                </a>
+                <a class="area-card" href="/jobs?q=qa" aria-label="Ver ofertas de QA y testing">
                     <span class="area-icon">QA</span>
-                    <h3>QA</h3>
+                    <h3>QA/Testing</h3>
                     <p>Pruebas, calidad y automatizacion.</p>
-                </article>
+                </a>
             </div>
         </section>
 
@@ -174,7 +251,10 @@
             </div>
 
             <div class="opportunity-cards">
-                <article class="opportunity-card" th:each="job : ${recentJobs}">
+                <a class="opportunity-card"
+                   th:each="job : ${recentJobs}"
+                   th:href="@{/jobs(selectedJobId=${job.id})}"
+                   th:attr="aria-label=${'Ver oferta ' + (job.title != null ? job.title : 'sin titulo')}">
                     <div class="opportunity-topline">
                         <span class="company-mark opportunity-logo"
                               th:attr="data-has-logo=${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}">
@@ -196,11 +276,7 @@
                     <p class="opportunity-company" th:text="${job.company != null ? job.company : 'Empresa no informada'}">Empresa</p>
                     <p class="muted opportunity-location"
                        th:text="${job.location != null && !job.location.isBlank() ? job.location : 'Ubicacion no informada'}">Ubicacion</p>
-                </article>
-            </div>
-
-            <div class="opportunity-actions">
-                <a class="btn btn-secondary" th:href="@{/jobs}">Ver ofertas</a>
+                </a>
             </div>
         </section>
 
@@ -226,5 +302,6 @@
 </main>
 
 <div th:replace="~{fragments/footer :: footer}"></div>
+<script th:src="@{/technology-visual-catalog.js}"></script>
 </body>
 </html>
