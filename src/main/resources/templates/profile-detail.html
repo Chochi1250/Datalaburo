@@ -6,304 +6,782 @@
 	<title>DataLaburo - Perfil</title>
 	<link rel="stylesheet" th:href="@{/app.css}"/>
 </head>
-<body>
+<body class="page page-profile-detail page-profile-create">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<main class="container">
-	<header class="header profile-detail-header">
-		<div class="profile-detail-identity">
-			<div class="profile-detail-avatar avatar-surface"
-				 data-profile-avatar
-				 th:attr="data-avatar-preset=${profile.avatarPreset},data-avatar-name=${profile.name}"
-				 th:text="${profile.name != null && !profile.name.isBlank() ? #strings.toUpperCase(#strings.substring(profile.name, 0, 1)) : 'D'}">D</div>
-			<div>
-				<h1 th:text="${profile.name}">Perfil</h1>
-				<p class="muted">
-					<span th:if="${profile.createdAt != null}" th:text="${'Creado: ' + profile.createdAt}"></span>
-					<span th:if="${profile.updatedAt != null}" th:text="${' - Actualizado: ' + profile.updatedAt}"></span>
-				</p>
-				<p class="muted small">Perfil guardado localmente en esta demo. No requiere login ni cuenta de usuario.</p>
-			</div>
+<main class="container profile-create-page profile-detail-page">
+	<header class="profile-create-hero profile-detail-create-hero">
+		<div class="profile-create-hero-copy">
+			<h1>Editar perfil laboral</h1>
+			<p>Actualiza la informacion visible, proyectos y CV base de este perfil local sin cambiar la logica de analisis.</p>
 		</div>
 	</header>
 
-	<section class="actions">
-		<a class="btn btn-primary" th:href="@{/matching(profileId=${profile.id})}">Usar en matching clasico</a>
-		<a class="btn btn-secondary" th:href="@{/profiles/{id}/vector-first-compatibility(id=${profile.id})}">Ver compatibilidad vectorial</a>
-		<a class="btn btn-secondary" th:href="@{/vector-search}">Elegir perfil existente</a>
-		<a class="btn btn-secondary" th:href="@{/profiles}">Volver a perfiles</a>
-	</section>
-
-	<section class="card">
-		<h2>Presentacion del perfil</h2>
-		<p class="muted small">Este perfil puede reutilizar CV, metadata visible, proyectos, preferencias y embedding dentro de la app/base local del proyecto.</p>
-		<p class="muted" th:if="${metadataMessage != null}" th:text="${metadataMessage}">Metadata guardada.</p>
-		<p class="error" th:if="${metadataError != null}" th:text="${metadataError}">Error</p>
-
-		<p th:if="${profile.headline != null && !profile.headline.isBlank()}" th:text="${profile.headline}">Backend Java junior</p>
-		<p class="muted" th:if="${profile.summary != null && !profile.summary.isBlank()}" th:text="${profile.summary}">Resumen</p>
-
-		<div class="chips">
-			<span class="chip match-chip" th:text="${'Rol: ' + (profile.targetRole != null ? profile.targetRole : 'UNDECIDED')}">Rol</span>
-			<span class="chip match-chip" th:text="${'Seniority: ' + (profile.targetSeniority != null ? profile.targetSeniority : 'ANY')}">Seniority</span>
-			<span class="chip match-chip" th:text="${'Modo: ' + (profile.searchMode != null ? profile.searchMode : 'FOCUSED')}">Modo</span>
+	<div class="profile-detail-feedback" th:if="${metadataMessage != null || metadataError != null || projectMessage != null || projectError != null || cvMessage != null || cvError != null || cvUploadMessage != null || cvUploadError != null}">
+		<div class="profile-detail-status-card" th:if="${metadataMessage != null}" role="status" aria-live="polite">
+			<span class="profile-detail-status-icon" aria-hidden="true">✓</span>
+			<div class="profile-detail-status-copy">
+				<strong>Metadata visible guardada</strong>
+				<span>No cambia embeddings, ranking ni matching.</span>
+			</div>
 		</div>
+		<p class="profile-detail-message is-error" th:if="${metadataError != null}" th:text="${metadataError}">Error</p>
+		<p class="profile-detail-message" th:if="${projectMessage != null}" th:text="${projectMessage}">Proyecto guardado.</p>
+		<p class="profile-detail-message is-error" th:if="${projectError != null}" th:text="${projectError}">Error</p>
+		<p class="profile-detail-message" th:if="${cvMessage != null}" th:text="${cvMessage}">CV guardado.</p>
+		<p class="profile-detail-message is-error" th:if="${cvError != null}" th:text="${cvError}">Error</p>
+		<p class="profile-detail-message" th:if="${cvUploadMessage != null}" th:text="${cvUploadMessage}">Texto extraido.</p>
+		<p class="profile-detail-message is-error" th:if="${cvUploadError != null}" th:text="${cvUploadError}">Error de upload</p>
+	</div>
 
-		<div class="chips" th:if="${!#lists.isEmpty(profile.declaredSkillTags)}">
-			<span class="chip match-chip skill-chip tech-badge is-text-only"
-				  th:each="skill : ${profile.declaredSkillTags}"
-				  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
-				<span class="tech-badge-label" th:text="${skill}">Java</span>
-			</span>
-		</div>
+	<section class="profile-create-layout profile-detail-create-layout">
+		<div class="profile-create-form profile-detail-form-column">
+			<div class="profile-create-form-stack">
+				<form id="profileMetadataForm" class="profile-detail-metadata-form" method="post" th:action="@{/profiles/{id}/metadata(id=${profile.id})}" th:object="${metadataForm}">
 
-		<div class="links">
-			<a class="project-link" th:if="${profile.linkedinUrl != null && !profile.linkedinUrl.isBlank()}" th:href="${profile.linkedinUrl}" target="_blank" rel="noopener">LinkedIn</a>
-			<a class="project-link" th:if="${profile.githubUrl != null && !profile.githubUrl.isBlank()}" th:href="${profile.githubUrl}" target="_blank" rel="noopener">GitHub</a>
-			<a class="project-link" th:if="${profile.portfolioUrl != null && !profile.portfolioUrl.isBlank()}" th:href="${profile.portfolioUrl}" target="_blank" rel="noopener">Portfolio</a>
-		</div>
+					<section class="profile-create-card profile-section-identity">
+						<div class="profile-section-header">
+							<div>
+								<h2>Identidad visible</h2>
+								<p>Nombre, resumen y contexto principal que se muestran en la preview del perfil.</p>
+							</div>
+						</div>
 
-		<p class="muted small">Esta metadata mejora la presentacion visible del perfil. No cambia ranking, embeddings ni matching.</p>
+						<div class="profile-detail-identity-edit">
+							<div class="profile-avatar-panel profile-detail-avatar-panel"
+								 data-avatar-panel
+								 th:data-avatar-manifest="@{/images/avatars/avatars.json}">
+								<div class="profile-avatar-panel-top">
+									<div class="profile-avatar-demo avatar-surface"
+										 data-avatar-selected
+										 th:attr="data-avatar-preset=${metadataForm.avatarPreset},data-avatar-name=${metadataForm.name}"
+										 th:text="${metadataForm.name != null && !metadataForm.name.isBlank() ? #strings.toUpperCase(#strings.substring(metadataForm.name, 0, 1)) : 'D'}">D</div>
+									<div>
+										<strong>Imagen del perfil</strong>
+										<p>Elegi una imagen del catalogo o usa iniciales.</p>
+									</div>
+								</div>
 
-		<form method="post" th:action="@{/profiles/{id}/metadata(id=${profile.id})}" th:object="${metadataForm}">
-			<input type="hidden" th:field="*{avatarPreset}"/>
-			<h3 class="project-form-title">Editar metadata visible</h3>
-			<div class="field">
-				<label for="headline">Titulo profesional breve</label>
-				<input id="headline" type="text" th:field="*{headline}" placeholder="Backend Java junior | Spring Boot | PostgreSQL"/>
-			</div>
+								<input id="avatarPreset" type="hidden" th:field="*{avatarPreset}"/>
 
-			<div class="field">
-				<label for="summary">Resumen corto</label>
-				<textarea id="summary" rows="4" th:field="*{summary}" placeholder="Resumen visible para presentar el perfil en la demo."></textarea>
-			</div>
+								<div class="field profile-avatar-field">
+									<label for="avatarSearch">Buscar avatar</label>
+									<input id="avatarSearch" type="search" placeholder="Ej: java, backend, datos" data-avatar-search autocomplete="off"/>
+									<div class="profile-avatar-actions">
+										<p class="hint muted profile-avatar-status" data-avatar-status>Si no elegis un avatar, usamos tus iniciales.</p>
+										<button class="btn btn-ghost btn-sm profile-avatar-clear" type="button" data-avatar-clear>Usar iniciales</button>
+									</div>
+								</div>
 
-			<div class="field">
-				<label for="declaredSkillsText">Skills declaradas</label>
-				<input id="declaredSkillsText" type="text" th:field="*{declaredSkillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, Git"/>
-			</div>
+								<div class="profile-avatar-list" data-avatar-list hidden></div>
+							</div>
 
-			<div class="grid-2">
-				<div class="field">
-					<label for="targetRole">Rol objetivo</label>
-					<select id="targetRole" th:field="*{targetRole}">
-						<option value="UNDECIDED">Sin definir</option>
-						<option value="BACKEND">Backend</option>
-						<option value="FRONTEND">Frontend</option>
-						<option value="FULL_STACK">Full stack</option>
-						<option value="DATA">Data</option>
-						<option value="QA">QA</option>
-						<option value="DEVOPS">DevOps</option>
-						<option value="CLOUD">Cloud</option>
-						<option value="IT_SUPPORT">IT support</option>
-						<option value="APP_SUPPORT">App support</option>
-						<option value="SECURITY_OPS">Security ops</option>
-						<option value="IAM">IAM</option>
-						<option value="DATABASE">Database</option>
-					</select>
-				</div>
+							<div class="profile-identity-fields">
+								<div class="grid-2">
+									<div class="field">
+										<label for="name">Nombre del perfil</label>
+										<input id="name" type="text" th:field="*{name}" placeholder="Ej: Perfil Backend Java"/>
+									</div>
 
-				<div class="field">
-					<label for="targetSeniority">Seniority objetivo</label>
-					<select id="targetSeniority" th:field="*{targetSeniority}">
-						<option value="ANY">Cualquiera</option>
-						<option value="TRAINEE">Trainee</option>
-						<option value="JUNIOR">Junior</option>
-						<option value="MID">Mid</option>
-						<option value="SENIOR">Senior</option>
-						<option value="LEAD">Lead</option>
-					</select>
-				</div>
-			</div>
+									<div class="field">
+										<label for="headline">Titulo profesional breve</label>
+										<input id="headline" type="text" th:field="*{headline}" placeholder="Backend Java junior | Spring Boot | PostgreSQL"/>
+									</div>
+								</div>
 
-			<div class="field">
-				<label for="searchMode">Modo de busqueda</label>
-				<select id="searchMode" th:field="*{searchMode}">
-					<option value="FOCUSED">Enfocado</option>
-					<option value="BALANCED">Balanceado</option>
-					<option value="EXPLORATORY">Exploratorio</option>
-				</select>
-			</div>
+								<div class="field">
+									<label for="summary">Resumen corto</label>
+									<textarea id="summary" rows="4" th:field="*{summary}" placeholder="Resumen visible para presentar el perfil en la demo."></textarea>
+									<p class="hint muted">Estos datos ayudan a presentar mejor tu perfil.</p>
+								</div>
+							</div>
+						</div>
 
-			<div class="grid-3">
-				<div class="field">
-					<label for="linkedinUrl">LinkedIn opcional</label>
-					<input id="linkedinUrl" type="url" th:field="*{linkedinUrl}" placeholder="https://www.linkedin.com/in/..."/>
-				</div>
-				<div class="field">
-					<label for="githubUrl">GitHub opcional</label>
-					<input id="githubUrl" type="url" th:field="*{githubUrl}" placeholder="https://github.com/..."/>
-				</div>
-				<div class="field">
-					<label for="portfolioUrl">Portfolio opcional</label>
-					<input id="portfolioUrl" type="url" th:field="*{portfolioUrl}" placeholder="https://..."/>
-				</div>
-			</div>
+						<div class="profile-create-actions profile-detail-save-row">
+							<button type="submit">Guardar identidad</button>
+						</div>
+					</section>
 
-			<div class="actions">
-				<button type="submit">Guardar metadata</button>
-			</div>
-		</form>
-	</section>
+					<section class="profile-create-card profile-section-target">
+						<div class="profile-section-header">
+							<div>
+								<h2>Skills y objetivo</h2>
+								<p>Declara el stack visible y hacia donde queres orientar la busqueda.</p>
+							</div>
+						</div>
 
-	<section class="card" id="projects">
-		<h2>Evidencia por proyectos</h2>
-		<p class="muted small">Proyectos cargados manualmente como evidencia estructurada. Todavia no alteran ranking, matching, recuperacion vectorial ni embeddings.</p>
+						<div class="field">
+							<label for="declaredSkillsText">Skills declaradas</label>
+							<input id="declaredSkillsText" type="text" th:field="*{declaredSkillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, Git"/>
+							<p class="hint muted">Separalas por comas. Se muestran como tech badges cuando existe icono en el catalogo visual.</p>
+						</div>
 
-		<p class="muted" th:if="${projectMessage != null}" th:text="${projectMessage}">Proyecto guardado.</p>
-		<p class="error" th:if="${projectError != null}" th:text="${projectError}">Error</p>
+						<div class="grid-3">
+							<div class="field">
+								<label for="targetRole">Rol objetivo</label>
+								<select id="targetRole" th:field="*{targetRole}">
+									<option value="UNDECIDED">Sin definir</option>
+									<option value="BACKEND">Backend</option>
+									<option value="FRONTEND">Frontend</option>
+									<option value="FULL_STACK">Full stack</option>
+									<option value="DATA">Data</option>
+									<option value="QA">QA</option>
+									<option value="DEVOPS">DevOps</option>
+									<option value="CLOUD">Cloud</option>
+									<option value="IT_SUPPORT">IT support</option>
+									<option value="APP_SUPPORT">App support</option>
+									<option value="SECURITY_OPS">Security ops</option>
+									<option value="IAM">IAM</option>
+									<option value="DATABASE">Database</option>
+								</select>
+							</div>
 
-		<div class="project-empty" th:if="${#lists.isEmpty(projects)}">
-			<p><strong>Sin proyectos cargados.</strong></p>
-			<p class="muted small">Agrega proyectos academicos, personales o laborales para registrar evidencia visible del perfil. En esta fase quedan fuera de embeddings y ranking.</p>
-		</div>
+							<div class="field">
+								<label for="targetSeniority">Seniority objetivo</label>
+								<select id="targetSeniority" th:field="*{targetSeniority}">
+									<option value="ANY">Cualquiera</option>
+									<option value="TRAINEE">Trainee</option>
+									<option value="JUNIOR">Junior</option>
+									<option value="MID">Mid</option>
+									<option value="SENIOR">Senior</option>
+									<option value="LEAD">Lead</option>
+								</select>
+							</div>
 
-		<div class="project-list" th:if="${!#lists.isEmpty(projects)}">
-			<article class="project-evidence" th:each="project : ${projects}">
-				<div class="project-header">
-					<div>
-						<h3 class="project-title" th:text="${project.title}">API REST de ofertas laborales</h3>
-						<p class="muted small" th:if="${project.createdAt != null}" th:text="${'Cargado: ' + project.createdAt}">Cargado</p>
+							<div class="field">
+								<label for="searchMode">Modo de busqueda</label>
+								<select id="searchMode" th:field="*{searchMode}">
+									<option value="FOCUSED">Enfocado</option>
+									<option value="BALANCED">Balanceado</option>
+									<option value="EXPLORATORY">Exploratorio</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="profile-create-actions profile-detail-save-row">
+							<button type="submit">Guardar metadata</button>
+						</div>
+					</section>
+				</form>
+
+				<section class="profile-create-card profile-section-projects" id="projects">
+					<div class="profile-section-header">
+						<div>
+							<h2>Proyectos</h2>
+							<p>Suma o revisa evidencia visible asociada a este perfil.</p>
+						</div>
+						<span class="profile-detail-count" th:text="${#lists.size(projects) == 1 ? '1 proyecto' : #lists.size(projects) + ' proyectos'}">0 proyectos</span>
 					</div>
-					<span class="chip match-chip profile-chip project-type-chip" th:text="${project.evidenceTypeLabel}">Proyecto personal</span>
-				</div>
 
-				<p th:text="${project.description}">Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests.</p>
+					<div class="project-empty profile-detail-empty-panel" th:if="${#lists.isEmpty(projects)}">
+						<strong>Sin proyectos cargados.</strong>
+						<span>Agrega proyectos academicos, personales o laborales para registrar evidencia visible del perfil.</span>
+					</div>
 
-				<div class="chips" th:if="${!#lists.isEmpty(project.skillTags)}">
-					<span class="chip match-chip project-skill-chip skill-chip tech-badge is-text-only"
-						  th:each="skill : ${project.skillTags}"
-						  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
-						<span class="tech-badge-label" th:text="${skill}">Java</span>
-					</span>
-				</div>
+					<div class="profile-detail-project-list" th:if="${!#lists.isEmpty(projects)}">
+						<article class="profile-detail-project-card" th:each="project : ${projects}">
+							<div class="profile-detail-project-top">
+								<div>
+									<span class="profile-detail-project-type" data-badge-kind="flow" th:attr="data-badge-value=${project.evidenceTypeLabel}" th:text="${project.evidenceTypeLabel}">Proyecto personal</span>
+									<h3 th:text="${project.title}">API REST de ofertas laborales</h3>
+									<time class="profile-detail-project-date" th:if="${project.createdAt != null}"
+										  th:attr="datetime=${project.createdAt},data-profile-date=${project.createdAt},data-profile-date-prefix='Cargado'">
+										Cargado recientemente
+									</time>
+								</div>
+								<form class="inline-form" method="post" th:action="@{/profiles/{profileId}/projects/{projectId}/delete(profileId=${profile.id},projectId=${project.id})}">
+									<button class="btn btn-ghost btn-sm danger-button" type="submit">Eliminar</button>
+								</form>
+							</div>
+							<p class="profile-detail-project-description" th:text="${project.description}">Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests.</p>
+							<div class="profile-detail-techs" th:if="${!#lists.isEmpty(project.skillTags)}">
+								<span class="chip match-chip project-skill-chip skill-chip tech-badge is-text-only"
+									  th:each="skill : ${project.skillTags}"
+									  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+									<span class="tech-badge-label" th:text="${skill}">Java</span>
+								</span>
+							</div>
+							<div class="profile-detail-links" th:if="${project.repositoryUrl != null || project.demoUrl != null}">
+								<a th:if="${project.repositoryUrl != null}" th:href="${project.repositoryUrl}" target="_blank" rel="noopener">Repositorio</a>
+								<a th:if="${project.demoUrl != null}" th:href="${project.demoUrl}" target="_blank" rel="noopener">Demo</a>
+							</div>
+						</article>
+					</div>
 
-				<div class="links">
-					<a class="project-link" th:if="${project.repositoryUrl != null}" th:href="${project.repositoryUrl}" target="_blank" rel="noopener">Repositorio</a>
-					<a class="project-link" th:if="${project.demoUrl != null}" th:href="${project.demoUrl}" target="_blank" rel="noopener">Demo</a>
-					<form class="inline-form" method="post" th:action="@{/profiles/{profileId}/projects/{projectId}/delete(profileId=${profile.id},projectId=${project.id})}">
-						<button class="btn btn-ghost btn-sm danger-button" type="submit">Eliminar</button>
+					<form class="profile-detail-project-form" method="post" th:action="@{/profiles/{id}/projects(id=${profile.id})}" th:object="${projectForm}">
+						<div class="profile-detail-subheading">
+							<strong>Agregar proyecto</strong>
+							<span>Carga una evidencia puntual con descripcion, skills y links opcionales.</span>
+						</div>
+						<div class="grid-2">
+							<div class="field">
+								<label for="projectTitle">Titulo</label>
+								<input id="projectTitle" type="text" th:field="*{title}" placeholder="API REST de ofertas laborales"/>
+							</div>
+							<div class="field">
+								<label for="projectEvidenceType">Tipo de evidencia</label>
+								<select id="projectEvidenceType" th:field="*{evidenceType}">
+									<option th:each="type : ${evidenceTypes}" th:value="${type}" th:text="${type.label()}">Proyecto personal</option>
+								</select>
+							</div>
+						</div>
+						<div class="field">
+							<label for="projectDescription">Descripcion</label>
+							<textarea id="projectDescription" rows="4" th:field="*{description}" placeholder="Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests."></textarea>
+						</div>
+						<div class="field">
+							<label for="projectSkills">Skills evidenciadas</label>
+							<input id="projectSkills" type="text" th:field="*{skillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, SQL, Git"/>
+							<p class="hint muted">Campo requerido. Texto simple separado por comas.</p>
+						</div>
+						<div class="grid-2">
+							<div class="field">
+								<label for="repositoryUrl">URL repo opcional</label>
+								<input id="repositoryUrl" type="url" th:field="*{repositoryUrl}" placeholder="https://github.com/..."/>
+							</div>
+							<div class="field">
+								<label for="demoUrl">URL demo opcional</label>
+								<input id="demoUrl" type="url" th:field="*{demoUrl}" placeholder="https://..."/>
+							</div>
+						</div>
+						<div class="profile-create-actions profile-detail-save-row">
+							<button type="submit">Guardar proyecto</button>
+						</div>
 					</form>
-				</div>
-			</article>
+				</section>
+
+				<section class="profile-create-card profile-professional-card profile-detail-cv-card">
+					<div class="profile-professional-heading">
+						<h2>CV base del perfil</h2>
+						<p>Texto base para comparar tu perfil con ofertas. Revisalo antes de guardar.</p>
+					</div>
+
+					<div class="profile-professional-section profile-section-cv">
+						<div class="profile-subsection-heading">
+							<span class="profile-subsection-icon profile-subsection-icon-cv" aria-hidden="true">
+								<img th:src="@{/images/1f4c4.png}" alt="" loading="lazy"/>
+							</span>
+							<div>
+								<h3>Fuente textual para analisis</h3>
+								<p>Subi un archivo o edita directamente el texto que se compara contra ofertas.</p>
+							</div>
+						</div>
+
+						<form class="profile-detail-upload-form" method="post" enctype="multipart/form-data" th:if="${cvUploadPreviewText == null}" th:action="@{/profiles/{id}/cv/upload(id=${profile.id})}">
+							<div class="field vector-cv-upload profile-detail-cv-upload">
+								<input class="vector-cv-file-input" id="cvFile" name="cvFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"/>
+								<div class="vector-cv-dropzone">
+									<span class="vector-cv-document-icon" aria-hidden="true">
+										<img th:src="@{/images/1f4c4.png}" alt="" loading="lazy"/>
+									</span>
+									<span class="vector-cv-upload-copy">
+										<strong>Subi tu CV en PDF o DOCX</strong>
+										<span>Arrastra un archivo o hace clic para seleccionarlo.</span>
+									</span>
+									<label class="vector-cv-upload-action" for="cvFile">Elegir archivo</label>
+								</div>
+								<p class="hint muted profile-detail-cv-helper">El archivo se lee para completar el texto de abajo. No se guarda.</p>
+							</div>
+							<div class="profile-create-actions profile-detail-save-row">
+								<button type="submit">Extraer texto</button>
+							</div>
+						</form>
+
+						<div th:if="${cvUploadPreviewText != null}">
+							<form method="post" th:action="@{/profiles/{id}/cv(id=${profile.id})}">
+								<div class="field profile-detail-cv-textarea">
+									<label for="cvUploadPreviewText">Vista previa editable</label>
+									<textarea id="cvUploadPreviewText" name="cvText" rows="16" th:text="${cvUploadPreviewText}"></textarea>
+									<p class="hint muted">Este texto todavia no esta guardado. Confirmar lo guarda como CV base del perfil.</p>
+								</div>
+								<div class="profile-create-actions profile-detail-save-row">
+									<button type="submit">Confirmar y guardar CV</button>
+									<a class="btn btn-secondary" th:href="@{/profiles/{id}(id=${profile.id})}">Cancelar</a>
+								</div>
+							</form>
+						</div>
+
+						<form method="post" th:if="${cvUploadPreviewText == null}" th:action="@{/profiles/{id}/cv(id=${profile.id})}">
+							<div class="field profile-detail-cv-textarea">
+								<label for="cvText">CV como texto</label>
+								<textarea id="cvText" name="cvText" rows="16" th:text="${profile.cvText}" placeholder="Pega aca el CV en texto plano"></textarea>
+								<p class="hint muted">Este texto se usa como base para comparar el perfil con ofertas. Los proyectos se editan por separado.</p>
+							</div>
+							<div class="profile-create-actions profile-detail-save-row">
+								<button type="submit">Guardar CV</button>
+							</div>
+						</form>
+					</div>
+				</section>
+
+				<section class="profile-create-card profile-professional-card profile-detail-links-card">
+					<div class="profile-professional-section profile-section-links">
+						<div class="profile-subsection-heading">
+							<span class="profile-subsection-icon profile-subsection-icon-links" aria-hidden="true">
+								<svg viewBox="0 0 24 24" focusable="false">
+									<path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.9 5.03"/>
+									<path d="M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07l1.22-1.22"/>
+								</svg>
+							</span>
+							<div>
+								<h3>Links</h3>
+								<p>Informacion complementaria del perfil. Queda al final para no competir con identidad, skills y CV.</p>
+							</div>
+						</div>
+
+						<div class="profile-links-grid">
+							<div class="field profile-link-field">
+								<label for="linkedinUrl">LinkedIn</label>
+								<div class="profile-link-input">
+									<span class="profile-link-icon profile-link-icon-linkedin" aria-hidden="true">
+										<img th:src="@{/images/tech/linkedin.svg}" alt="" loading="lazy"/>
+									</span>
+									<input id="linkedinUrl" name="linkedinUrl" type="url" form="profileMetadataForm" th:value="${metadataForm.linkedinUrl}" placeholder=" "/>
+									<span class="profile-link-placeholder">https://www.linkedin.com/in/tu-perfil</span>
+								</div>
+							</div>
+							<div class="field profile-link-field">
+								<label for="githubUrl">GitHub</label>
+								<div class="profile-link-input">
+									<span class="profile-link-icon profile-link-icon-github" aria-hidden="true">
+										<img th:src="@{/images/tech/github.png}" alt="" loading="lazy"/>
+									</span>
+									<input id="githubUrl" name="githubUrl" type="url" form="profileMetadataForm" th:value="${metadataForm.githubUrl}" placeholder=" "/>
+									<span class="profile-link-placeholder">https://github.com/tu-usuario</span>
+								</div>
+							</div>
+							<div class="field profile-link-field profile-links-wide">
+								<label for="portfolioUrl">Portfolio</label>
+								<div class="profile-link-input">
+									<span class="profile-link-icon profile-link-icon-portfolio" aria-hidden="true">
+										<img th:src="@{/images/tech/portfolio.png}" alt="" loading="lazy"/>
+									</span>
+									<input id="portfolioUrl" name="portfolioUrl" type="url" form="profileMetadataForm" th:value="${metadataForm.portfolioUrl}" placeholder=" "/>
+									<span class="profile-link-placeholder">https://tu-portafolio.com</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="profile-create-actions profile-detail-save-row">
+						<button type="submit" form="profileMetadataForm">Guardar links</button>
+					</div>
+				</section>
+			</div>
 		</div>
 
-		<form class="project-form" method="post" th:action="@{/profiles/{id}/projects(id=${profile.id})}" th:object="${projectForm}">
-			<h3 class="project-form-title">Agregar proyecto</h3>
-			<div class="grid-2">
-				<div class="field">
-					<label for="projectTitle">Titulo</label>
-					<input id="projectTitle" type="text" th:field="*{title}" placeholder="API REST de ofertas laborales"/>
+		<aside class="profile-create-preview profile-detail-preview" aria-label="Vista previa del perfil">
+			<div class="profile-preview-card"
+				 data-profile-preview-card
+				 th:attr="data-avatar-accent=${profile.avatarPreset}">
+				<div class="profile-preview-topline">
+					<span class="profile-preview-label">Vista previa</span>
 				</div>
-				<div class="field">
-					<label for="projectEvidenceType">Tipo de evidencia</label>
-					<select id="projectEvidenceType" th:field="*{evidenceType}">
-						<option th:each="type : ${evidenceTypes}" th:value="${type}" th:text="${type.label()}">Proyecto personal</option>
-					</select>
+
+				<div class="profile-preview-scroll">
+					<div class="profile-preview-identity">
+						<div class="profile-preview-avatar avatar-surface"
+							 data-profile-avatar
+							 th:attr="data-avatar-preset=${profile.avatarPreset},data-avatar-name=${profile.name}"
+							 th:text="${profile.name != null && !profile.name.isBlank() ? #strings.toUpperCase(#strings.substring(profile.name, 0, 1)) : 'D'}">D</div>
+						<div class="profile-preview-heading">
+							<h2 th:text="${profile.name != null && !profile.name.isBlank() ? profile.name : 'Perfil laboral'}">Perfil laboral</h2>
+							<p class="profile-preview-headline"
+							   th:text="${profile.headline != null && !profile.headline.isBlank() ? profile.headline : 'Titulo profesional breve'}">Titulo profesional breve</p>
+						</div>
+					</div>
+
+					<p class="profile-preview-summary muted"
+					   th:text="${profile.summary != null && !profile.summary.isBlank() ? profile.summary : 'Completa un resumen para darle contexto a tu perfil.'}">
+						Completa un resumen para darle contexto a tu perfil.
+					</p>
+
+					<div class="profile-preview-focus">
+						<div class="profile-preview-focus-item">
+							<span>Rol objetivo</span>
+							<strong th:switch="${profile.targetRole}">
+								<span th:case="'BACKEND'">Backend</span>
+								<span th:case="'FRONTEND'">Frontend</span>
+								<span th:case="'FULL_STACK'">Full stack</span>
+								<span th:case="'DATA'">Data</span>
+								<span th:case="'QA'">QA</span>
+								<span th:case="'DEVOPS'">DevOps</span>
+								<span th:case="'CLOUD'">Cloud</span>
+								<span th:case="'IT_SUPPORT'">IT support</span>
+								<span th:case="'APP_SUPPORT'">App support</span>
+								<span th:case="'SECURITY_OPS'">Security ops</span>
+								<span th:case="'IAM'">IAM</span>
+								<span th:case="'DATABASE'">Database</span>
+								<span th:case="*">Sin definir</span>
+							</strong>
+						</div>
+						<div class="profile-preview-focus-item">
+							<span>Seniority</span>
+							<strong th:switch="${profile.targetSeniority}">
+								<span th:case="'TRAINEE'">Trainee</span>
+								<span th:case="'JUNIOR'">Junior</span>
+								<span th:case="'MID'">Mid</span>
+								<span th:case="'SENIOR'">Senior</span>
+								<span th:case="'LEAD'">Lead</span>
+								<span th:case="*">Cualquiera</span>
+							</strong>
+						</div>
+						<div class="profile-preview-focus-item">
+							<span>Busqueda</span>
+							<strong th:switch="${profile.searchMode}">
+								<span th:case="'BALANCED'">Balanceado</span>
+								<span th:case="'EXPLORATORY'">Exploratorio</span>
+								<span th:case="*">Enfocado</span>
+							</strong>
+						</div>
+					</div>
+
+					<section class="profile-preview-section">
+						<div class="profile-preview-section-head">
+							<span>Skills visibles</span>
+							<small th:text="${#lists.isEmpty(profile.declaredSkillTags) ? 'Se completan al editar' : #lists.size(profile.declaredSkillTags) + ' skills'}">Skills</small>
+						</div>
+						<div class="profile-preview-tags" th:if="${!#lists.isEmpty(profile.declaredSkillTags)}">
+							<span class="chip skill-chip tech-badge profile-preview-badge is-text-only"
+								  th:each="skill, it : ${profile.declaredSkillTags}"
+								  th:if="${it.index < 6}"
+								  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+								<span class="tech-badge-label" th:text="${skill}">Java</span>
+							</span>
+							<span class="chip skill-chip skill-chip-more tech-badge profile-preview-badge is-text-only"
+								  data-badge-tone="more"
+								  th:if="${#lists.size(profile.declaredSkillTags) > 6}"
+								  th:attr="title=${#lists.size(profile.declaredSkillTags) - 6 + ' tecnologias mas'}">
+								<span class="tech-badge-label" th:text="${'+' + (#lists.size(profile.declaredSkillTags) - 6) + ' mas'}">+2 mas</span>
+							</span>
+						</div>
+						<div class="profile-preview-tags" th:if="${#lists.isEmpty(profile.declaredSkillTags)}">
+							<span class="chip skill-chip tech-badge profile-preview-badge is-text-only" data-badge-tone="placeholder" style="--badge-bg:#e8effa;--badge-text:#526075;--badge-border:#c6d4e6;--badge-shadow:rgba(148,163,184,0.18);">
+								<span class="tech-badge-label">Tus badges</span>
+							</span>
+						</div>
+					</section>
+
+					<section class="profile-preview-section">
+						<div class="profile-preview-section-head">
+							<span>Proyectos visibles</span>
+							<small th:text="${#lists.isEmpty(projects) ? 'Opcional' : #lists.size(projects) + ' evidencias'}">Opcional</small>
+						</div>
+						<div class="profile-preview-project-list" th:if="${!#lists.isEmpty(projects)}">
+							<article class="profile-preview-project" th:each="project, it : ${projects}" th:if="${it.index < 2}">
+								<div class="profile-preview-section-head">
+									<span th:text="${project.evidenceTypeLabel}">Proyecto</span>
+									<small th:text="${#lists.isEmpty(project.skillTags) ? 'Contexto visible' : #lists.size(project.skillTags) + ' skills'}">Skills</small>
+								</div>
+								<strong th:text="${project.title}">Proyecto visible</strong>
+								<span th:text="${project.description}">Descripcion del proyecto</span>
+								<div class="profile-preview-tags" th:if="${!#lists.isEmpty(project.skillTags)}">
+									<span class="chip skill-chip tech-badge profile-preview-badge is-text-only"
+										  th:each="skill, skillIt : ${project.skillTags}"
+										  th:if="${skillIt.index < 3}"
+										  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+										<span class="tech-badge-label" th:text="${skill}">Java</span>
+									</span>
+								</div>
+							</article>
+							<p class="profile-preview-overflow-note" th:if="${#lists.size(projects) > 2}" th:text="${'+' + (#lists.size(projects) - 2) + ' proyecto' + (#lists.size(projects) - 2 == 1 ? '' : 's') + ' mas en el formulario.'}">+1 proyecto mas.</p>
+						</div>
+						<div class="profile-preview-project-list" th:if="${#lists.isEmpty(projects)}">
+							<article class="profile-preview-project is-empty">
+								<div class="profile-preview-section-head">
+									<span>Proyecto visible opcional</span>
+									<small>Sin evidencia todavia</small>
+								</div>
+								<strong>Agrega un proyecto si queres mostrar evidencia puntual.</strong>
+								<span>La preview prioriza lo esencial y resume el resto para no crecer sin limite.</span>
+							</article>
+						</div>
+					</section>
 				</div>
-			</div>
 
-			<div class="field">
-				<label for="projectDescription">Descripcion</label>
-				<textarea id="projectDescription" rows="4" th:field="*{description}" placeholder="Backend Java/Spring Boot con PostgreSQL, endpoints REST, validaciones y tests."></textarea>
+				<p class="profile-preview-note">Esta preview usa los datos ya guardados del perfil. Al guardar cambios, la vista vuelve a reflejar la version actualizada.</p>
 			</div>
-
-			<div class="field">
-				<label for="projectSkills">Skills evidenciadas</label>
-				<input id="projectSkills" type="text" th:field="*{skillsText}" placeholder="Java, Spring Boot, REST, PostgreSQL, SQL, Git"/>
-				<p class="hint muted">Campo requerido. Texto simple separado por comas. En esta fase no se normaliza contra el catalogo de skills.</p>
-			</div>
-
-			<div class="grid-2">
-				<div class="field">
-					<label for="repositoryUrl">URL repo opcional</label>
-					<input id="repositoryUrl" type="url" th:field="*{repositoryUrl}" placeholder="https://github.com/..."/>
-				</div>
-				<div class="field">
-					<label for="demoUrl">URL demo opcional</label>
-					<input id="demoUrl" type="url" th:field="*{demoUrl}" placeholder="https://..."/>
-				</div>
-			</div>
-
-			<div class="actions">
-				<button type="submit">Guardar proyecto</button>
-			</div>
-		</form>
-	</section>
-
-	<section class="card">
-		<h2>Estado del embedding PROFILE</h2>
-		<p class="muted" th:if="${embeddingProcessMessage != null}" th:text="${embeddingProcessMessage}">Embedding procesado.</p>
-		<p class="error" th:if="${embeddingProcessError != null}" th:text="${embeddingProcessError}">Error de embedding</p>
-		<div th:if="${profileEmbedding != null}">
-			<div class="chips">
-				<span class="chip match-chip" th:text="${profileEmbedding.status}">PENDING</span>
-				<span class="chip match-chip" th:text="${profileEmbedding.embeddingModel}">BAAI/bge-m3</span>
-				<span class="chip match-chip" th:text="${profileEmbedding.embeddingDimensions + ' dims'}">1024 dims</span>
-			</div>
-			<p class="muted small" th:if="${profileEmbedding.updatedAt != null}" th:text="${'Metadata actualizada: ' + profileEmbedding.updatedAt}">Metadata actualizada</p>
-			<p class="muted small" th:if="${profileEmbedding.lastEmbeddedAt != null}" th:text="${'Ultimo embedding READY: ' + profileEmbedding.lastEmbeddedAt}">Ultimo embedding READY</p>
-			<p class="error" th:if="${profileEmbedding.errorMessage != null && !profileEmbedding.errorMessage.isBlank()}" th:text="${profileEmbedding.errorMessage}">Error</p>
-		</div>
-		<div th:if="${profileEmbedding == null}">
-			<span class="chip match-chip">sin embedding</span>
-		</div>
-		<p class="muted small">Guardar el CV solo prepara el embedding si cambia. El ranking vector-first no cambia hasta que el embedding sea procesado y quede READY.</p>
-		<form method="post"
-			  th:if="${profileEmbedding == null || profileEmbedding.status.name() == 'PENDING' || profileEmbedding.status.name() == 'FAILED'}"
-			  th:action="@{/profiles/{id}/embedding/process(id=${profile.id})}">
-			<div class="actions">
-				<button type="submit">Procesar embedding del perfil</button>
-			</div>
-			<p class="hint muted">Procesa solo el embedding PROFILE de este perfil con BAAI/bge-m3. No procesa ofertas ni otros pendientes.</p>
-		</form>
-	</section>
-
-	<section class="card">
-		<h2>CV textual editable</h2>
-		<p class="muted small">Para una prueba puntual, carga o actualiza el CV de este perfil local antes de procesar el embedding.</p>
-		<p class="muted" th:if="${cvMessage != null}" th:text="${cvMessage}">CV guardado.</p>
-		<p class="error" th:if="${cvError != null}" th:text="${cvError}">Error</p>
-		<p class="muted" th:if="${cvUploadMessage != null}" th:text="${cvUploadMessage}">Texto extraido.</p>
-		<p class="error" th:if="${cvUploadError != null}" th:text="${cvUploadError}">Error de upload</p>
-
-		<form method="post" enctype="multipart/form-data" th:if="${cvUploadPreviewText == null}" th:action="@{/profiles/{id}/cv/upload(id=${profile.id})}">
-			<div class="field">
-				<label for="cvFile">Subir CV desde PDF/DOCX</label>
-				<input id="cvFile" name="cvFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"/>
-				<p class="hint muted">El archivo no se guarda. Se extrae texto para revisar antes de reemplazar el CV textual.</p>
-			</div>
-			<div class="actions">
-				<button type="submit">Extraer texto</button>
-			</div>
-		</form>
-
-		<div th:if="${cvUploadPreviewText != null}">
-			<form method="post" th:action="@{/profiles/{id}/cv(id=${profile.id})}">
-				<div class="field">
-					<label for="cvUploadPreviewText">Vista previa editable</label>
-					<textarea id="cvUploadPreviewText" name="cvText" rows="16" th:text="${cvUploadPreviewText}"></textarea>
-					<p class="hint muted">Este texto todavia no esta guardado. Confirmar lo guarda como CV del perfil y prepara el embedding PROFILE solo si cambio.</p>
-				</div>
-				<div class="actions">
-					<button type="submit">Confirmar y guardar CV</button>
-					<a class="btn btn-secondary" th:href="@{/profiles/{id}(id=${profile.id})}">Cancelar</a>
-				</div>
-			</form>
-		</div>
-
-		<form method="post" th:if="${cvUploadPreviewText == null}" th:action="@{/profiles/{id}/cv(id=${profile.id})}">
-			<div class="field">
-				<label for="cvText">CV (texto)</label>
-				<textarea id="cvText" name="cvText" rows="16" th:text="${profile.cvText}" placeholder="Pega aca el CV en texto plano"></textarea>
-				<p class="hint muted">Este texto es la fuente del embedding PROFILE. Los proyectos manuales siguen fuera de embeddings.</p>
-			</div>
-			<div class="actions">
-				<button type="submit">Guardar CV</button>
-			</div>
-		</form>
+		</aside>
 	</section>
 </main>
 <script th:src="@{/profile-avatar-display.js}"></script>
 <script th:src="@{/technology-visual-catalog.js}"></script>
+<script th:src="@{/visual-badge-registry.js}"></script>
+<script>
+	(function () {
+		const panel = document.querySelector("[data-avatar-panel]");
+		if (!panel) {
+			return;
+		}
+
+		const DEFAULT_AVATAR_PRESET = "atlas";
+		const DEFAULT_AVATAR_OPTION_IDS = ["java", "spring", "python", "docker", "react", "git"];
+		const EXTRA_AVATAR_OPTIONS = [
+			{ id: "react", label: "React", file: "/images/tech/react.png", tags: ["react", "frontend", "ui", "javascript"] },
+			{ id: "git", label: "Git", file: "/images/tech/github.png", tags: ["git", "github", "repositorios", "codigo"] }
+		];
+		const manifestUrl = panel.dataset.avatarManifest || "";
+		const avatarPreset = document.querySelector("#avatarPreset");
+		const avatarSearch = panel.querySelector("[data-avatar-search]");
+		const avatarStatus = panel.querySelector("[data-avatar-status]");
+		const avatarClear = panel.querySelector("[data-avatar-clear]");
+		const avatarList = panel.querySelector("[data-avatar-list]");
+		const nameInput = document.querySelector("#name");
+		const avatarTargets = Array.from(document.querySelectorAll("[data-avatar-selected], [data-profile-avatar]"));
+		let avatarRegistry = [];
+
+		function normalizeKey(value) {
+			return String(value || "")
+				.toLowerCase()
+				.normalize("NFD")
+				.replace(/[\u0300-\u036f]/g, "")
+				.replace(/[^a-z0-9\s]+/g, " ")
+				.replace(/\s+/g, " ")
+				.trim();
+		}
+
+		function initials() {
+			const source = nameInput && nameInput.value ? nameInput.value : "";
+			const words = String(source)
+				.replace(/[^A-Za-z0-9 ]+/g, " ")
+				.trim()
+				.split(/\s+/)
+				.filter(Boolean);
+			if (!words.length) {
+				return "DL";
+			}
+			if (words.length === 1) {
+				return words[0].slice(0, 2).toUpperCase();
+			}
+			return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+		}
+
+		function selectedId() {
+			const value = avatarPreset && avatarPreset.value ? avatarPreset.value.trim().toLowerCase() : "";
+			return value || DEFAULT_AVATAR_PRESET;
+		}
+
+		function normalizeAvatarEntry(entry) {
+			if (!entry || !entry.id || !entry.label) {
+				return null;
+			}
+			const tags = Array.isArray(entry.tags)
+				? entry.tags.map(function (tag) { return String(tag || "").trim(); }).filter(Boolean)
+				: String(entry.tags || "").split(",").map(function (tag) { return tag.trim(); }).filter(Boolean);
+			return {
+				id: String(entry.id).trim().toLowerCase(),
+				label: String(entry.label).trim(),
+				file: String(entry.file || "").trim(),
+				mark: String(entry.mark || "").trim(),
+				tags: tags
+			};
+		}
+
+		function uniqueEntries(entries) {
+			const seen = new Set();
+			return entries.filter(function (entry) {
+				if (!entry || seen.has(entry.id)) {
+					return false;
+				}
+				seen.add(entry.id);
+				return true;
+			});
+		}
+
+		function findAvatarEntry(id) {
+			return avatarRegistry.find(function (entry) {
+				return entry.id === id;
+			}) || null;
+		}
+
+		function renderFallback(target, preset) {
+			target.classList.remove("is-avatar-image");
+			target.setAttribute("data-avatar-preset", preset || DEFAULT_AVATAR_PRESET);
+			target.removeAttribute("data-avatar-image");
+			target.style.removeProperty("--avatar-accent");
+			target.style.removeProperty("--avatar-shadow");
+			target.textContent = initials();
+		}
+
+		function renderAvatarImage(target, entry) {
+			if (!entry || !entry.file) {
+				renderFallback(target, entry ? entry.id : selectedId());
+				return;
+			}
+			target.classList.add("is-avatar-image");
+			target.removeAttribute("data-avatar-preset");
+			target.setAttribute("data-avatar-image", entry.id);
+			target.style.setProperty("--avatar-accent", "#cbd5e1");
+			target.style.setProperty("--avatar-shadow", "rgba(15,23,42,0.12)");
+			target.textContent = "";
+			const image = document.createElement("img");
+			image.className = "avatar-selected-image";
+			image.alt = entry.label;
+			image.src = entry.file;
+			image.addEventListener("error", function () {
+				renderFallback(target, entry.id);
+			}, { once: true });
+			target.appendChild(image);
+		}
+
+		function syncAvatar() {
+			const currentId = selectedId();
+			const currentEntry = findAvatarEntry(currentId);
+			avatarTargets.forEach(function (target) {
+				renderAvatarImage(target, currentEntry);
+			});
+			if (avatarStatus) {
+				avatarStatus.textContent = currentEntry
+					? "Avatar elegido: " + currentEntry.label + "."
+					: "Si no elegis un avatar, usamos tus iniciales.";
+			}
+			if (avatarClear) {
+				avatarClear.disabled = currentId === DEFAULT_AVATAR_PRESET;
+			}
+		}
+
+		function optionMark(entry) {
+			return entry.mark || entry.label.slice(0, 2).toUpperCase();
+		}
+
+		function buildOption(entry, currentId) {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = "profile-avatar-option";
+			button.title = entry.label;
+			button.setAttribute("aria-pressed", entry.id === currentId ? "true" : "false");
+			if (entry.id === currentId) {
+				button.classList.add("is-selected");
+			}
+
+			const media = document.createElement("span");
+			media.className = "profile-avatar-option-media";
+			if (entry.file) {
+				const image = document.createElement("img");
+				image.alt = "";
+				image.src = entry.file;
+				image.addEventListener("error", function () {
+					image.remove();
+					media.textContent = optionMark(entry);
+					media.classList.add("profile-avatar-option-media-mark");
+				}, { once: true });
+				media.appendChild(image);
+			} else {
+				media.textContent = optionMark(entry);
+				media.classList.add("profile-avatar-option-media-mark");
+			}
+			button.appendChild(media);
+
+			const label = document.createElement("span");
+			label.className = "profile-avatar-option-label";
+			label.textContent = entry.label;
+			button.appendChild(label);
+
+			button.addEventListener("click", function () {
+				if (avatarPreset) {
+					avatarPreset.value = entry.id;
+				}
+				renderOptions();
+				syncAvatar();
+			});
+			return button;
+		}
+
+		function renderOptions() {
+			if (!avatarList) {
+				return;
+			}
+			const currentId = selectedId();
+			const currentEntry = findAvatarEntry(currentId);
+			const query = normalizeKey(avatarSearch && avatarSearch.value ? avatarSearch.value : "");
+			const matches = query
+				? avatarRegistry.filter(function (entry) {
+					return normalizeKey(entry.label + " " + entry.tags.join(" ")).indexOf(query) !== -1;
+				}).slice(0, 10)
+				: DEFAULT_AVATAR_OPTION_IDS.map(findAvatarEntry).filter(Boolean);
+			const visible = uniqueEntries((currentEntry ? [currentEntry] : []).concat(matches)).slice(0, 6);
+			avatarList.innerHTML = "";
+			if (!visible.length) {
+				avatarList.hidden = true;
+				if (avatarStatus) {
+					avatarStatus.textContent = query ? "No encontramos coincidencias. Si seguis, usamos tus iniciales." : "Si no elegis un avatar, usamos tus iniciales.";
+				}
+				return;
+			}
+			visible.forEach(function (entry) {
+				avatarList.appendChild(buildOption(entry, currentId));
+			});
+			avatarList.hidden = false;
+		}
+
+		async function loadAvatars() {
+			try {
+				const response = await fetch(manifestUrl, { headers: { "Accept": "application/json" } });
+				if (!response.ok) {
+					throw new Error("avatar-manifest-unavailable");
+				}
+				const payload = await response.json();
+				avatarRegistry = Array.isArray(payload) ? payload.map(normalizeAvatarEntry).filter(Boolean) : [];
+			} catch (error) {
+				avatarRegistry = [];
+			}
+			avatarRegistry = uniqueEntries(avatarRegistry.concat(EXTRA_AVATAR_OPTIONS.map(normalizeAvatarEntry).filter(Boolean)));
+			renderOptions();
+			syncAvatar();
+		}
+
+		if (avatarSearch) {
+			avatarSearch.addEventListener("input", renderOptions);
+		}
+		if (avatarClear) {
+			avatarClear.addEventListener("click", function () {
+				if (avatarPreset) {
+					avatarPreset.value = DEFAULT_AVATAR_PRESET;
+				}
+				renderOptions();
+				syncAvatar();
+			});
+		}
+		if (nameInput) {
+			nameInput.addEventListener("input", syncAvatar);
+		}
+
+		loadAvatars();
+	}());
+</script>
+<script>
+	(function () {
+		const formatter = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric" });
+		const dayMs = 24 * 60 * 60 * 1000;
+
+		function labelFor(date, prefix) {
+			const now = new Date();
+			const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+			const then = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+			const days = Math.max(0, Math.floor((today - then) / dayMs));
+			if (days === 0) {
+				return prefix + " hoy";
+			}
+			if (days === 1) {
+				return prefix + " ayer";
+			}
+			if (days < 7) {
+				return prefix + " hace " + days + " dias";
+			}
+			if (days < 28) {
+				const weeks = Math.floor(days / 7);
+				return prefix + " hace " + weeks + (weeks === 1 ? " semana" : " semanas");
+			}
+			return prefix + " el " + formatter.format(date).replace(".", "");
+		}
+
+		document.querySelectorAll("[data-profile-date]").forEach(function (element) {
+			const date = new Date(element.dataset.profileDate);
+			if (Number.isNaN(date.getTime())) {
+				return;
+			}
+			element.textContent = labelFor(date, element.dataset.profileDatePrefix || "Actualizado");
+		});
+	}());
+</script>
 </body>
 </html>

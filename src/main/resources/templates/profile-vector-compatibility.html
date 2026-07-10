@@ -72,27 +72,27 @@
 
 				<div class="vector-profile-chips">
 					<th:block th:switch="${profile.targetRole}">
-						<span class="chip vector-profile-chip" th:case="'BACKEND'">Backend</span>
-						<span class="chip vector-profile-chip" th:case="'DOTNET_BACKEND'">.NET backend</span>
-						<span class="chip vector-profile-chip" th:case="'FRONTEND'">Frontend</span>
-						<span class="chip vector-profile-chip" th:case="'FULL_STACK'">Full stack</span>
-						<span class="chip vector-profile-chip" th:case="'DOTNET_FULLSTACK'">.NET full stack</span>
-						<span class="chip vector-profile-chip" th:case="'DATA'">Data/BI</span>
-						<span class="chip vector-profile-chip" th:case="'DATABASE'">Base de datos</span>
-						<span class="chip vector-profile-chip" th:case="'IT_SUPPORT'">IT Support</span>
-						<span class="chip vector-profile-chip" th:case="'APP_SUPPORT'">App Support</span>
-						<span class="chip vector-profile-chip" th:case="'SECURITY_OPS'">Security Ops</span>
-						<span class="chip vector-profile-chip" th:case="'IAM'">IAM</span>
-						<span class="chip vector-profile-chip" th:case="*">Sin definir</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="Backend" th:case="'BACKEND'">Backend</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value=".NET backend" th:case="'DOTNET_BACKEND'">.NET backend</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="Frontend" th:case="'FRONTEND'">Frontend</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="Full stack" th:case="'FULL_STACK'">Full stack</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value=".NET full stack" th:case="'DOTNET_FULLSTACK'">.NET full stack</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="Data" th:case="'DATA'">Data/BI</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="Data" th:case="'DATABASE'">Base de datos</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="Support IT" th:case="'IT_SUPPORT'">IT Support</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="Support IT" th:case="'APP_SUPPORT'">App Support</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="Security Ops" th:case="'SECURITY_OPS'">Security Ops</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" data-badge-value="IAM" th:case="'IAM'">IAM</span>
+						<span class="chip vector-profile-chip" data-badge-kind="role" th:case="*">Sin definir</span>
 					</th:block>
 
 					<th:block th:switch="${profile.targetSeniority}">
-						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'TRAINEE'">Trainee</span>
-						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'JUNIOR'">Junior</span>
-						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'MID'">Semi senior</span>
-						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'SENIOR'">Senior</span>
-						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="'LEAD'">Lead</span>
-						<span class="chip vector-profile-chip vector-profile-chip-soft" th:case="*">Seniority flexible</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" data-badge-kind="seniority" data-badge-value="Trainee" th:case="'TRAINEE'">Trainee</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" data-badge-kind="seniority" data-badge-value="Junior" th:case="'JUNIOR'">Junior</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" data-badge-kind="seniority" data-badge-value="Semi senior" th:case="'MID'">Semi senior</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" data-badge-kind="seniority" data-badge-value="Senior" th:case="'SENIOR'">Senior</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" data-badge-kind="seniority" data-badge-value="Lead" th:case="'LEAD'">Lead</span>
+						<span class="chip vector-profile-chip vector-profile-chip-soft" data-badge-kind="seniority" th:case="*">Seniority flexible</span>
 					</th:block>
 
 					<span class="chip skill-chip tech-badge is-text-only vector-stack-badge vector-profile-chip vector-profile-chip-skill"

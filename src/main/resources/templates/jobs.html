@@ -123,7 +123,11 @@
 								 data-title=${job.title},
 								 data-company=${job.company},
 								 data-location=${job.location},
-								 data-posted=${job.postedAtText},
+								 data-posted=${job.postedAtLabel},
+								 data-role-family=${job.roleFamily},
+								 data-modality=${job.workModality},
+								 data-employment-type=${job.employmentType},
+								 data-seniority=${job.roleSeniority},
 								 data-has-logo=${job.companyLogoUrl != null && !job.companyLogoUrl.isBlank()}">
 					<span class="company-mark" th:attr="data-company=${job.company}">
 						<img class="logo-img"
@@ -145,33 +149,34 @@
 						<span class="job-item-company" th:text="${job.company != null && !job.company.isBlank() ? job.company : 'Empresa no informada'}"></span>
 						<span class="job-item-meta">
 							<span th:text="${job.location != null && !job.location.isBlank() ? job.location : 'Ubicacion no informada'}"></span>
-							<span class="posted-time" th:if="${job.postedAtText != null && !job.postedAtText.isBlank()}" th:attr="data-posted=${job.postedAtText}" th:text="${' - ' + job.postedAtText}"></span>
+							<span class="posted-time" th:if="${job.postedAtLabel != null && !job.postedAtLabel.isBlank()}" th:attr="data-posted=${job.postedAtLabel}" th:text="${' - ' + job.postedAtLabel}"></span>
 						</span>
 						<span class="job-item-tags" aria-label="Etiquetas"></span>
 					</span>
 				</button>
 
 				<nav id="jobs-pagination" class="jobs-pagination" aria-label="Paginacion de ofertas">
-					<p id="jobs-page-summary" class="jobs-page-summary muted" th:text="|Mostrando ${pageStart}-${pageEnd} de ${totalJobs} ofertas|"></p>
 					<div class="jobs-page-controls">
 						<a th:if="${hasPreviousPage}"
 						   id="jobs-page-prev"
 						   class="btn btn-secondary btn-sm"
+						   aria-label="Ir a la pagina anterior"
 						   th:href="@{/jobs(page=${previousPage},q=${q},date=${date},experience=${experience},modality=${modality},jornada=${jornada})}">Anterior</a>
-						<span th:unless="${hasPreviousPage}" id="jobs-page-prev" class="btn btn-secondary btn-sm is-disabled" aria-disabled="true">Anterior</span>
+						<span th:unless="${hasPreviousPage}" id="jobs-page-prev" class="btn btn-secondary btn-sm is-disabled" aria-disabled="true" aria-label="No hay pagina anterior">Anterior</span>
 						<div id="jobs-page-numbers" class="jobs-page-numbers" aria-label="Paginas">
 							<a th:each="pageNumber : ${pageNumbers}"
 							   class="jobs-page-number"
 							   th:classappend="${pageNumber == currentPage} ? ' is-active'"
-							   th:attr="aria-current=${pageNumber == currentPage ? 'page' : null}"
+							   th:attr="aria-current=${pageNumber == currentPage ? 'page' : null},aria-label=${'Ir a la pagina ' + pageNumber}"
 							   th:href="@{/jobs(page=${pageNumber},q=${q},date=${date},experience=${experience},modality=${modality},jornada=${jornada})}"
 							   th:text="${pageNumber}"></a>
 						</div>
 						<a th:if="${hasNextPage}"
 						   id="jobs-page-next"
 						   class="btn btn-secondary btn-sm"
+						   aria-label="Ir a la pagina siguiente"
 						   th:href="@{/jobs(page=${nextPage},q=${q},date=${date},experience=${experience},modality=${modality},jornada=${jornada})}">Siguiente</a>
-						<span th:unless="${hasNextPage}" id="jobs-page-next" class="btn btn-secondary btn-sm is-disabled" aria-disabled="true">Siguiente</span>
+						<span th:unless="${hasNextPage}" id="jobs-page-next" class="btn btn-secondary btn-sm is-disabled" aria-disabled="true" aria-label="No hay pagina siguiente">Siguiente</span>
 					</div>
 				</nav>
 			</aside>
@@ -199,7 +204,7 @@
 								<div class="detail-company" th:text="${job.company != null && !job.company.isBlank() ? job.company : 'Empresa no informada'}"></div>
 								<div class="detail-meta">
 									<span th:text="${job.location != null && !job.location.isBlank() ? job.location : 'Ubicacion no informada'}"></span>
-									<span class="posted-time" th:if="${job.postedAtText != null && !job.postedAtText.isBlank()}" th:attr="data-posted=${job.postedAtText}" th:text="${' - ' + job.postedAtText}"></span>
+									<span class="posted-time" th:if="${job.postedAtLabel != null && !job.postedAtLabel.isBlank()}" th:attr="data-posted=${job.postedAtLabel}" th:text="${' - ' + job.postedAtLabel}"></span>
 								</div>
 								<div class="detail-tags" aria-label="Etiquetas"></div>
 							</div>
@@ -268,36 +273,34 @@
     function formatPostedAt(text) {
       const raw = String(text || "").trim();
       if (!raw) return "";
-      return raw
-        .replace(/\bhace\s+(\d+)\s+(minuto|minutos|hora|horas|d(?:i|\u00ed)a|d(?:i|\u00ed)as|semana|semanas|mes|meses)\b/gi, function (_, count, unit) {
-          const n = Number(count);
-          const normalized = normalizeForSearch(unit);
-          const labels = {
-            minuto: ["minuto", "minutos"],
-            hora: ["hora", "horas"],
-            dia: ["dia", "dias"],
-            semana: ["semana", "semanas"],
-            mes: ["mes", "meses"],
-          };
-          const key = normalized.startsWith("minuto") ? "minuto" :
-            normalized.startsWith("hora") ? "hora" :
-            normalized.startsWith("dia") ? "dia" :
-            normalized.startsWith("semana") ? "semana" :
-            normalized.startsWith("mes") ? "mes" : null;
-          if (!key) return _;
-          return `hace ${count} ${n === 1 ? labels[key][0] : labels[key][1]}`;
-        })
-        .replace(/\b(\d+)\s+(minute|minutes|hour|hours|day|days|week|weeks|month|months)\s+ago\b/gi, function (_, count, unit) {
-          const n = Number(count);
-          const normalized = unit.toLowerCase();
-          const key = normalized.startsWith("minute") ? "minute" :
-            normalized.startsWith("hour") ? "hour" :
-            normalized.startsWith("day") ? "day" :
-            normalized.startsWith("week") ? "week" :
-            normalized.startsWith("month") ? "month" : null;
-          if (!key) return _;
-          return `${count} ${n === 1 ? key : `${key}s`} ago`;
-        });
+      const normalized = normalizeForSearch(raw);
+      const match = normalized.match(/^hace\s+(\d+)\s+(minuto|minutos|hora|horas|dia|dias|semana|semanas|mes|meses)$/);
+      if (!match) return raw;
+
+      const amount = Number(match[1]);
+      if (!Number.isFinite(amount)) return raw;
+
+      const unit = match[2];
+      let singular = unit;
+      let plural = unit;
+      if (unit.startsWith("minuto")) {
+        singular = "minuto";
+        plural = "minutos";
+      } else if (unit.startsWith("hora")) {
+        singular = "hora";
+        plural = "horas";
+      } else if (unit.startsWith("dia")) {
+        singular = "día";
+        plural = "días";
+      } else if (unit.startsWith("semana")) {
+        singular = "semana";
+        plural = "semanas";
+      } else if (unit.startsWith("mes")) {
+        singular = "mes";
+        plural = "meses";
+      }
+
+      return `hace ${amount} ${amount === 1 ? singular : plural}`;
     }
 
     function applyPostedAtText() {
@@ -511,6 +514,40 @@
       return null;
     }
 
+    function areaFromClassification(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return undefined;
+      const code = raw.toUpperCase();
+      if (code === "UNKNOWN" || code === "OUT_OF_SCOPE") return null;
+      return code;
+    }
+
+    function modalityFromClassification(value) {
+      const code = String(value || "").trim().toUpperCase();
+      if (code === "REMOTE") return "remote";
+      if (code === "HYBRID") return "hybrid";
+      if (code === "ONSITE") return "onsite";
+      return null;
+    }
+
+    function employmentTypeFromClassification(value) {
+      const code = String(value || "").trim().toUpperCase();
+      if (code === "FULLTIME") return "fulltime";
+      if (code === "PARTTIME") return "parttime";
+      if (code === "CONTRACT") return "contract";
+      if (code === "FREELANCE") return "freelance";
+      return null;
+    }
+
+    function experienceFromClassification(value) {
+      const code = String(value || "").trim().toUpperCase();
+      if (code === "TRAINEE") return "trainee";
+      if (code === "JUNIOR") return "junior";
+      if (code === "MID") return "mid";
+      if (code === "SENIOR" || code === "LEAD" || code === "MANAGER") return "senior";
+      return null;
+    }
+
     function getJobMeta(jobId) {
       const detail = details.find((d) => d.dataset.jobId === jobId);
       const title = detail?.querySelector(".detail-title")?.textContent || "";
@@ -521,16 +558,17 @@
       const postedAtText = formatPostedAt(listItem?.dataset?.posted || "");
 
       const descRaw = descriptionTextById.get(jobId) || "";
+      const classifiedArea = areaFromClassification(listItem?.dataset?.roleFamily);
       return {
         title,
         company,
         location,
         postedAtText,
         postedAtTs: parsePostedAtToTimestamp(postedAtText),
-        modality: modalityFromText(location, descRaw),
-        employmentType: employmentTypeFromText(title, descRaw),
-        experience: experienceFromText(title, descRaw),
-        area: areaFromText(title, descRaw),
+        modality: modalityFromClassification(listItem?.dataset?.modality) || modalityFromText(location, descRaw),
+        employmentType: employmentTypeFromClassification(listItem?.dataset?.employmentType) || employmentTypeFromText(title, descRaw),
+        experience: experienceFromClassification(listItem?.dataset?.seniority) || experienceFromText(title, descRaw),
+        area: classifiedArea !== undefined ? classifiedArea : areaFromText(title, descRaw),
         descRaw,
       };
     }
@@ -559,6 +597,28 @@
     }
 
     function tagLabelForArea(value) {
+      if (value === "BACKEND") return "Backend";
+      if (value === "FRONTEND") return "Frontend";
+      if (value === "FULL_STACK") return "Fullstack";
+      if (value === "SOFTWARE_ENGINEERING_GENERAL") return "Software";
+      if (value === "DATA") return "Data";
+      if (value === "AI_ML_AUTOMATION") return "AI/ML";
+      if (value === "CLOUD_DEVOPS_SRE") return "Cloud/DevOps";
+      if (value === "INFRASTRUCTURE_SUPPORT") return "Soporte";
+      if (value === "NETWORKING_TELECOM") return "Redes";
+      if (value === "SECURITY") return "Seguridad";
+      if (value === "DATABASE") return "Base de datos";
+      if (value === "QA") return "QA";
+      if (value === "ERP_CRM_ENTERPRISE") return "ERP/CRM";
+      if (value === "PRODUCT_BUSINESS_ANALYSIS") return "Producto/BA";
+      if (value === "PROJECT_PROGRAM_DELIVERY") return "Delivery";
+      if (value === "UX_UI_DESIGN") return "UX/UI";
+      if (value === "MOBILE") return "Mobile";
+      if (value === "EMBEDDED_IOT") return "Embedded/IoT";
+      if (value === "GAME_DEVELOPMENT") return "Games";
+      if (value === "BLOCKCHAIN_WEB3") return "Web3";
+      if (value === "SOLUTIONS_CONSULTING_PRE_SALES") return "Soluciones";
+      if (value === "TECHNICAL_LEADERSHIP_ARCHITECTURE") return "Liderazgo técnico";
       if (value === "frontend") return "Frontend";
       if (value === "backend") return "Backend";
       if (value === "fullstack") return "Fullstack";
@@ -570,11 +630,17 @@
       return null;
     }
 
-    function appendTag(container, label, className) {
+    function applyVisualBadge(tag, kind, label) {
+      if (!kind || !window.DATALABURO_VISUAL_BADGES) return;
+      window.DATALABURO_VISUAL_BADGES.apply(tag, kind, label);
+    }
+
+    function appendTag(container, label, className, badgeKind) {
       if (!label) return;
       const tag = document.createElement("span");
       tag.className = `tag ${className || ""}`.trim();
       tag.textContent = label;
+      applyVisualBadge(tag, badgeKind, label);
       container.appendChild(tag);
     }
 
@@ -588,10 +654,10 @@
       const isNew = meta.postedAtTs != null && (now - meta.postedAtTs) <= 24 * 60 * 60 * 1000;
       if (isNew) appendTag(tags, "Nueva", "tag-new");
 
-      appendTag(tags, tagLabelForArea(meta.area), "tag-area");
-      appendTag(tags, tagLabelForModality(meta.modality), "");
-      appendTag(tags, tagLabelForEmploymentType(meta.employmentType), "");
-      appendTag(tags, tagLabelForExperience(meta.experience), "");
+      appendTag(tags, tagLabelForArea(meta.area), "tag-area", "role");
+      appendTag(tags, tagLabelForModality(meta.modality), "tag-modality", "work");
+      appendTag(tags, tagLabelForEmploymentType(meta.employmentType), "tag-employment", "work");
+      appendTag(tags, tagLabelForExperience(meta.experience), "tag-seniority", "seniority");
 
       while (tags.childElementCount > 3) {
         tags.removeChild(tags.lastElementChild);
@@ -609,10 +675,10 @@
       const isNew = meta.postedAtTs != null && (now - meta.postedAtTs) <= 24 * 60 * 60 * 1000;
       if (isNew) appendTag(tags, "Nueva", "tag-new");
 
-      appendTag(tags, tagLabelForArea(meta.area), "tag-area");
-      appendTag(tags, tagLabelForModality(meta.modality), "");
-      appendTag(tags, tagLabelForEmploymentType(meta.employmentType), "");
-      appendTag(tags, tagLabelForExperience(meta.experience), "");
+      appendTag(tags, tagLabelForArea(meta.area), "tag-area", "role");
+      appendTag(tags, tagLabelForModality(meta.modality), "tag-modality", "work");
+      appendTag(tags, tagLabelForEmploymentType(meta.employmentType), "tag-employment", "work");
+      appendTag(tags, tagLabelForExperience(meta.experience), "tag-seniority", "seniority");
 
       while (tags.childElementCount > 5) {
         tags.removeChild(tags.lastElementChild);
@@ -649,10 +715,66 @@
       if (settings.sync) syncSelectedJobParam(jobId);
     }
 
+    function compactPagination() {
+      const pageNumbers = document.getElementById("jobs-page-numbers");
+      if (!pageNumbers) return;
+
+      const links = Array.from(pageNumbers.querySelectorAll(".jobs-page-number"));
+      if (links.length <= 5) return;
+
+      const pages = links
+        .map((link) => ({ number: Number(link.textContent || ""), link }))
+        .filter((page) => Number.isFinite(page.number))
+        .sort((a, b) => a.number - b.number);
+      if (pages.length <= 5) return;
+
+      const active = pages.find((page) => page.link.classList.contains("is-active"));
+      const current = active?.number || pages[0].number;
+      const first = pages[0].number;
+      const last = pages[pages.length - 1].number;
+      const controls = document.getElementById("jobs-pagination");
+      const maxBlockSize = controls && controls.getBoundingClientRect().width < 340 ? 3 : 5;
+      const maxNonTerminal = current === last ? last : last - 1;
+      let start = current <= first + Math.floor(maxBlockSize / 2)
+        ? first
+        : current - Math.floor(maxBlockSize / 2);
+      let end = Math.min(maxNonTerminal, start + maxBlockSize - 1);
+      start = Math.max(first, end - maxBlockSize + 1);
+
+      const fragment = document.createDocumentFragment();
+      const pageByNumber = new Map(pages.map((page) => [page.number, page.link]));
+
+      for (let page = start; page <= end; page += 1) {
+        const link = pageByNumber.get(page);
+        if (link) {
+          link.setAttribute("aria-label", `Ir a la pagina ${page}`);
+          fragment.appendChild(link);
+        }
+      }
+
+      const jumpTarget = Math.min(last - 1, end + maxBlockSize);
+      if (jumpTarget > end && jumpTarget < last && pageByNumber.has(jumpTarget)) {
+        const ellipsis = document.createElement("span");
+        ellipsis.className = "jobs-page-ellipsis";
+        ellipsis.setAttribute("aria-hidden", "true");
+        ellipsis.textContent = "...";
+        fragment.appendChild(ellipsis);
+
+        const jumpLink = pageByNumber.get(jumpTarget);
+        jumpLink.classList.add("is-jump");
+        jumpLink.setAttribute("aria-label", `Saltar a la pagina ${jumpTarget}`);
+        fragment.appendChild(jumpLink);
+      }
+
+      pageNumbers.textContent = "";
+      pageNumbers.appendChild(fragment);
+    }
+
     Array.from(document.querySelectorAll(".job-description[data-format='job-description']")).forEach(formatDescriptionElement);
     applyPostedAtText();
     applyLogoAccents();
     renderAllTags();
+    compactPagination();
 
     const initialActive = document.querySelector(".job-item.is-selected") || items[0];
     if (initialActive) {

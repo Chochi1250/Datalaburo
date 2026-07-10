@@ -1,49 +1,166 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<title>DataLaburo - Perfiles</title>
 	<link rel="stylesheet" th:href="@{/app.css}"/>
 </head>
-<body>
+<body class="page page-profiles">
 <div th:replace="~{fragments/navbar :: navbar}"></div>
-<main class="container">
-	<header class="header">
-		<h1>Perfiles</h1>
-		<p class="muted">CVs guardados para reutilizar en el matching del MVP.</p>
+<main class="container profiles-page">
+	<header class="profiles-hero">
+		<div class="profiles-hero-copy">
+			<span class="profiles-eyebrow">Catalogo local</span>
+			<h1>Perfiles</h1>
+			<p class="muted">Gestiona tus CVs guardados y elegi rapidamente cual usar para analizar oportunidades.</p>
+			<span class="profiles-count-pill"
+				  th:text="${profiles != null && #lists.size(profiles) == 1 ? '1 perfil guardado' : ((profiles != null ? #lists.size(profiles) : 0) + ' perfiles guardados')}">0 perfiles guardados</span>
+		</div>
+		<div class="profiles-hero-actions">
+			<a class="btn btn-primary" th:href="@{/profiles/new}">Nuevo perfil</a>
+			<a class="btn btn-secondary" th:href="@{/matching}">Ir a matching</a>
+		</div>
 	</header>
 
-	<section class="actions">
+	<section class="profiles-empty-state" th:if="${#lists.isEmpty(profiles)}">
+		<div class="profile-catalog-avatar avatar-surface" data-profile-avatar data-avatar-preset="atlas" data-avatar-name="DataLaburo">DL</div>
+		<div>
+			<h2>Todavia no hay perfiles guardados</h2>
+			<p class="muted">Crea tu primer perfil para reutilizar CV, metadata visible y analisis dentro de DataLaburo.</p>
+		</div>
 		<a class="btn btn-primary" th:href="@{/profiles/new}">Nuevo perfil</a>
-		<a class="btn btn-secondary" th:href="@{/matching}">Ir a matching</a>
 	</section>
 
-	<section class="card" th:if="${#lists.isEmpty(profiles)}">
-		<p class="muted">Todavia no hay perfiles guardados.</p>
-	</section>
+	<section th:if="${!#lists.isEmpty(profiles)}" class="profiles-grid" aria-label="Perfiles guardados">
+		<article class="profile-catalog-card"
+				 th:each="profile : ${profiles}"
+				 th:attr="data-profile-role=${profile.targetRole}">
+			<div class="profile-catalog-main">
+				<div class="profile-catalog-avatar avatar-surface"
+					 data-profile-avatar
+					 th:attr="data-avatar-preset=${profile.avatarPreset},data-avatar-name=${profile.name}"
+					 th:text="${profile.name != null && !profile.name.isBlank() ? #strings.toUpperCase(#strings.substring(profile.name, 0, 1)) : 'DL'}">DL</div>
 
-	<section th:if="${!#lists.isEmpty(profiles)}" class="grid">
-		<article class="card" th:each="profile : ${profiles}">
-			<header class="header">
-				<h2 th:text="${profile.name}">Perfil</h2>
-				<p class="muted" th:if="${profile.headline != null && !profile.headline.isBlank()}" th:text="${profile.headline}">Backend Java junior</p>
-				<p class="muted small" th:if="${profile.updatedAt != null}" th:text="${'Actualizado: ' + profile.updatedAt}"></p>
-			</header>
-			<div class="chips">
-				<span class="chip match-chip" th:text="${profile.targetRole != null ? profile.targetRole : 'UNDECIDED'}">UNDECIDED</span>
-				<span class="chip match-chip" th:text="${profile.targetSeniority != null ? profile.targetSeniority : 'ANY'}">ANY</span>
-				<span class="chip match-chip" th:text="${profile.searchMode != null ? profile.searchMode : 'FOCUSED'}">FOCUSED</span>
+				<div class="profile-catalog-copy">
+					<div class="profile-catalog-heading">
+						<div>
+							<h2 th:text="${profile.name}">Perfil</h2>
+							<p class="profile-catalog-headline"
+							   th:text="${profile.headline != null && !profile.headline.isBlank() ? profile.headline : 'Perfil guardado localmente'}">Backend Java junior</p>
+						</div>
+						<time class="profile-updated-label"
+							  th:if="${profile.updatedAt != null}"
+							  th:attr="datetime=${profile.updatedAt},data-profile-updated-at=${profile.updatedAt}">
+							<img th:src="@{/images/png-transparent-emoji-whatsapp-computer-icons-clock-emoticon-emoji-angle-text-time.png}" alt="" loading="lazy" decoding="async"/>
+							<span data-profile-updated-text>Actualizado recientemente</span>
+						</time>
+					</div>
+
+					<p class="profile-catalog-summary"
+					   th:text="${profile.summary != null && !profile.summary.isBlank() ? profile.summary : ((profile.cvText != null && !profile.cvText.isBlank()) ? profile.cvText : 'Sin resumen visible.')}">Resumen del perfil</p>
+
+					<div class="profile-catalog-badges" aria-label="Metadata del perfil">
+						<th:block th:switch="${profile.targetRole}">
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Backend" th:case="'BACKEND'">Backend</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value=".NET backend" th:case="'DOTNET_BACKEND'">.NET backend</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Frontend" th:case="'FRONTEND'">Frontend</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Fullstack" th:case="'FULL_STACK'">Fullstack</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value=".NET fullstack" th:case="'DOTNET_FULLSTACK'">.NET fullstack</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Data" th:case="'DATA'">Data/BI</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Data" th:case="'DATABASE'">Base de datos</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Cloud DevOps" th:case="'DEVOPS'">DevOps</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Cloud" th:case="'CLOUD'">Cloud</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="QA" th:case="'QA'">QA</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Support IT" th:case="'IT_SUPPORT'">IT Support</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="App Support" th:case="'APP_SUPPORT'">App Support</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="Security Ops" th:case="'SECURITY_OPS'">Security Ops</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="IAM" th:case="'IAM'">IAM</span>
+							<span class="profile-catalog-badge" data-badge-kind="role" data-badge-value="generic" th:case="*">Rol por definir</span>
+						</th:block>
+
+						<th:block th:switch="${profile.targetSeniority}">
+							<span class="profile-catalog-badge" data-badge-kind="seniority" data-badge-value="Trainee" th:case="'TRAINEE'">Trainee</span>
+							<span class="profile-catalog-badge" data-badge-kind="seniority" data-badge-value="Junior" th:case="'JUNIOR'">Junior</span>
+							<span class="profile-catalog-badge" data-badge-kind="seniority" data-badge-value="Semi Senior" th:case="'MID'">Semi Senior</span>
+							<span class="profile-catalog-badge" data-badge-kind="seniority" data-badge-value="Senior" th:case="'SENIOR'">Senior</span>
+							<span class="profile-catalog-badge" data-badge-kind="seniority" data-badge-value="Lead" th:case="'LEAD'">Lead</span>
+							<span class="profile-catalog-badge" data-badge-kind="seniority" data-badge-value="generic" th:case="*">Seniority flexible</span>
+						</th:block>
+
+						<th:block th:switch="${profile.searchMode}">
+							<span class="profile-catalog-badge" data-badge-kind="flow" data-badge-value="Focused" th:case="'FOCUSED'">Enfocado</span>
+							<span class="profile-catalog-badge" data-badge-kind="flow" data-badge-value="Balanced" th:case="'BALANCED'">Balanceado</span>
+							<span class="profile-catalog-badge" data-badge-kind="flow" data-badge-value="Exploratory" th:case="'EXPLORATORY'">Exploratorio</span>
+							<span class="profile-catalog-badge" data-badge-kind="flow" data-badge-value="Focused" th:case="*">Enfocado</span>
+						</th:block>
+					</div>
+				</div>
 			</div>
-			<p class="muted"
-			   th:text="${profile.summary != null && !profile.summary.isBlank() ? #strings.abbreviate(profile.summary, 220) : #strings.abbreviate(profile.cvText, 220)}"></p>
-			<div class="actions">
-				<a class="link" th:href="@{/profiles/{id}(id=${profile.id})}">Ver detalle</a>
-				<a class="link" th:href="@{/matching(profileId=${profile.id})}">Usar en matching</a>
-				<a class="link" th:href="@{/profiles/{id}/vector-first-compatibility(id=${profile.id})}">Compatibilidad vectorial</a>
+
+			<div class="profile-catalog-techs" th:if="${!#lists.isEmpty(profile.declaredSkillTags)}" aria-label="Tecnologias declaradas">
+				<span class="chip skill-chip tech-badge is-text-only profile-catalog-tech"
+					  th:each="skill, it : ${profile.declaredSkillTags}"
+					  th:if="${it.index < 5}"
+					  th:attr="data-skill=${#strings.toLowerCase(skill)},data-tech=${skill}">
+					<span class="tech-badge-label" th:text="${skill}">Java</span>
+				</span>
+				<span class="chip skill-chip tech-badge is-text-only profile-catalog-tech"
+					  data-badge-tone="more"
+					  th:if="${#lists.size(profile.declaredSkillTags) > 5}"
+					  th:attr="title=${#lists.size(profile.declaredSkillTags) - 5 + ' tecnologias mas'}">
+					<span class="tech-badge-label" th:text="${'+' + (#lists.size(profile.declaredSkillTags) - 5)}">+2</span>
+				</span>
+			</div>
+
+			<div class="profile-catalog-actions">
+				<a class="btn btn-primary" th:href="@{/profiles/{id}/vector-first-compatibility(id=${profile.id})}">Ir a vector search</a>
+				<a class="btn btn-secondary" th:href="@{/profiles/{id}(id=${profile.id})}">Ver perfil</a>
 			</div>
 		</article>
 	</section>
 </main>
+<script th:src="@{/technology-visual-catalog.js}"></script>
+<script th:src="@{/visual-badge-registry.js}"></script>
+<script th:src="@{/profile-avatar-display.js}"></script>
+<script>
+	(function () {
+		const formatter = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", year: "numeric" });
+		const dayMs = 24 * 60 * 60 * 1000;
+
+		function profileDateLabel(date) {
+			const now = new Date();
+			const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+			const then = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+			const days = Math.max(0, Math.floor((today - then) / dayMs));
+
+			if (days === 0) {
+				return "Actualizado hoy";
+			}
+			if (days === 1) {
+				return "Actualizado ayer";
+			}
+			if (days < 7) {
+				return "Actualizado hace " + days + " dias";
+			}
+			if (days < 28) {
+				const weeks = Math.floor(days / 7);
+				return "Actualizado hace " + weeks + (weeks === 1 ? " semana" : " semanas");
+			}
+			return "Actualizado el " + formatter.format(date).replace(".", "");
+		}
+
+		document.querySelectorAll("[data-profile-updated-at]").forEach(function (element) {
+			const date = new Date(element.dataset.profileUpdatedAt);
+			if (Number.isNaN(date.getTime())) {
+				return;
+			}
+			const label = element.querySelector("[data-profile-updated-text]");
+			if (label) {
+				label.textContent = profileDateLabel(date);
+			}
+		});
+	}());
+</script>
 </body>
 </html>

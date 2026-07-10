@@ -228,6 +228,7 @@ public class VectorSearchEntryController {
                 profile.getName(),
                 profile.getHeadline(),
                 profile.getSummary(),
+                profile.getAvatarPreset(),
                 status == null ? "sin embedding" : status.name(),
                 statusMessage(status),
                 embedding == null ? null : embedding.getErrorMessage(),
@@ -308,6 +309,7 @@ public class VectorSearchEntryController {
         private final String name;
         private final String headline;
         private final String summary;
+        private final String avatarPreset;
         private final String statusLabel;
         private final String statusMessage;
         private final String errorMessage;
@@ -318,6 +320,7 @@ public class VectorSearchEntryController {
                 String name,
                 String headline,
                 String summary,
+                String avatarPreset,
                 String statusLabel,
                 String statusMessage,
                 String errorMessage,
@@ -327,6 +330,7 @@ public class VectorSearchEntryController {
             this.name = name;
             this.headline = headline;
             this.summary = summary;
+            this.avatarPreset = avatarPreset;
             this.statusLabel = statusLabel;
             this.statusMessage = statusMessage;
             this.errorMessage = errorMessage;
@@ -347,6 +351,10 @@ public class VectorSearchEntryController {
 
         public String getSummary() {
             return summary;
+        }
+
+        public String getAvatarPreset() {
+            return avatarPreset;
         }
 
         public String getStatusLabel() {

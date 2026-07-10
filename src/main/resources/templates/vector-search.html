@@ -31,31 +31,23 @@
 
 			<aside class="hero-showcase vector-start-options" aria-label="Elegir forma de empezar">
 				<label for="flow-quick" class="showcase-card profile-card vector-start-card vector-start-card-cv">
-					<span class="vector-active-marker">Activo</span>
+					<span class="vector-active-marker" data-badge-kind="flow" data-badge-value="Activo">Activo</span>
 					<div class="showcase-card-header">
 						<span class="card-kicker">CV rapido</span>
-						<span class="semantic-badge">CV</span>
+						<span class="semantic-badge" data-badge-kind="flow" data-badge-value="CV">CV</span>
 					</div>
 					<h2>Pegar CV</h2>
 					<p>Crea un perfil rapido desde texto y abre el analisis de oportunidades cercanas.</p>
-					<div class="skill-cloud">
-						<span>Texto libre</span>
-						<span>Perfil local</span>
-					</div>
 				</label>
 
 				<label for="flow-existing" class="showcase-card job-card vector-start-card vector-start-card-existing">
-					<span class="vector-active-marker">Activo</span>
+					<span class="vector-active-marker" data-badge-kind="flow" data-badge-value="Activo">Activo</span>
 					<div class="showcase-card-header">
 						<span class="card-kicker">Perfil guardado</span>
-						<span class="semantic-badge">Perfil</span>
+						<span class="semantic-badge" data-badge-kind="flow" data-badge-value="Perfil">Perfil</span>
 					</div>
 					<h2>Usar perfil existente</h2>
 					<p>Elegis un perfil guardado localmente y continuas con el mismo flujo de resultados.</p>
-					<div class="insight-stack">
-						<span class="insight-pill is-evidence">Estado visible</span>
-						<span class="insight-pill is-transfer">Continuidad</span>
-					</div>
 				</label>
 			</aside>
 		</div>
@@ -66,23 +58,6 @@
 			<div>
 				<h2 class="vector-workbench-title vector-workbench-title-quick">Pega tu CV para iniciar el analisis</h2>
 				<h2 class="vector-workbench-title vector-workbench-title-existing">Elegi un perfil guardado</h2>
-			</div>
-		</div>
-
-		<div class="vector-session-inline" th:if="${activeProfile != null}">
-			<div>
-				<span class="card-kicker">Perfil actual</span>
-				<strong th:text="${activeProfile.name}">Perfil usado</strong>
-				<p class="muted small" th:text="${activeProfile.statusMessage}">Estado del perfil</p>
-			</div>
-			<div class="vector-session-actions">
-				<span class="chip match-chip"
-					  th:classappend="${activeProfile.ready ? ' profile-chip' : ' chip-muted'}"
-					  th:text="${activeProfile.statusLabel}">READY</span>
-				<form method="post" th:action="@{/vector-search}">
-					<input type="hidden" name="profileId" th:value="${activeProfile.id}"/>
-					<button type="submit" class="btn btn-primary btn-sm">Continuar analisis</button>
-				</form>
 			</div>
 		</div>
 
@@ -111,7 +86,7 @@
 						<div class="field vector-cv-upload" data-cv-upload th:data-extract-url="@{/vector-search/cv/extract}">
 							<input class="vector-cv-file-input" id="cvFile" name="cvFile" type="file"
 								   accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"/>
-							<label class="vector-cv-dropzone" for="cvFile" data-cv-dropzone>
+							<div class="vector-cv-dropzone" data-cv-dropzone>
 								<span class="vector-cv-document-icon" aria-hidden="true">
 									<img th:src="@{/images/1f4c4.png}" alt="" loading="lazy"/>
 								</span>
@@ -119,7 +94,8 @@
 									<strong>Subi tu CV en PDF o DOCX</strong>
 									<span>Arrastra un archivo o hace clic para seleccionarlo.</span>
 								</span>
-							</label>
+								<label class="vector-cv-upload-action" for="cvFile">Elegir archivo</label>
+							</div>
 							<div class="vector-cv-file-status" data-cv-file-status hidden>
 								<span class="vector-cv-file-name" data-cv-file-name>cv.pdf</span>
 								<span class="vector-cv-file-state" data-cv-file-state>Listo para revisar</span>
@@ -136,7 +112,7 @@
 						</div>
 					</div>
 					<div class="actions">
-						<button type="submit">Crear perfil e iniciar analisis</button>
+						<button type="submit" class="btn btn-primary">Crear perfil e iniciar analisis</button>
 						<button type="submit" class="btn btn-secondary" formnovalidate
 								th:formaction="@{/profiles/new/draft}">Completar perfil</button>
 					</div>
@@ -152,21 +128,67 @@
 					</p>
 				</div>
 
-				<form method="post" th:action="@{/vector-search}" th:if="${profileOptions != null && !#lists.isEmpty(profileOptions)}">
-					<div class="field">
-						<label for="profileId">Perfil local</label>
-						<select id="profileId" name="profileId" required>
-							<option th:each="option : ${profileOptions}"
-									th:value="${option.id}"
-									th:text="${option.name + ' - ' + option.statusLabel}">Perfil - READY</option>
-						</select>
-						<p class="hint muted">No se muestran todos los perfiles como grilla: elegis uno y avanzas.</p>
+				<div class="vector-existing-card"
+					 data-existing-profile
+					 th:if="${profileOptions != null && !#lists.isEmpty(profileOptions)}"
+					 th:attr="data-profile-ready=${activeProfile != null && activeProfile.ready}">
+					<div class="vector-existing-summary">
+						<div class="vector-profile-avatar avatar-surface"
+							 data-profile-avatar
+							 data-existing-profile-avatar
+							 th:attr="data-avatar-preset=${activeProfile != null ? activeProfile.avatarPreset : null},data-avatar-name=${activeProfile != null ? activeProfile.name : 'Perfil'}"
+							 aria-hidden="true">
+							<span data-existing-profile-initial
+								  th:text="${activeProfile != null && !#strings.isEmpty(activeProfile.name) ? #strings.substring(activeProfile.name, 0, 1) : 'P'}">P</span>
+						</div>
+						<div class="vector-existing-profile-copy">
+							<span class="vector-existing-eyebrow">Perfil actual</span>
+							<strong data-existing-profile-name
+									th:text="${activeProfile != null ? activeProfile.name : 'Selecciona un perfil'}">Lucas Java App</strong>
+							<p class="muted small" data-existing-profile-status
+							   th:text="${activeProfile != null ? activeProfile.statusMessage : 'Elegi un perfil local para continuar.'}">Perfil local guardado.</p>
+						</div>
+						<form class="vector-existing-continue-form" method="post" th:action="@{/vector-search}">
+							<input type="hidden" name="profileId" data-existing-current-id
+								   th:value="${activeProfile != null ? activeProfile.id : ''}"/>
+							<button type="submit" class="btn btn-primary btn-sm"
+									data-existing-continue
+									th:disabled="${activeProfile == null || !activeProfile.ready}">Continuar analisis</button>
+						</form>
 					</div>
-					<div class="actions">
-						<button type="submit">Iniciar analisis</button>
-						<a class="btn btn-secondary" th:href="@{/profiles}">Ver perfiles</a>
-					</div>
-				</form>
+
+					<form class="vector-existing-form" method="post" th:action="@{/vector-search}">
+						<div class="field">
+							<label for="profileId">Perfil local</label>
+							<select id="profileId" name="profileId" required data-existing-profile-select>
+								<option th:each="option : ${profileOptions}"
+										th:value="${option.id}"
+										th:selected="${activeProfile != null && option.id == activeProfile.id}"
+										th:attr="data-ready=${option.ready},
+												data-status-message=${option.statusMessage},
+												data-profile-name=${option.name},
+												data-avatar-preset=${option.avatarPreset},
+												data-profile-caption=${!#strings.isEmpty(option.headline) ? option.headline : 'Perfil local guardado.'}"
+										th:text="${option.ready ? option.name : option.name + ' - No listo'}">Perfil local</option>
+							</select>
+							<div class="vector-existing-error" data-existing-profile-error
+								 th:hidden="${activeProfile == null || activeProfile.ready}" aria-live="polite">
+								<span class="vector-existing-error-icon" aria-hidden="true">!</span>
+								<p>
+									<strong>El perfil seleccionado no esta listo para analizar.</strong>
+									<span>Es necesario actualizarlo antes de continuar.</span>
+								</p>
+							</div>
+							<p class="hint muted">No se muestran todos los perfiles como grilla: elegis uno y avanzas.</p>
+						</div>
+						<div class="actions">
+							<button type="submit" class="btn btn-primary"
+									data-existing-submit
+									th:disabled="${activeProfile != null && !activeProfile.ready}">Iniciar analisis</button>
+							<a class="btn btn-secondary" th:href="@{/profiles}">Ver perfiles</a>
+						</div>
+					</form>
+				</div>
 
 				<div class="vector-empty-state" th:if="${profileOptions == null || #lists.isEmpty(profileOptions)}">
 					<p class="muted">Todavia no hay perfiles locales para analizar.</p>
@@ -176,8 +198,119 @@
 		</div>
 	</section>
 </main>
+<script th:src="@{/profile-avatar-display.js}"></script>
 <script>
 	(function () {
+		const existingProfile = document.querySelector("[data-existing-profile]");
+		if (existingProfile) {
+			const select = existingProfile.querySelector("[data-existing-profile-select]");
+			const currentIdInput = existingProfile.querySelector("[data-existing-current-id]");
+			const currentAvatar = existingProfile.querySelector("[data-existing-profile-avatar]");
+			const currentName = existingProfile.querySelector("[data-existing-profile-name]");
+			const currentStatus = existingProfile.querySelector("[data-existing-profile-status]");
+			const error = existingProfile.querySelector("[data-existing-profile-error]");
+			const continueButton = existingProfile.querySelector("[data-existing-continue]");
+			const submitButton = existingProfile.querySelector("[data-existing-submit]");
+			const avatarImages = new Map([
+				["docker", { file: "/images/tech/docker.png", label: "Docker" }],
+				["java", { file: "/images/tech/java.png", label: "Java" }],
+				["kubernetes", { file: "/images/tech/kubernetes.png", label: "Kubernetes" }],
+				["oracle", { file: "/images/tech/oracle.svg", label: "Oracle" }],
+				["spring", { file: "/images/tech/spring-icon.svg", label: "Spring" }],
+				["postgresql", { file: "/images/tech/postgresql.png", label: "PostgreSQL" }],
+				["python", { file: "/images/tech/Python.png", label: "Python" }],
+				["react", { file: "/images/tech/react.png", label: "React" }],
+				["git", { file: "/images/tech/github.png", label: "Git" }]
+			]);
+
+			function selectedOption() {
+				return select && select.options[select.selectedIndex];
+			}
+
+			function initials(name) {
+				const words = String(name || "")
+					.replace(/[^A-Za-z0-9 ]+/g, " ")
+					.trim()
+					.split(/\s+/)
+					.filter(Boolean);
+				if (!words.length) {
+					return "DL";
+				}
+				if (words.length === 1) {
+					return words[0].slice(0, 2).toUpperCase();
+				}
+				return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+			}
+
+			function renderAvatar(name, preset) {
+				if (!currentAvatar) {
+					return;
+				}
+				const normalizedPreset = String(preset || "").trim().toLowerCase();
+				const option = avatarImages.get(normalizedPreset);
+				currentAvatar.dataset.avatarName = name;
+				currentAvatar.textContent = "";
+				if (option) {
+					const image = document.createElement("img");
+					image.className = "avatar-selected-image";
+					image.alt = option.label || "";
+					image.src = option.file;
+					image.addEventListener("error", function () {
+						currentAvatar.classList.remove("is-avatar-image");
+						currentAvatar.dataset.avatarPreset = normalizedPreset || "atlas";
+						currentAvatar.removeAttribute("data-avatar-image");
+						currentAvatar.textContent = initials(name);
+					}, { once: true });
+					currentAvatar.classList.add("is-avatar-image");
+					currentAvatar.dataset.avatarImage = normalizedPreset;
+					currentAvatar.dataset.avatarPreset = normalizedPreset || "atlas";
+					currentAvatar.appendChild(image);
+					return;
+				}
+				currentAvatar.classList.remove("is-avatar-image");
+				currentAvatar.dataset.avatarPreset = normalizedPreset || "atlas";
+				currentAvatar.removeAttribute("data-avatar-image");
+				currentAvatar.textContent = initials(name);
+			}
+
+			function updateExistingProfileState() {
+				const option = selectedOption();
+				if (!option) {
+					return;
+				}
+				const name = option.dataset.profileName || option.textContent.trim();
+				const status = option.dataset.statusMessage || option.dataset.profileCaption || "Perfil local guardado.";
+				const ready = option.dataset.ready === "true";
+				const avatarPreset = option.dataset.avatarPreset || "";
+
+				existingProfile.dataset.profileReady = ready ? "true" : "false";
+				if (currentIdInput) {
+					currentIdInput.value = option.value;
+				}
+				renderAvatar(name, avatarPreset);
+				if (currentName) {
+					currentName.textContent = name;
+				}
+				if (currentStatus) {
+					currentStatus.textContent = status;
+				}
+				if (error) {
+					error.hidden = ready;
+				}
+				if (continueButton) {
+					continueButton.disabled = !ready;
+				}
+				if (submitButton) {
+					submitButton.disabled = !ready;
+				}
+			}
+
+			if (select) {
+				select.addEventListener("change", updateExistingProfileState);
+				updateExistingProfileState();
+			}
+		}
+
 		const upload = document.querySelector("[data-cv-upload]");
 		if (!upload) {
 			return;

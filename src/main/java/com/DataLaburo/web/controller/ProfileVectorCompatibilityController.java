@@ -21,6 +21,7 @@ import com.DataLaburo.web.model.Job;
 import com.DataLaburo.web.repository.JobRepository;
 import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
+import com.DataLaburo.web.service.JobPublicationDateService;
 import com.DataLaburo.web.service.ProfileImprovementSuggestionService;
 import com.DataLaburo.web.service.ProfileRoadmapSuggestionService;
 import org.springframework.beans.factory.ObjectProvider;
@@ -54,6 +55,7 @@ public class ProfileVectorCompatibilityController {
     private final OpportunityKnowledgeDetailMapper opportunityKnowledgeDetailMapper;
     private final JobRepository jobRepository;
     private final ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider;
+    private final JobPublicationDateService publicationDateService;
 
     public ProfileVectorCompatibilityController(
             CandidateProfileService candidateProfileService,
@@ -63,7 +65,8 @@ public class ProfileVectorCompatibilityController {
             ProfessionalEvidenceService professionalEvidenceService,
             OpportunityKnowledgeDetailMapper opportunityKnowledgeDetailMapper,
             JobRepository jobRepository,
-            ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider
+            ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider,
+            JobPublicationDateService publicationDateService
     ) {
         this.candidateProfileService = candidateProfileService;
         this.candidateProfileProjectService = candidateProfileProjectService;
@@ -73,6 +76,7 @@ public class ProfileVectorCompatibilityController {
         this.opportunityKnowledgeDetailMapper = opportunityKnowledgeDetailMapper;
         this.jobRepository = jobRepository;
         this.compatibilityServiceProvider = compatibilityServiceProvider;
+        this.publicationDateService = publicationDateService;
     }
 
     @GetMapping("/profiles/{profileId}/vector-first-compatibility")
@@ -181,7 +185,8 @@ public class ProfileVectorCompatibilityController {
                             profile.get(),
                             projects,
                             profileEvidenceSummary,
-                            profileImprovementSuggestionService
+                            profileImprovementSuggestionService,
+                            publicationDateService
                     ))
                     .toList();
             model.addAttribute("response", response);
@@ -330,7 +335,8 @@ public class ProfileVectorCompatibilityController {
                 CandidateProfile profile,
                 List<CandidateProfileProject> projects,
                 ProfileEvidenceSummary profileEvidenceSummary,
-                ProfileImprovementSuggestionService profileImprovementSuggestionService
+                ProfileImprovementSuggestionService profileImprovementSuggestionService,
+                JobPublicationDateService publicationDateService
         ) {
             String bucketCode = result.compatibilityBucket() == null ? null : result.compatibilityBucket().name();
             Integer suggestedRank = result.suggestedRerankRank();
@@ -396,7 +402,7 @@ public class ProfileVectorCompatibilityController {
                     modalityCode,
                     labelOpportunityType(opportunityTypeCode),
                     opportunityTypeCode,
-                    ProfileVectorCompatibilityController.postedAtLabel(job),
+                    ProfileVectorCompatibilityController.postedAtLabel(job, publicationDateService),
                     ProfileVectorCompatibilityController.visibleSkills(result),
                     ProfileVectorCompatibilityController.userSummary(result, closenessScore, gapLevel),
                     result.vectorRank(),
@@ -959,11 +965,11 @@ public class ProfileVectorCompatibilityController {
         return job == null ? null : firstNonBlank(job.getLocation(), job.getLocationRaw());
     }
 
-    private static String postedAtLabel(Job job) {
+    private static String postedAtLabel(Job job, JobPublicationDateService publicationDateService) {
         if (job == null) {
             return null;
         }
-        String posted = firstNonBlank(job.getPostedAtText());
+        String posted = publicationDateService.labelFor(job).orElse(null);
         if (posted != null) {
             return posted;
         }

@@ -32,7 +32,7 @@
 						<div class="detail-company" th:text="${job.company != null && !job.company.isBlank() ? job.company : 'Empresa no informada'}"></div>
 						<div class="detail-meta">
 							<span th:text="${job.location != null && !job.location.isBlank() ? job.location : 'Ubicacion no informada'}"></span>
-							<span class="posted-time" th:if="${job.postedAtText != null && !job.postedAtText.isBlank()}" th:attr="data-posted=${job.postedAtText}" th:text="${' - ' + job.postedAtText}"></span>
+							<span class="posted-time" th:if="${job.postedAtLabel != null && !job.postedAtLabel.isBlank()}" th:attr="data-posted=${job.postedAtLabel}" th:text="${' - ' + job.postedAtLabel}"></span>
 						</div>
 					</div>
 				</div>
@@ -74,40 +74,7 @@
     function formatPostedAt(text) {
       const raw = String(text || "").trim();
       if (!raw) return "";
-      const normalize = (value) => String(value || "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-      return raw
-        .replace(/\bhace\s+(\d+)\s+(minuto|minutos|hora|horas|d(?:i|\u00ed)a|d(?:i|\u00ed)as|semana|semanas|mes|meses)\b/gi, function (_, count, unit) {
-          const n = Number(count);
-          const normalized = normalize(unit);
-          const labels = {
-            minuto: ["minuto", "minutos"],
-            hora: ["hora", "horas"],
-            dia: ["dia", "dias"],
-            semana: ["semana", "semanas"],
-            mes: ["mes", "meses"],
-          };
-          const key = normalized.startsWith("minuto") ? "minuto" :
-            normalized.startsWith("hora") ? "hora" :
-            normalized.startsWith("dia") ? "dia" :
-            normalized.startsWith("semana") ? "semana" :
-            normalized.startsWith("mes") ? "mes" : null;
-          if (!key) return _;
-          return `hace ${count} ${n === 1 ? labels[key][0] : labels[key][1]}`;
-        })
-        .replace(/\b(\d+)\s+(minute|minutes|hour|hours|day|days|week|weeks|month|months)\s+ago\b/gi, function (_, count, unit) {
-          const n = Number(count);
-          const normalized = unit.toLowerCase();
-          const key = normalized.startsWith("minute") ? "minute" :
-            normalized.startsWith("hour") ? "hour" :
-            normalized.startsWith("day") ? "day" :
-            normalized.startsWith("week") ? "week" :
-            normalized.startsWith("month") ? "month" : null;
-          if (!key) return _;
-          return `${count} ${n === 1 ? key : `${key}s`} ago`;
-        });
+      return raw;
     }
 
     document.querySelectorAll(".posted-time[data-posted]").forEach((el) => {
