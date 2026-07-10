@@ -8,12 +8,17 @@ import com.DataLaburo.web.repository.JobRepository;
 import com.DataLaburo.web.service.CandidateProfileService;
 import com.DataLaburo.web.service.CvMatchingService;
 import com.DataLaburo.web.service.DashboardService;
+import com.DataLaburo.web.service.JobPublicationDateService;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,11 +35,15 @@ class MatchControllerTest {
     private final DashboardService dashboardService = mock(DashboardService.class);
     private final CvMatchingService cvMatchingService = mock(CvMatchingService.class);
     private final CandidateProfileService candidateProfileService = mock(CandidateProfileService.class);
+    private final JobPublicationDateService publicationDateService = new JobPublicationDateService(
+            Clock.fixed(Instant.parse("2026-07-31T15:00:00Z"), ZoneId.of("America/Argentina/Buenos_Aires"))
+    );
     private final MatchController controller = new MatchController(
             jobRepository,
             dashboardService,
             cvMatchingService,
-            candidateProfileService
+            candidateProfileService,
+            publicationDateService
     );
 
     @Test
@@ -194,6 +203,48 @@ class MatchControllerTest {
         assertEquals(2, model.getAttribute("currentPage"));
         assertEquals(16L, jobs.get(0).getId());
         assertEquals(18L, model.getAttribute("selectedJobId"));
+    }
+
+    @Test
+    void jobsDateFilterPrefersEstimatedPublicationDateOverFrozenRawText() {
+        Job staleByEstimate = job(1L);
+        staleByEstimate.setPostedAtText("hace 1 dia");
+        staleByEstimate.setPublishedAtEstimated(publicationDateService.observedAtNow().minus(Duration.ofDays(12)));
+        Job recentByEstimate = job(2L);
+        recentByEstimate.setPostedAtText("hace 1 mes");
+        recentByEstimate.setPublishedAtEstimated(publicationDateService.observedAtNow().minus(Duration.ofDays(2)));
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(List.of(staleByEstimate, recentByEstimate));
+        ConcurrentModel model = new ConcurrentModel();
+
+        controller.jobs(null, null, "7d", null, null, null, "1", null, model);
+
+        List<Job> jobs = jobsFrom(model);
+        assertEquals(1, jobs.size());
+        assertEquals(2L, jobs.get(0).getId());
+        assertEquals("Hace 2 días", jobs.get(0).getPostedAtLabel());
+    }
+
+    @Test
+    void jobsFiltersPreferStoredClassificationWhenPresent() {
+        Job classified = job(1L);
+        classified.setTitle("Engineer");
+        classified.setLocation("Buenos Aires");
+        classified.setRoleSeniority("JUNIOR");
+        classified.setWorkModality("REMOTE");
+        classified.setEmploymentType("CONTRACT");
+
+        Job unclassified = job(2L);
+        unclassified.setTitle("Engineer");
+        unclassified.setLocation("Buenos Aires");
+
+        when(jobRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(List.of(classified, unclassified));
+        ConcurrentModel model = new ConcurrentModel();
+
+        controller.jobs(null, null, null, "junior", "remote", "contract", "1", null, model);
+
+        List<Job> jobs = jobsFrom(model);
+        assertEquals(1, jobs.size());
+        assertEquals(1L, jobs.get(0).getId());
     }
 
     @Test

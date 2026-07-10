@@ -34,6 +34,7 @@ import com.DataLaburo.web.model.ProjectEvidenceType;
 import com.DataLaburo.web.repository.JobRepository;
 import com.DataLaburo.web.service.CandidateProfileProjectService;
 import com.DataLaburo.web.service.CandidateProfileService;
+import com.DataLaburo.web.service.JobPublicationDateService;
 import com.DataLaburo.web.service.ProfileImprovementSuggestionService;
 import com.DataLaburo.web.service.ProfileRoadmapSuggestionService;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,10 @@ import org.springframework.ui.ConcurrentModel;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,6 +69,9 @@ class ProfileVectorCompatibilityControllerTest {
     private final OpportunityKnowledgeDetailMapper opportunityKnowledgeDetailMapper = mock(OpportunityKnowledgeDetailMapper.class);
     private final JobRepository jobRepository = mock(JobRepository.class);
     private final VectorFirstCompatibilityService compatibilityService = mock(VectorFirstCompatibilityService.class);
+    private final JobPublicationDateService publicationDateService = new JobPublicationDateService(
+            Clock.fixed(Instant.parse("2026-07-31T15:00:00Z"), ZoneId.of("America/Argentina/Buenos_Aires"))
+    );
     @SuppressWarnings("unchecked")
     private final ObjectProvider<VectorFirstCompatibilityService> compatibilityServiceProvider = mock(ObjectProvider.class);
     private final ProfileVectorCompatibilityController controller = new ProfileVectorCompatibilityController(
@@ -74,7 +82,8 @@ class ProfileVectorCompatibilityControllerTest {
             professionalEvidenceService,
             opportunityKnowledgeDetailMapper,
             jobRepository,
-            compatibilityServiceProvider
+            compatibilityServiceProvider,
+            publicationDateService
     );
 
     @Test
@@ -169,10 +178,10 @@ class ProfileVectorCompatibilityControllerTest {
         when(candidateProfileProjectService.findByProfileId(1L)).thenReturn(List.of(project));
         ProfileEvidenceSummary professionalEvidence = professionalEvidenceSummary();
         when(professionalEvidenceService.summarizeProfile(profile, List.of(project))).thenReturn(professionalEvidence);
-        when(jobRepository.findAllById(List.of(14L, 15L))).thenReturn(List.of(
-                job(14L, "Example", "Buenos Aires", "Remoto", "hace 2 dias"),
-                job(15L, "Example", "Cordoba", "Hibrido", "hace 5 dias")
-        ));
+        Job firstJob = job(14L, "Example", "Buenos Aires", "Remoto", "hace 2 dias");
+        firstJob.setPublishedAtEstimated(publicationDateService.observedAtNow().minus(Duration.ofDays(7)));
+        Job secondJob = job(15L, "Example", "Cordoba", "Hibrido", "hace 5 dias");
+        when(jobRepository.findAllById(List.of(14L, 15L))).thenReturn(List.of(firstJob, secondJob));
         when(compatibilityServiceProvider.getIfAvailable()).thenReturn(compatibilityService);
         when(compatibilityService.analyze(1L, 20)).thenReturn(new VectorFirstCompatibilityResponse(
                 1L,
@@ -214,7 +223,7 @@ class ProfileVectorCompatibilityControllerTest {
         assertEquals("E", invoke(rows.get(0), "companyInitial"));
         assertEquals("Buenos Aires", invoke(rows.get(0), "locationLabel"));
         assertEquals("Remoto", invoke(rows.get(0), "modalityLabel"));
-        assertEquals("hace 2 dias", invoke(rows.get(0), "postedAtLabel"));
+        assertEquals("Hace 1 semana", invoke(rows.get(0), "postedAtLabel"));
         assertEquals("Buen punto de partida, aunque conviene revisar brechas visibles antes de priorizar.", invoke(rows.get(0), "userSummary"));
         List<?> visibleSkills = (List<?>) invoke(rows.get(0), "visibleSkills");
         assertEquals(List.of("Java", "Spring Boot", "AWS", "Cloud"), visibleSkills);
@@ -431,11 +440,11 @@ class ProfileVectorCompatibilityControllerTest {
         assertFalse(vectorSearchTemplate.contains("Alta completa de perfil"));
         assertFalse(vectorSearchTemplate.contains("Estado de embeddings"));
 
-        assertTrue(profileDetailTemplate.contains(
-                "Perfil guardado localmente en esta demo. No requiere login ni cuenta de usuario."
-        ));
-        assertTrue(profileDetailTemplate.contains("Elegir perfil existente"));
-        assertTrue(profileDetailTemplate.contains("Ver compatibilidad vectorial"));
+        assertTrue(profileDetailTemplate.contains("Editar perfil laboral"));
+        assertTrue(profileDetailTemplate.contains("Guardar identidad"));
+        assertTrue(profileDetailTemplate.contains("Guardar metadata"));
+        assertTrue(profileDetailTemplate.contains("Proyectos"));
+        assertTrue(profileDetailTemplate.contains("CV base del perfil"));
     }
 
     private static ProfileEvidenceSummary professionalEvidenceSummary() {
