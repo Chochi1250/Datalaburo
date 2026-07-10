@@ -10,6 +10,7 @@ public class JobSnapshotDto {
     private Integer applicantsCount;
     private String applicantsText;
     private String postedAtText;
+    private String postedAtLabel;
     private String locationRaw;
     private String html;
     private String capturedAt;
@@ -27,6 +28,7 @@ public class JobSnapshotDto {
             Integer applicantsCount,
             String applicantsText,
             String postedAtText,
+            String postedAtLabel,
             String locationRaw,
             String html,
             String capturedAt
@@ -40,6 +42,7 @@ public class JobSnapshotDto {
         this.applicantsCount = applicantsCount;
         this.applicantsText = applicantsText;
         this.postedAtText = postedAtText;
+        this.postedAtLabel = postedAtLabel;
         this.locationRaw = locationRaw;
         this.html = html;
         this.capturedAt = capturedAt;
@@ -117,6 +120,14 @@ public class JobSnapshotDto {
         this.postedAtText = postedAtText;
     }
 
+    public String getPostedAtLabel() {
+        return postedAtLabel;
+    }
+
+    public void setPostedAtLabel(String postedAtLabel) {
+        this.postedAtLabel = postedAtLabel;
+    }
+
     public String getLocationRaw() {
         return locationRaw;
     }
@@ -141,4 +152,3 @@ public class JobSnapshotDto {
         this.capturedAt = capturedAt;
     }
 }
-

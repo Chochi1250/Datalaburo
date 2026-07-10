@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
@@ -71,6 +72,36 @@ public class Job {
 
     @Column(name = "posted_at_text", length = 2000)
     private String postedAtText;
+
+    @Column(name = "published_at_estimated")
+    private Instant publishedAtEstimated;
+
+    @Column(name = "posted_at_observed_at")
+    private Instant postedAtObservedAt;
+
+    @Transient
+    private String postedAtLabel;
+
+    @Column(name = "role_family", length = 64)
+    private String roleFamily;
+
+    @Column(name = "role_specialty", length = 128)
+    private String roleSpecialty;
+
+    @Column(name = "role_seniority", length = 32)
+    private String roleSeniority;
+
+    @Column(name = "work_modality", length = 32)
+    private String workModality;
+
+    @Column(name = "employment_type", length = 32)
+    private String employmentType;
+
+    @Column(name = "classification_version", length = 64)
+    private String classificationVersion;
+
+    @Column(name = "classified_at")
+    private Instant classifiedAt;
 
     @Column(name = "location_raw", length = 2000)
     private String locationRaw;
@@ -213,6 +244,86 @@ public class Job {
 
     public void setPostedAtText(String postedAtText) {
         this.postedAtText = postedAtText;
+    }
+
+    public Instant getPublishedAtEstimated() {
+        return publishedAtEstimated;
+    }
+
+    public void setPublishedAtEstimated(Instant publishedAtEstimated) {
+        this.publishedAtEstimated = publishedAtEstimated;
+    }
+
+    public Instant getPostedAtObservedAt() {
+        return postedAtObservedAt;
+    }
+
+    public void setPostedAtObservedAt(Instant postedAtObservedAt) {
+        this.postedAtObservedAt = postedAtObservedAt;
+    }
+
+    public String getPostedAtLabel() {
+        return postedAtLabel;
+    }
+
+    public void setPostedAtLabel(String postedAtLabel) {
+        this.postedAtLabel = postedAtLabel;
+    }
+
+    public String getRoleFamily() {
+        return roleFamily;
+    }
+
+    public void setRoleFamily(String roleFamily) {
+        this.roleFamily = roleFamily;
+    }
+
+    public String getRoleSpecialty() {
+        return roleSpecialty;
+    }
+
+    public void setRoleSpecialty(String roleSpecialty) {
+        this.roleSpecialty = roleSpecialty;
+    }
+
+    public String getRoleSeniority() {
+        return roleSeniority;
+    }
+
+    public void setRoleSeniority(String roleSeniority) {
+        this.roleSeniority = roleSeniority;
+    }
+
+    public String getWorkModality() {
+        return workModality;
+    }
+
+    public void setWorkModality(String workModality) {
+        this.workModality = workModality;
+    }
+
+    public String getEmploymentType() {
+        return employmentType;
+    }
+
+    public void setEmploymentType(String employmentType) {
+        this.employmentType = employmentType;
+    }
+
+    public String getClassificationVersion() {
+        return classificationVersion;
+    }
+
+    public void setClassificationVersion(String classificationVersion) {
+        this.classificationVersion = classificationVersion;
+    }
+
+    public Instant getClassifiedAt() {
+        return classifiedAt;
+    }
+
+    public void setClassifiedAt(Instant classifiedAt) {
+        this.classifiedAt = classifiedAt;
     }
 
     public String getLocationRaw() {

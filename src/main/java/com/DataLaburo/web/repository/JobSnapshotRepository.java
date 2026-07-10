@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface JobSnapshotRepository extends JpaRepository<JobSnapshot, Long> {
     Optional<JobSnapshot> findTopByJobIdOrderByCapturedAtDescIdDesc(Long jobId);
+
+    Optional<JobSnapshot> findTopByJobIdAndPostedAtTextOrderByCapturedAtDescIdDesc(Long jobId, String postedAtText);
 }

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,10 +24,19 @@ public class JobIngestService {
 
     private final JobRepository jobRepository;
     private final JobSnapshotRepository jobSnapshotRepository;
+    private final JobPublicationDateService publicationDateService;
+    private final JobClassificationService classificationService;
 
-    public JobIngestService(JobRepository jobRepository, JobSnapshotRepository jobSnapshotRepository) {
+    public JobIngestService(
+            JobRepository jobRepository,
+            JobSnapshotRepository jobSnapshotRepository,
+            JobPublicationDateService publicationDateService,
+            JobClassificationService classificationService
+    ) {
         this.jobRepository = jobRepository;
         this.jobSnapshotRepository = jobSnapshotRepository;
+        this.publicationDateService = publicationDateService;
+        this.classificationService = classificationService;
     }
 
     @Transactional
@@ -101,13 +111,19 @@ public class JobIngestService {
         job.setVisibleText(cleanedVisibleText);
         job.setApplicantsCount(payload.getApplicantsCount());
         job.setApplicantsText(safeTrim(payload.getApplicantsText()));
-        job.setPostedAtText(safeTrim(payload.getPostedAtText()));
+        String postedAtText = safeTrim(payload.getPostedAtText());
+        Instant observedAt = publicationDateService.observedAtNow();
+        job.setPostedAtText(postedAtText);
+        job.setPostedAtObservedAt(observedAt);
+        publicationDateService.estimatePublishedAt(postedAtText, observedAt)
+                .ifPresent(job::setPublishedAtEstimated);
 
         String locationRaw = safeTrim(payload.getLocationRaw());
         if (locationRaw == null && rawLocation != null && cleanedLocation != null && !cleanedLocation.equals(rawLocation)) {
             locationRaw = rawLocation;
         }
         job.setLocationRaw(locationRaw);
+        applyClassification(job, false);
 
         job = jobRepository.save(job);
         log.info("Plugin ingest: created job (source={}, externalJobId={}, jobId={})", source, externalJobId, job.getId());
@@ -139,7 +155,7 @@ public class JobIngestService {
         return new IngestResult(job, "created", false, null);
     }
 
-    private static boolean applyPayloadToJobIfMissing(Job job, ScrapeCurrentRequestDto payload) {
+    private boolean applyPayloadToJobIfMissing(Job job, ScrapeCurrentRequestDto payload) {
         boolean changed = false;
 
         String companyLogoUrl = safeTrim(payload.getCompanyLogoUrl());
@@ -191,13 +207,73 @@ public class JobIngestService {
             changed = true;
         }
 
-        if ((job.getPostedAtText() == null || job.getPostedAtText().isBlank()) && safeTrim(payload.getPostedAtText()) != null) {
-            job.setPostedAtText(safeTrim(payload.getPostedAtText()));
+        String payloadPostedAtText = safeTrim(payload.getPostedAtText());
+        if ((job.getPostedAtText() == null || job.getPostedAtText().isBlank()) && payloadPostedAtText != null) {
+            job.setPostedAtText(payloadPostedAtText);
             changed = true;
+        }
+
+        String rawPostedAtText = firstNonBlank(safeTrim(job.getPostedAtText()), payloadPostedAtText);
+        if (rawPostedAtText != null
+                && (job.getPostedAtObservedAt() == null || job.getPublishedAtEstimated() == null)) {
+            Instant observedAt = job.getPostedAtObservedAt() != null
+                    ? job.getPostedAtObservedAt()
+                    : publicationDateService.observedAtNow();
+            if (job.getPostedAtObservedAt() == null) {
+                job.setPostedAtObservedAt(observedAt);
+                changed = true;
+            }
+            if (job.getPublishedAtEstimated() == null) {
+                Optional<Instant> estimated = publicationDateService.estimatePublishedAt(rawPostedAtText, observedAt);
+                if (estimated.isPresent()) {
+                    job.setPublishedAtEstimated(estimated.get());
+                    changed = true;
+                }
+            }
         }
 
         if ((job.getLocationRaw() == null || job.getLocationRaw().isBlank()) && safeTrim(payload.getLocationRaw()) != null) {
             job.setLocationRaw(safeTrim(payload.getLocationRaw()));
+            changed = true;
+        }
+
+        if (applyClassification(job, true)) {
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private boolean applyClassification(Job job, boolean onlyMissing) {
+        JobClassification classification = classificationService.classify(job);
+        boolean changed = false;
+
+        if (!onlyMissing || isBlank(job.getRoleFamily())) {
+            job.setRoleFamily(classification.roleFamily().name());
+            changed = true;
+        }
+        if (classification.roleSpecialty() != null && (!onlyMissing || isBlank(job.getRoleSpecialty()))) {
+            job.setRoleSpecialty(classification.roleSpecialty());
+            changed = true;
+        }
+        if (classification.roleSeniority() != null && (!onlyMissing || isBlank(job.getRoleSeniority()))) {
+            job.setRoleSeniority(classification.roleSeniority());
+            changed = true;
+        }
+        if (classification.workModality() != null && (!onlyMissing || isBlank(job.getWorkModality()))) {
+            job.setWorkModality(classification.workModality());
+            changed = true;
+        }
+        if (classification.employmentType() != null && (!onlyMissing || isBlank(job.getEmploymentType()))) {
+            job.setEmploymentType(classification.employmentType());
+            changed = true;
+        }
+        if (!onlyMissing || isBlank(job.getClassificationVersion())) {
+            job.setClassificationVersion(JobClassificationService.CLASSIFICATION_VERSION);
+            changed = true;
+        }
+        if (!onlyMissing || job.getClassifiedAt() == null) {
+            job.setClassifiedAt(classificationService.classifiedAtNow());
             changed = true;
         }
 
@@ -250,6 +326,10 @@ public class JobIngestService {
 
     private static String firstNonBlank(String first, String second) {
         return first != null ? first : second;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     public record IngestResult(Job job, String status, boolean deduplicated, String reason) {}

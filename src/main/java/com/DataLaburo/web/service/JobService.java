@@ -13,9 +13,11 @@ import java.util.List;
 @Service
 public class JobService {
     private final JobRepository jobRepository;
+    private final JobPublicationDateService publicationDateService;
 
-    public JobService(JobRepository jobRepository) {
+    public JobService(JobRepository jobRepository, JobPublicationDateService publicationDateService) {
         this.jobRepository = jobRepository;
+        this.publicationDateService = publicationDateService;
     }
 
     public List<JobListItemDto> listJobs() {
@@ -51,6 +53,7 @@ public class JobService {
                 job.getApplicantsCount(),
                 job.getApplicantsText(),
                 job.getPostedAtText(),
+                publicationDateService.labelFor(job).orElse(null),
                 job.getLocationRaw(),
                 null,
                 null
